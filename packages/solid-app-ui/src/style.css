@@ -1,0 +1,466 @@
+/* App palette from the original Contacts page. Keep this above DS defaults. */
+:root {
+  --ds-primary: oklch(0.4866 0.1142 255.31);
+  --ds-primary-contrast: white;
+  --ds-box-radius: 0;
+  --ds-dialog-radius: 0;
+  --ds-panels-list-width: 20em;
+}
+html,
+body {
+  min-height: 100%;
+}
+body {
+  margin: 0;
+  min-height: 100dvh;
+}
+button,
+a[data-simply-command] {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+.ds-button {
+  border-radius: 0;
+  text-transform: none;
+}
+.ds-icon-feather {
+  width: 1.2em;
+  height: 1.2em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+[hidden] {
+  display: none !important;
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.suite-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  padding: var(--ds-space-d2) var(--ds-space);
+  background: var(--ds-color-background);
+  overflow: visible;
+}
+.suite-header h1 {
+  margin: 0;
+  padding-inline-end: 3rem;
+}
+/* The DS heading mask belongs to horizontally scrolling panel headings. */
+.suite-header::after {
+  content: none;
+}
+.account {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-d2);
+  position: fixed;
+  inset: 0 0 auto auto;
+  z-index: 100;
+}
+.account-button {
+  clip-path: polygon(0 0, 17px 100%, 100% 100%, 100% 0);
+  padding: 6px 15px 6px 30px;
+  background: var(--ds-grey-70);
+  color: white;
+  margin: 0;
+  min-height: 2.5rem;
+}
+.account-button:hover,
+.account-button:focus-visible {
+  background: var(--ds-primary);
+}
+.account .ds-dropdown-nav {
+  position: fixed;
+  position-anchor: auto;
+  position-area: none;
+  inset: 3.25rem 0.5rem auto auto;
+  margin: 0;
+  width: min(21rem, calc(100vw - 1rem));
+  max-height: calc(100dvh - 4rem);
+  overflow: auto;
+}
+.account .ds-dropdown-list {
+  margin: 0;
+  padding: 0;
+}
+.account .ds-dropdown-item {
+  margin: 0;
+  border-top: 1px solid var(--ds-grey-low);
+}
+.account .ds-dropdown-link {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: var(--ds-space-d2);
+  text-align: left;
+  color: inherit;
+}
+.account .ds-dropdown-link:hover,
+.account .ds-dropdown-link:focus-visible {
+  background: var(--ds-dropdown-focus);
+}
+.suite-status {
+  margin: var(--ds-space-d2) 0 0;
+  padding: var(--ds-space-d4) var(--ds-space-d2);
+  border-inline-start: 0.25rem solid var(--ds-primary);
+  font-size: 0.85em;
+  overflow-wrap: anywhere;
+}
+.suite-status:empty,
+.empty:empty {
+  display: none;
+}
+.suite-main {
+  padding: var(--ds-space-d2) var(--ds-space) var(--ds-space-x2);
+}
+.app-content {
+  max-width: 80rem;
+}
+.app-toolbar,
+.toolbar,
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--ds-space-d2);
+}
+.app-toolbar {
+  margin-block: var(--ds-space-d2) var(--ds-space);
+}
+.actions {
+  margin-block: var(--ds-space);
+}
+.toolbar {
+  margin: 0;
+}
+.toolbar > label {
+  flex: 1;
+  min-width: min(100%, 15rem);
+}
+label {
+  display: block;
+  margin-block: var(--ds-space-d2);
+}
+label input,
+label textarea,
+label select {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+}
+input,
+textarea,
+select {
+  padding: var(--ds-space-d4) var(--ds-space-d2);
+  font: inherit;
+}
+label input,
+label textarea,
+label select,
+.app-toolbar .ds-button {
+  margin-block: 0;
+}
+textarea {
+  min-height: 2.75rem;
+  resize: vertical;
+}
+textarea[name='notes'] {
+  min-height: 7rem;
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: 0 var(--ds-space);
+}
+.form-grid > *,
+.split-view > * {
+  min-width: 0;
+}
+
+.split-view.ds-panels-panes {
+  display: grid;
+  grid-template-columns: minmax(15rem, var(--ds-panels-list-width)) minmax(
+      0,
+      1fr
+    );
+  gap: var(--ds-space-x2);
+  align-items: start;
+}
+.split-view .ds-panels-pane {
+  width: auto;
+  padding: 0;
+}
+.contacts-list {
+  display: flex;
+  flex-direction: column;
+  min-height: 22rem;
+}
+.person-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.person-list li {
+  margin: 0;
+}
+.person-list button[data-simply-command='select'] {
+  display: flex;
+  gap: var(--ds-space-d2);
+  align-items: center;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: var(--ds-space-d4) 0;
+  overflow-wrap: anywhere;
+}
+.person-list button[data-simply-command='select']:hover,
+.person-list button[data-simply-command='select']:focus-visible {
+  background: var(--ds-grey-low);
+}
+.person-avatar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 2.25rem;
+  aspect-ratio: 1;
+  background: var(--ds-grey-medium);
+}
+.contacts-toolbar {
+  position: sticky;
+  bottom: 0;
+  background: var(--ds-color-background);
+  padding-block: var(--ds-space-d2);
+  margin-block: auto 0;
+  flex-wrap: nowrap;
+}
+.contact-search {
+  display: flex;
+  align-items: center;
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+.contact-search > svg {
+  position: absolute;
+  left: var(--ds-space-d4);
+  pointer-events: none;
+}
+.contact-search input {
+  min-width: 0;
+  padding-inline-start: 2rem;
+  border: 1px solid var(--ds-grey-medium);
+}
+.icon-button {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  padding: var(--ds-space-d4);
+  margin: 0;
+}
+.profile-card {
+  padding: 0;
+}
+.profile-card h2 {
+  margin-block-start: 0;
+  overflow-wrap: anywhere;
+}
+.profile-card dl {
+  display: grid;
+  grid-template-columns: minmax(6rem, max-content) minmax(0, 1fr);
+  gap: var(--ds-space-d2) var(--ds-space);
+}
+.profile-card dl > div {
+  display: contents;
+}
+.profile-card dt {
+  font-weight: 700;
+}
+.profile-card dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.profile-card form {
+  max-width: 48rem;
+}
+.resource-url {
+  overflow-wrap: anywhere;
+  font-size: 0.75em;
+}
+.muted {
+  font-size: 0.85em;
+  opacity: 0.8;
+}
+.empty {
+  padding-block: var(--ds-space);
+  opacity: 0.8;
+}
+.app-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: var(--ds-space);
+}
+.app-card {
+  padding: var(--ds-space);
+  border-block-start: 0.25rem solid var(--ds-primary);
+  background: var(--ds-grey-low);
+}
+.app-card h2 {
+  margin-block-start: 0;
+}
+.app-card .ds-button {
+  margin-bottom: 0;
+}
+.saved-apps {
+  margin-block-start: var(--ds-space-x2);
+}
+.saved-apps .person-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space);
+}
+.saved-apps .person-list a {
+  overflow-wrap: anywhere;
+}
+.file-list {
+  width: 100%;
+  border-collapse: collapse;
+  margin-block: var(--ds-space);
+}
+.file-list th,
+.file-list td {
+  padding: var(--ds-space-d2);
+  text-align: left;
+  border-bottom: 1px solid var(--ds-grey-medium);
+}
+.file-list button {
+  margin: 0;
+}
+.file-list th {
+  font-weight: 700;
+}
+.file-upload {
+  position: relative;
+  overflow: hidden;
+  margin: 0;
+}
+.file-upload input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.file-upload:focus-within {
+  outline: 2px solid var(--ds-primary);
+  outline-offset: 2px;
+}
+[data-density='compact'] .file-list td,
+[data-density='compact'] .person-list button {
+  padding-block: var(--ds-space-d4);
+}
+.ds-dialog {
+  width: min(90vw, 45rem);
+  min-width: 0;
+  max-height: 90dvh;
+  overflow: auto;
+  padding: var(--ds-space);
+  border-radius: 0;
+}
+.ds-dialog h2 {
+  margin-top: 0;
+}
+.ds-dialog::backdrop {
+  background: #0007;
+  backdrop-filter: blur(3px);
+}
+fieldset {
+  min-width: 0;
+  padding: var(--ds-space-d2);
+  border: 1px solid var(--ds-grey-medium);
+}
+@media (max-width: 720px) {
+  .suite-header {
+    padding-inline: var(--ds-space-d2);
+  }
+  .suite-main {
+    padding-inline: var(--ds-space-d2);
+  }
+  .split-view.ds-panels-panes {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--ds-space);
+  }
+  .contacts-list {
+    min-height: 0;
+  }
+  .contacts-toolbar {
+    position: static;
+  }
+  .profile-card dl {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--ds-space-d4);
+  }
+  .profile-card dd {
+    margin-bottom: var(--ds-space-d2);
+  }
+  .file-list {
+    table-layout: fixed;
+  }
+  .file-list th,
+  .file-list td {
+    padding: var(--ds-space-d4);
+    overflow-wrap: anywhere;
+  }
+  .file-list th:first-child {
+    width: 45%;
+  }
+  .file-list .ds-button {
+    padding-inline: var(--ds-space-d4);
+  }
+}
+
+.account-name {
+  max-width: min(24rem, 40vw);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 0.85em;
+}
+.account-name:empty {
+  display: none;
+}
+@media (max-width: 720px) {
+  .account-name {
+    max-width: clamp(2rem, calc(100vw - 19rem), 12rem);
+  }
+}
+
+.logout-section {
+  margin-top: var(--ds-space);
+  padding-top: var(--ds-space-d2);
+  border-top: 1px solid var(--ds-grey-medium);
+}

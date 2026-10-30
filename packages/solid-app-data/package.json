@@ -1,0 +1,22 @@
+{
+  "name": "@muze-labs/solid-app-data",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.mjs",
+    "./*": "./src/*"
+  },
+  "dependencies": {
+    "@muze-labs/simplysolid": "^0.2.1",
+    "@muze-labs/solid-workspace": "^0.2.1",
+    "@muze-labs/jsfs-solid": "^0.1.1",
+    "@muze-labs/metro-solid": "^0.1.0",
+    "@muze-nl/metro-oldm": "^0.5.1",
+    "@muze-nl/oldm": "^0.8.2",
+    "@muze-nl/oldm-core": "^0.8.2",
+    "@muze-labs/oldm-turtle": "^0.4.3",
+    "@muze-nl/metro-oidc": "^0.9.4",
+    "@muze-nl/metro-oauth2": "^0.9.3"
+  }
+}

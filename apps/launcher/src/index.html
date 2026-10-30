@@ -1,0 +1,56 @@
+<div class="app-grid">
+  <article class="app-card">
+    <h2>Contacts</h2>
+    <p>Your address book and contact profiles</p>
+    <a class="ds-button" href="../contacts/">Open contacts</a>
+  </article>
+  <article class="app-card">
+    <h2>Files</h2>
+    <p>Browse and manage your Solid files</p>
+    <a class="ds-button" href="../files/">Open files</a>
+  </article>
+  <article class="app-card">
+    <h2>Profile</h2>
+    <p>View and edit profiles</p>
+    <a class="ds-button" href="../profile/">Open profile</a>
+  </article>
+</div>
+<section class="saved-apps">
+  <h2>Your shortcuts</h2>
+  <form class="form-grid app-toolbar" data-simply-command="add">
+    <label>Name<input name="name" required /></label
+    ><label>Application URL<input name="url" type="url" required /></label
+    ><button class="ds-button ds-button-primary">Add shortcut</button>
+  </form>
+  <div class="app-toolbar">
+    <button class="ds-button" data-simply-command="sync">
+      Sync with Solid
+    </button>
+  </div>
+  <ul class="person-list" data-simply-list="shortcuts">
+    <template
+      ><li>
+        <a
+          data-simply-field="link"
+          data-simply-transform="attributes"
+          data-simply-attributes="href target rel"
+          ><span
+            data-simply-field="label"
+            data-simply-transform="escape_html"
+          ></span></a
+        ><button
+          class="ds-button"
+          data-simply-command="remove"
+          data-simply-value=":value.id"
+        >
+          Remove shortcut
+        </button>
+      </li></template
+    >
+  </ul>
+  <p
+    class="empty"
+    data-simply-field="empty"
+    data-simply-transform="escape_html"
+  ></p>
+</section>

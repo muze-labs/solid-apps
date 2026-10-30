@@ -1,0 +1,104 @@
+<header class="suite-header ds-panels-heading">
+  <h1 class="ds-panels-title">{{title}}</h1>
+  <div class="account ds-dropdown">
+    <span
+      class="account-name"
+      data-simply-field="accountName"
+      data-simply-transform="escape_html"
+    ></span>
+    <button
+      type="button"
+      class="ds-button ds-button-naked account-button"
+      popovertarget="account-menu"
+      aria-label="Account and preferences"
+      title="Account and preferences"
+    >
+      <svg class="ds-icon ds-icon-feather" aria-hidden="true">
+        <use href="../assets/icons.svg#user"></use>
+      </svg>
+    </button>
+    <nav
+      id="account-menu"
+      class="ds-dropdown-nav ds-dropdown-right"
+      popover="auto"
+      aria-label="Account"
+    >
+      <ul class="ds-dropdown-list">
+        <li class="ds-dropdown-item">
+          <button
+            type="button"
+            class="ds-button ds-button-naked ds-dropdown-link"
+            data-simply-command="connectDialog"
+            autofocus
+          >
+            WebID / connection
+          </button>
+        </li>
+        <li class="ds-dropdown-item">
+          <button
+            type="button"
+            class="ds-button ds-button-naked ds-dropdown-link"
+            data-simply-command="preferences"
+          >
+            Preferences
+          </button>
+        </li>
+      </ul>
+    </nav>
+  </div>
+  <p
+    class="suite-status"
+    role="status"
+    data-simply-field="message"
+    data-simply-transform="escape_html"
+  ></p>
+  <dialog class="ds-dialog connect-dialog">
+    <form data-simply-command="connect">
+      <h2>WebID / connection</h2>
+      <label
+        >WebID<input
+          type="url"
+          name="webId"
+          data-simply-field="webId"
+          required
+          placeholder="https://example.org/profile/card#me"
+          autocomplete="url"
+      /></label>
+      <p>Your profile supplies your storage and preferences locations.</p>
+      <div class="actions">
+        <button
+          class="ds-button ds-button-primary"
+          data-simply-field="connectButton"
+          data-simply-transform="attributes"
+          data-simply-attributes="disabled"
+        >
+          Connect
+        </button>
+        <button
+          type="button"
+          class="ds-button"
+          data-simply-command="closeConnect"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
+    <section
+      class="logout-section"
+      hidden
+      data-simply-field="logoutVisibility"
+      data-simply-transform="attributes"
+      data-simply-attributes="hidden"
+    >
+      <p>
+        Log out of Solid Apps on this browser. Your local contacts and shortcuts
+        stay on this device.
+      </p>
+      <button type="button" class="ds-button" data-simply-command="logout">
+        Log out
+      </button>
+    </section>
+  </dialog>
+</header>
+<main class="suite-main"><div class="app-content">{{content}}</div></main>
+{{preferences}}

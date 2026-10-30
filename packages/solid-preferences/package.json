@@ -1,0 +1,14 @@
+{
+  "name": "@muze-labs/solid-preferences",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.mjs",
+    "./*": "./src/*"
+  },
+  "dependencies": {
+    "@muze-labs/solid-app-data": "0.1.0",
+    "@muze-labs/simplyflow": "^0.10.4"
+  }
+}

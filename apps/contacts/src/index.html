@@ -1,0 +1,100 @@
+<div class="split-view ds-panels-panes">
+  <section
+    class="contacts-list ds-panels-pane ds-panels-list"
+    aria-label="Contacts"
+  >
+    <ul class="person-list" data-simply-list="people">
+      <template
+        ><li>
+          <button data-simply-command="select" data-simply-value=":value.id">
+            <span class="person-avatar" aria-hidden="true"
+              ><svg class="ds-icon ds-icon-feather">
+                <use href="../assets/icons.svg#user"></use></svg></span
+            ><span
+              data-simply-field="label"
+              data-simply-transform="escape_html"
+            ></span>
+          </button></li
+      ></template>
+    </ul>
+    <p
+      class="empty"
+      data-simply-field="empty"
+      data-simply-transform="escape_html"
+    ></p>
+    <div
+      class="contacts-toolbar app-toolbar"
+      role="toolbar"
+      aria-label="Contact actions"
+    >
+      <label class="contact-search"
+        ><span class="visually-hidden">Search contacts</span
+        ><svg class="ds-icon ds-icon-feather" aria-hidden="true">
+          <use href="../assets/icons.svg#search"></use></svg
+        ><input
+          type="search"
+          aria-label="Search contacts"
+          placeholder="Search"
+          data-simply-command="search"
+          data-simply-immediate="true"
+      /></label>
+      <button
+        class="ds-button ds-button-primary icon-button"
+        type="button"
+        data-simply-command="newContact"
+        aria-label="Add contact"
+        title="Add contact"
+      >
+        <svg class="ds-icon ds-icon-feather" aria-hidden="true">
+          <use href="../assets/icons.svg#plus"></use>
+        </svg>
+      </button>
+      <button
+        class="ds-button icon-button"
+        type="button"
+        data-simply-command="sync"
+        aria-label="Sync with Solid"
+        title="Sync with Solid"
+      >
+        <svg class="ds-icon ds-icon-feather" aria-hidden="true">
+          <use href="../assets/icons.svg#refresh"></use>
+        </svg>
+      </button>
+    </div>
+    <dialog class="ds-dialog new-contact-dialog">
+      <form data-simply-command="add">
+        <h2>New contact</h2>
+        <label>Name<input name="name" placeholder="Name (optional)" /></label>
+        <div class="actions">
+          <button class="ds-button ds-button-primary">Add contact</button
+          ><button
+            class="ds-button"
+            type="button"
+            data-simply-command="cancelNew"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    </dialog>
+  </section>
+  <section
+    class="contact-details ds-panels-pane ds-panels-details"
+    aria-label="Contact profile"
+  >
+    <div class="contact-profile">{{profile}}</div>
+    <div class="contact-actions">
+      <div
+        class="actions"
+        hidden
+        data-simply-field="visibility"
+        data-simply-transform="attributes"
+        data-simply-attributes="hidden"
+      >
+        <button class="ds-button" data-simply-command="remove">
+          Delete contact
+        </button>
+      </div>
+    </div>
+  </section>
+</div>

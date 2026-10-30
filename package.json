@@ -1,0 +1,24 @@
+{
+  "name": "@muze-labs/solid-apps",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "dev": "npm run build && node scripts/serve.mjs",
+    "test": "node --import ./scripts/oldm-loader.mjs --test test/*.test.mjs",
+    "check": "npm test && npm run build",
+    "test:browser": "npm run build && node test/browser.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.12",
+    "prettier": "^3.6.2"
+  },
+  "engines": {
+    "node": ">=20.6"
+  }
+}
