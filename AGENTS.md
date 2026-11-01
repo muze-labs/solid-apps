@@ -20,7 +20,10 @@ theme and text-size settings. Add exceptions only for a concrete browser need.
 
 Keep native RDF authoritative. UI projections and edit drafts must not replace
 shared graphs. Preserve unknown terms, multiple values, identity, and other
-subjects. Refuse unsupported structured edits rather than flattening them.
+subjects. Ignore unknown predicates when reading/projecting; preserve them on
+write. Validate the fields we interpret rather than imposing a datatype
+allowlist on the whole resource. Refuse unsupported structured edits rather than
+flattening them.
 Profile editing is shared by Contacts and Profile; storage policy stays outside
 the profile view. Preferences use the profile's `pim:preferencesFile` link.
 
@@ -32,6 +35,12 @@ fixtures or migrations, except for the explicitly authorized experiment below.
 If a native RDF representation cannot be found in any other case, explain the
 concrete issue to the maintainer and resolve it together before writing; do not
 invent an exception.
+
+For the unreleased workspace format, the maintainer explicitly authorizes
+discarding the retired `apps:snapshot` predicate only on the current workspace
+root during an explicit conditional native save. Ignore its value on read;
+do not decode/import it or discard other unknown RDF. Background close cannot
+perform this one-time cleanup. Other JSON-in-Turtle writes remain forbidden.
 
 The sole authorized exception is a separate, optional app-owned opaque state
 string, which may experimentally contain JSON. The app interprets it itself;

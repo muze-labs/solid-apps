@@ -118,9 +118,17 @@ handling; draft form strings do not alter the actual profile graph.
 
 There is deliberately no migration for this unreleased prototype. The native
 cache starts fresh in `solid-apps-managed-workspaces-native`; old development
-cache records are left untouched. If Preferences still point to an old JSON Pod
-workspace, select a fresh URL (for example `workspace-native.ttl`) before saving.
-The old target is refused, never silently overwritten or copied into new state.
+cache records are left untouched. For a Pod file containing the retired
+`apps:snapshot` property, reload Launcher and click **Save to Pod** at the existing
+workspace URL. Loading ignores that obsolete value. Explicit saving discards only
+that property on the current workspace root and writes the current native state,
+with the normal ETag condition. Unknown RDF and other subjects remain preserved.
+No preference change or manually created file is required. Background close does
+not perform the one-time discard; denied/conflicting writes leave the Pod alone.
+The old value is never decoded or imported. Other JSON-in-Turtle writes remain
+forbidden; an unrelated RDF JSON value receives a specific write refusal instead
+of being silently removed. Unknown predicates/datatypes are otherwise ignored by
+read projections and retained in the native graph.
 See the [format design](../design/solid-native-workspace-state.md) and
 [generated native example](../design/examples/workspace.ttl).
 

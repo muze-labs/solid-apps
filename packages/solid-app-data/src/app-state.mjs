@@ -32,6 +32,7 @@ export function validateAppState(state) {
     throw rdfError('App state exceeds 64 KB.');
   }
   const graph = new StateGraph(state.turtle);
+  graph.assertWritable();
   for (const quad of graph.quads) {
     if (
       quad.subject.termType === 'NamedNode' &&

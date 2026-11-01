@@ -64,16 +64,26 @@ export class StateGraph {
     catch (error) {
       throw rdfError('Invalid Turtle. ' + error.message);
     }
-    if (this.quads.some((quad) => quad.object.datatype?.id === rdf + 'JSON')) {
+  }
+  clone() {
+    const graph = new StateGraph();
+    graph.quads = structuredClone(this.quads);
+    return graph;
+  }
+  assertWritable() {
+    const forbidden = this.quads.find(
+      (quad) => quad.object.datatype?.id === rdf + 'JSON'
+    );
+    if (forbidden) {
       throw rdfError(
-        'RDF JSON is unsupported. Choose a fresh native workspace.'
+        'Cannot write RDF JSON at ' +
+          forbidden.predicate.id +
+          '. This value is retained; resolve its representation before saving.'
       );
     }
   }
   write() {
-    if (this.quads.some((quad) => quad.object.datatype?.id === rdf + 'JSON')) {
-      throw rdfError('Cannot write RDF JSON. Use native statements.');
-    }
+    this.assertWritable();
     return [...new Set(this.quads.map(tripleText))].sort().join('\n') + '\n';
   }
   values(subject, predicate) {

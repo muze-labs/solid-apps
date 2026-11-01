@@ -1,6 +1,6 @@
 import { local } from '@muze-labs/solid-workspace';
 import { httpUrl, requireOk } from './index.mjs';
-import { StateGraph } from './state-rdf.mjs';
+import { StateGraph, apps, named } from './state-rdf.mjs';
 import { validateAppState } from './app-state.mjs';
 import {
   readWorkspace,
@@ -307,14 +307,26 @@ export class WorkspaceState {
     }
     const draft = {
       ...this.document,
-      graph: new StateGraph(this.document.graph.write(), this.url)
+      graph: this.document.graph.clone()
     };
+    // SRC27 authorizes this one-time discard at the Pod storage boundary.
+    // Keep the source and unrelated subjects intact until explicit saving.
+    draft.graph.set(
+      named(this.url + '#workspace'),
+      apps + 'snapshot',
+      undefined
+    );
     const snapshot = structuredClone(this.snapshot);
     writeWorkspace(draft.graph, this.url + '#workspace', snapshot);
     this.prepared = {
       draft,
       body: draft.graph.write(),
       snapshot,
+      discardsRetiredSnapshot:
+        this.document.graph.values(
+          named(this.url + '#workspace'),
+          apps + 'snapshot'
+        ).length > 0,
       url: this.url,
       owner: this.owner,
       headers: {
@@ -383,7 +395,11 @@ export class WorkspaceState {
     return !this.dirty;
   }
   attemptExit(session, url) {
-    if (!this.dirty || this.skipExit) {
+    if (
+      !this.dirty ||
+      this.skipExit ||
+      this.prepared?.discardsRetiredSnapshot
+    ) {
       return;
     }
     let result = 'unconfirmed';

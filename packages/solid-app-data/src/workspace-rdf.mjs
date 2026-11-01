@@ -165,11 +165,6 @@ export function sameWorkspace(a, b) {
 }
 export function readWorkspace(graph, root) {
   const node = named(root);
-  if (graph.values(node, apps + 'snapshot').length) {
-    throw rdfError(
-      'Retired JSON workspace format. Choose a fresh workspace resource.'
-    );
-  }
   const version = graph.one(node, apps + 'formatVersion', 'integer');
   if (!version) {
     if (

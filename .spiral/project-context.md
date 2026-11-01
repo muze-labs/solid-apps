@@ -699,3 +699,15 @@ unknown statements, identities, state isolation and the optional opaque string
 are preserved, including during conflict and save-timing failures. Full check
 and browser suites now run on native fixtures. DEF18 is fixed on the branch;
 CYC2 remains Active for renewed evaluation, without merge or publication.
+
+
+## Unknown-predicate default and existing workspace recovery
+
+SRC27 supersedes the fresh-URL workaround. The maintainer confirms ignoring
+unknown predicates on read and preserving them on write as the linked-data
+default. They explicitly authorize discarding the retired apps:snapshot at the
+current workspace root on an explicit conditional native save. Readers ignore
+its value without importing it, other unknown RDF stays intact, and background
+close cannot perform this one-time discard. Reload Launcher and use Save to Pod
+at the existing URL; no Preferences change is needed. The no-JSON-in-Turtle rule
+remains in force, with only the existing opaque app-owned string experiment.

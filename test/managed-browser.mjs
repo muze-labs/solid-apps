@@ -78,7 +78,8 @@ records.set('/profile', '<#me> <http://xmlns.com/foaf/0.1/name> "Workspace teste
 records.set('/prefs', '<#solid-apps> <https://vocab.muze.nl/solid-apps#workspaceResource> <' +
   base + '/workspace.ttl>; <https://vocab.muze.nl/solid-apps#filesRoot> <' +
   base + '/storage/>.');
-records.set('/workspace.ttl', '<#other> <https://example.org/unknown> ' +
+records.set('/workspace.ttl', '<#workspace> <https://vocab.muze.nl/solid-apps#snapshot> ' +
+  '"retired pre-release snapshot". <#other> <https://example.org/unknown> ' +
   '[<https://example.org/label> "preserve me"].');
 const appPort = await freePort();
 const appBase = 'http://127.0.0.1:' + appPort + '/';
@@ -240,8 +241,10 @@ try {
   await wait(launcher, 'document.querySelector(".launch-profile [name=resource]").value===' +
     JSON.stringify(base + '/storage/notes/note.ttl'));
   assert.equal(puts.length, 0);
+  assert.match(records.get('/workspace.ttl'), /retired pre-release snapshot/);
   await click(launcher, '[data-simply-command=saveWorkspace]');
   await wait(launcher, 'document.querySelector(".managed-workspace [role=status]").textContent.includes("saved to your Solid Pod")');
+  assert(!records.get('/workspace.ttl').includes('retired pre-release snapshot'));
   assert.equal(folderOf(readSnapshot().apps[0].state), base + '/storage/notes/');
   assert.match(records.get('/workspace.ttl'), /preserve me/);
   const privateKeys = await evaluate(launcher, 'return window.solidLauncher.workspace.keys();');

@@ -316,9 +316,12 @@ test('local unknown terms survive checkpointing; malformed state retains the las
   assert(sameWorkspace(restored.snapshot, snapshot()));
 });
 
-test('retired pre-release format is refused without migration or a PUT', async () => {
-  // No legacy JSON-in-Turtle fixture is created, even for a read-only test.
-  const legacy = `<#workspace> <${apps}snapshot> "retired".`;
+test('retired snapshot is ignored on load and discarded only by an explicit conditional save', async () => {
+  // Plain placeholder input exercises the retired predicate without creating
+  // a forbidden JSON-in-Turtle fixture. Parsed RDF JSON terms are tested below.
+  const legacy = `<#workspace> <${apps}snapshot> "retired";
+      <urn:unknown> "future"^^<urn:future:datatype>.
+    <#other> <${apps}snapshot> "keep this other subject".`;
   const state = new WorkspaceState({
     owner,
     source: {
@@ -327,21 +330,103 @@ test('retired pre-release format is refused without migration or a PUT', async (
     }
   });
   await state.open();
-  let puts = 0;
+  let written;
   const session = {
     webId: owner,
+    perform: (operation) => operation(),
     client: {
       get: async () => new Response(legacy, { headers: { ETag: '"old"' } }),
-      put: async () => {
-        puts++;
+      put: async (_url, options) => {
+        written = options;
+        return new Response(null, {
+          status: 204,
+          headers: { ETag: '"native"' }
+        });
       }
     }
   };
-  await assert.rejects(
-    state.bind(session, url),
-    /Choose a fresh workspace resource/
+  await state.bind(session, url);
+  assert.equal(written, undefined, 'Reading cannot alter the Pod.');
+  await state.stage(snapshot());
+  assert.equal(written, undefined, 'Local changes cannot discard Pod data.');
+  state.attemptExit(session, url);
+  assert.equal(
+    written,
+    undefined,
+    'Closing cannot perform this one-time discard.'
   );
-  assert.equal(puts, 0);
+  assert.equal(
+    state.document.graph.one(named(root), apps + 'snapshot', 'string').value,
+    'retired',
+    'Preparation leaves the source graph untouched.'
+  );
+  assert.equal(await state.save(session, url), true);
+  assert.equal(written.headers['If-Match'], '"old"');
+  const saved = new StateGraph(written.body, url);
+  assert.equal(saved.values(named(root), apps + 'snapshot').length, 0);
+  assert.equal(
+    saved.one(named(url + '#other'), apps + 'snapshot', 'string').value,
+    'keep this other subject'
+  );
+  assert.equal(
+    saved.values(named(root), 'urn:unknown')[0].datatype.id,
+    'urn:future:datatype'
+  );
+  assert(sameWorkspace(readWorkspace(saved, root), snapshot()));
+});
+
+test('parsed retired RDF JSON is discarded without decoding or serializing it', async () => {
+  // Construct parsed terms in memory; never emit a legacy JSON Turtle fixture.
+  const source = new StateGraph('<#workspace> <urn:unknown> "retain".', url);
+  source.set(
+    named(root),
+    apps + 'snapshot',
+    literal('never decoded', rdf + 'JSON')
+  );
+  assert.equal(readWorkspace(source, root), null);
+  const state = new WorkspaceState({
+    owner,
+    source: {
+      load: async () => '',
+      save: async () => {}
+    }
+  });
+  await state.open();
+  await state.stage(snapshot());
+  state.url = url;
+  state.document = { url, graph: source, missing: false, etag: '"old"' };
+  await state.prepare();
+  const output = state.prepared.body;
+  assert(!output.includes('never decoded'));
+  assert(!output.includes(rdf + 'JSON'));
+  assert.match(output, /retain/);
+  assert.equal(source.values(named(root), apps + 'snapshot').length, 1);
+  assert.throws(() => source.write(), /Cannot write RDF JSON/);
+});
+
+test('native state wins when retired state coexists; unrelated JSON is preserved and refuses output', async () => {
+  const source = new StateGraph();
+  const value = snapshot();
+  writeWorkspace(source, root, value);
+  source.set(named(root), apps + 'snapshot', literal('obsolete', rdf + 'JSON'));
+  const other = named(url + '#other');
+  source.set(other, 'urn:unknown', literal('opaque unknown', rdf + 'JSON'));
+  assert(sameWorkspace(readWorkspace(source, root), value));
+  const state = new WorkspaceState({
+    owner,
+    source: {
+      load: async () => '',
+      save: async () => {}
+    }
+  });
+  await state.open();
+  await state.stage(value);
+  state.url = url;
+  state.document = { url, graph: source, missing: false, etag: '"old"' };
+  await assert.rejects(state.prepare(), /Cannot write RDF JSON at urn:unknown/);
+  assert.equal(state.prepared, null);
+  assert.equal(source.values(other, 'urn:unknown')[0].value, 'opaque unknown');
+  assert.equal(source.values(named(root), apps + 'snapshot').length, 1);
 });
 
 test('custom native instance IRIs and root extensions survive subsequent writes', () => {
@@ -387,4 +472,55 @@ test('Turtle lexical escaping is reversible and the emitter refuses RDF JSON', (
     literal('not JSON', rdf + 'JSON')
   );
   assert.throws(() => graph.write(), /Cannot write RDF JSON/);
+});
+
+test('a conflict during retired-snapshot cleanup retains local state and retries against fresh metadata', async () => {
+  let body = `<#workspace> <${apps}snapshot> "retired".
+    <#other> <urn:metadata> "original".`;
+  let tag = '"old"';
+  let fail = true;
+  const puts = [];
+  const state = new WorkspaceState({
+    owner,
+    source: {
+      load: async () => '',
+      save: async () => {}
+    }
+  });
+  await state.open();
+  const session = {
+    webId: owner,
+    client: {
+      get: async () => new Response(body, { headers: { ETag: tag } }),
+      put: async (_url, options) => {
+        puts.push(options);
+        if (fail) {
+          return new Response(null, { status: 412 });
+        }
+        body = options.body;
+        return new Response(null, {
+          status: 204,
+          headers: { ETag: '"saved"' }
+        });
+      }
+    }
+  };
+  await state.bind(session, url);
+  await state.stage(snapshot());
+  await assert.rejects(
+    state.save(session, url),
+    (error) => error.code === 'workspace-conflict'
+  );
+  assert.match(body, /retired/);
+  assert.equal(puts[0].headers['If-Match'], '"old"');
+  assert(sameWorkspace(state.snapshot, snapshot()));
+  assert.equal(state.dirty, true);
+  body = body.replace('original', 'updated externally');
+  tag = '"fresh"';
+  fail = false;
+  await state.bind(session, url, { forWrite: true });
+  assert.equal(await state.save(session, url), true);
+  assert.equal(puts[1].headers['If-Match'], '"fresh"');
+  assert.match(body, /updated externally/);
+  assert(!body.includes('retired'));
 });
