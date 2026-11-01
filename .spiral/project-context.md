@@ -628,3 +628,21 @@ its corrected authorized GET 200 returns and exposes a strong ETag. IMP6 now
 separates acknowledged saves from next-write validator acquisition and persists
 a target-scoped baseline. EVD16 verifies the exact pattern throughout the browser
 fixture, without accessing the user's Pod. Human acceptance remains pending.
+
+## Mandatory native Turtle rule, 2026-11-01
+
+The maintainer explicitly forbids writing JSON inside any Turtle string under
+any circumstances. Turtle is the native persistence format for Solid Apps.
+Use native RDF statements, terms and typed scalar values, including for workspace
+state, local caches, baselines, fixtures and migrations. If an appropriate native
+representation cannot be found, explain the concrete issue and resolve it with
+the maintainer before writing. No rdf:JSON exception is allowed. The exact source
+is SRC-20261101-QG24H-17; AGENTS.md and culture.md now retain this hard rule.
+
+Current workspace persistence violates the rule in both Pod snapshots and the
+local Turtle cache/baseline. DES9 and IMP6 explicitly flag this known noncompliance.
+The existing code/encoding is retained as evidence, not an approved exception.
+This request records the rule and noncompliance; no runtime migration is claimed.
+Native RDF correction is required before cycle acceptance. No application tests
+were run for this documentation change because the current fixtures/codec write
+the newly forbidden encoding. Spiral metadata validation remains applicable.

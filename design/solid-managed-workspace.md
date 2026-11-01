@@ -1,5 +1,12 @@
 # Launcher-managed browser workspace
 
+**Persistence encoding requires correction.** The maintainer's
+[native Turtle rule](../.spiral/sources/SRC-20261101-QG24H-17.md) unconditionally
+forbids JSON in Turtle strings. The JSON-literal persistence described below is
+current implementation evidence, not an approved design. Replace it with native
+RDF for both Pod state and local caches/baselines; preserve existing data during
+that correction. The existing encoding requires native RDF correction before acceptance.
+
 Confirmed revision of the resource-picker cycle, 2026-11-01. This replaces the
 server relay for managed sessions; the earlier proof remains in Git history.
 

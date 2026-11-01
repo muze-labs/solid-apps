@@ -24,6 +24,14 @@ subjects. Refuse unsupported structured edits rather than flattening them.
 Profile editing is shared by Contacts and Profile; storage policy stays outside
 the profile view. Preferences use the profile's `pim:preferencesFile` link.
 
+Turtle is the native persistence format for Solid Apps. Never write a string
+containing JSON inside a Turtle file, under any circumstances. This includes
+`rdf:JSON` literals, escaped JSON, serialized snapshots and baseline blobs, in
+Pod resources, local Turtle caches, fixtures and migrations. Model persistent
+data as native RDF statements with appropriate terms and typed scalar values.
+If a native RDF representation cannot be found, explain the concrete issue to
+the maintainer and resolve it together before writing; do not invent an exception.
+
 Delete/move semantics must follow PDS Interop link metadata. Current file deletion
 writes a conditional tombstone to the advertised parent-container description;
 it retains bytes. Do not silently substitute HTTP DELETE. Moves are not implemented.

@@ -68,3 +68,14 @@ The [risk-discovery profile](risk-profile.md) guides what to investigate.
 Warning profiles guide scrutiny of consequential decisions. The maintainer
 separately adopted [WPF-HUMAN-001](warning-profiles/README.md) during intake.
 Culture adoption does not activate warning profiles automatically.
+
+## Mandatory native Turtle representation
+
+The maintainer's [direct instruction](sources/SRC-20261101-QG24H-17.md) makes
+Turtle the native persistence format and unconditionally forbids JSON inside
+Turtle string literals, including rdf:JSON. This is a hard project constraint,
+not a discretionary culture preference. It covers Pod data, local Turtle caches,
+fixtures and migrations. Use native RDF structures; if representation is unclear,
+explain the concrete issue and resolve it with the maintainer before writing.
+AGENTS.md records the operational rule. The current workspace JSON encoding is
+noncompliant and requires correction; this note does not migrate existing data.
