@@ -4,6 +4,12 @@
 **Scope:** Solid application suite, launcher, shared preferences component and cross-origin capability communication  
 **Vocabulary namespace:** `https://vocab.muze.nl/capability#` (proposed; not yet published)
 
+Suite-wide direction is recorded in the [Solid Apps roadmap](solid-apps-roadmap.md):
+Zett, Notebook, profile/account consistency, mobile and JavaScript-size targets,
+local-first automatic sync, PWA support, deferred collaboration and decentralized
+app catalogs. These additions do not select the next implementation cycle or
+reorder the broker phases below.
+
 ## 1. Purpose
 
 Build a small, self-hostable communication mechanism that lets independent Solid applications **offer functionality and interactive UI to other applications**.
@@ -295,7 +301,9 @@ Desired outcome:
 
 Before implementation, settle workspace identity and RDF representation,
 discovery through the existing linked preferences, migration of current
-shortcuts, and whether sync is automatic or explicitly requested. Keep the
+shortcuts, and automatic-sync behavior, recovery and conflict handling. The
+maintainer's subsequent local-first direction selects automatic sync when
+connectivity returns; the earlier manual/automatic choice is superseded. Keep the
 suite-wide Tabs/Windows preference separate unless a concrete workspace need
 justifies changing its scope. Workspace sync stores configuration; it does not
 copy the datasets referenced by links or manage open browser tabs/windows.
@@ -308,7 +316,9 @@ offline changes and sync conflicts. These criteria remain prospective.
 ## 9. Non-goals for the initial version
 
 - A window manager or desktop environment.
-- An application store, installer or pod-provisioning system.
+- An app store, installer or pod-provisioning system as part of the initial
+  broker proof. Simple decentralized app catalogs are separately planned in
+  the suite roadmap.
 - A central mandatory Muze broker.
 - A universal UI component framework or renderer.
 - Automatic capability matchmaking by inferred similarity.

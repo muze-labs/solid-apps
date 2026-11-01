@@ -4,6 +4,10 @@ Four small browser applications using SimplyFlow, the Muze design system and the
 Solid stack. This is an experimental, private npm workspace: no packages need to
 be published to run it.
 
+See the [Solid Apps roadmap](design/solid-apps-roadmap.md) for planned apps,
+mobile/local-first and PWA requirements, account improvements and decentralized
+app catalogs. These are future direction, not current feature claims.
+
 ## Try it
 
 ```sh
@@ -137,7 +141,9 @@ appearance/language. Content, list items, visibility and button state are
 SimplyFlow bindings.
 
 The adopted engineering and stewardship rules, with their source links, are in
-[AGENTS.md](AGENTS.md). We favor inspectable code, replaceable boundaries, open
+[AGENTS.md](AGENTS.md) and the [culture index](.spiral/culture.md). The
+[Muze architecture philosophy](ARCHITECTURE-PHILOSOPHY.md) is included in this
+repository. We favor inspectable code, replaceable boundaries, open
 RDF, and app-specific choices kept high in the stack. The root lockfile belongs
 to the runnable app suite, not a separately released library.
 

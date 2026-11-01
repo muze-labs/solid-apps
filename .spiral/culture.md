@@ -6,6 +6,8 @@ organization culture or change the adopted profiles.
 
 ## Pinned profiles and scope
 
+For the engineering and library stewardship profiles:
+
 Source repository: `https://github.com/muze-labs/spiral-developer`.
 Inspected submodule version: `3c93481336d0e771110a9437c6039df6d7ce078b`.
 The submodule path is `.spiral-core`; these are cross-repository source versions,
@@ -15,11 +17,33 @@ not historical commits claimed to belong to the Solid Apps repository.
 | --- | --- | --- |
 | CUL-MUZE-001: Muze Engineering Culture | [Pinned profile](../.spiral-core/cultures/muze-engineering.md) | Engineering choices across the suite. |
 | CUL-MUZE-LIB-001: Muze Library Stewardship | [Pinned profile](../.spiral-core/cultures/muze-library-stewardship.md) | Muze-owned shared packages and developer tooling; not a requirement for other developers' app stacks. |
+| Muze architecture philosophy | [Repository copy](../ARCHITECTURE-PHILOSOPHY.md) | Readable, correctable architecture and coding preferences across the suite. |
 
-AGENTS.md also explicitly adopts the Muze architecture philosophy at
-`../ARCHITECTURE-PHILOSOPHY.md` relative to the repository root, and the maturity
-policy linked there. Their adoption predates intake. The remote maturity-policy
+AGENTS.md also explicitly adopts the maturity policy linked there. Its adoption
+and the architecture philosophy's adoption predate intake. The remote maturity-policy
 version has not been independently checked or pinned during intake.
+
+### Architecture philosophy source
+
+The maintainer requested an in-repository copy as another engineering culture
+document on 2026-11-01. The complete guide was read and copied unchanged from
+`/home/auke/git/muze-labs/ARCHITECTURE-PHILOSOPHY.md` to the repository root.
+AGENTS.md now links to this local copy, so adoption no longer depends on a
+parent-directory file being available.
+
+- Title: **Architecture for readable, correctable software**.
+- Source dates: prepared 2026-09-19; updated 2026-09-27.
+- SHA-256: `fc010970867fe54aa3437a7fd2687c333e65d04c1f0ddd97757ad37d7b4b0ad1`.
+- Local modifications to the guide: none. Its sources and status are retained.
+- The source parent directory is not a Git repository; no upstream commit
+  identity is claimed. Later updates should be explicit, reviewed changes.
+
+Apply its guidance on affordable correction, domain vocabulary, coherent
+abstraction levels, cohesive ownership, policy/mechanism boundaries, timing and
+failure contracts, observable verification, shared-data preservation and
+discoverable rationale. It explicitly rejects architectural rewrites or extra
+approval ceremonies merely to demonstrate adherence. Project requirements and
+current maintainer instructions remain authoritative.
 
 ## Application here
 

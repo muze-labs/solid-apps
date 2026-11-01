@@ -2,7 +2,7 @@
 
 This is the Muze-owned Solid Apps monorepo. It explicitly adopts:
 
-- [Muze architecture philosophy](../ARCHITECTURE-PHILOSOPHY.md).
+- [Muze architecture philosophy](ARCHITECTURE-PHILOSOPHY.md).
 - [Muze engineering culture](https://github.com/muze-labs/spiral-developer/blob/main/cultures/muze-engineering.md).
 - [Muze library stewardship](https://github.com/muze-labs/spiral-developer/blob/main/cultures/muze-library-stewardship.md)
   for our shared packages and developer tooling.
