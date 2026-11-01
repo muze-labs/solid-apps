@@ -180,7 +180,7 @@ async function openFiles() {
       const page = await chrome.page(target.targetId);
       pages.push(page);
       await page.ready();
-      await wait(page, 'window.solidFiles?.host.managed?.peer');
+      await wait(page, 'window.solidFiles?.host.managed?.ready');
       return { page, id: target.targetId };
     }
     await new Promise(resolve => setTimeout(resolve, 40));
@@ -287,18 +287,18 @@ try {
   assert.equal(await evaluate(files, 'return window.replayedRestore;'), 0);
   await reload(launcher);
   await wait(launcher, 'window.solidLauncher?.workspace && ' +
-    '[...window.solidLauncher.workspace.instances.values()].some(r=>r.registered)');
+    '[...window.solidLauncher.workspace.instances.values()].some(r=>r.ready)');
   const liveFiles = (await control.send('Target.getTargets')).targetInfos
     .filter(target => target.url.startsWith(filesBase));
   assert.equal(liveFiles.length, 1, 'Launcher reload must reconnect without duplicate apps.');
   await reload(files);
-  await wait(files, 'window.solidFiles?.host.managed?.peer && ' +
+  await wait(files, 'window.solidFiles?.host.managed?.ready && ' +
     'document.querySelector("[name=url]").value===' + JSON.stringify(base + '/storage/notes/'));
   await authorizeWorkspace(launcher);
   const second = await openFiles();
   await wait(second.page, 'window.solidFiles?.host.session');
   await wait(launcher, '[...window.solidLauncher.workspace.instances.values()]' +
-    '.filter(r=>r.registered).length===2');
+    '.filter(r=>r.ready).length===2');
   const states = await evaluate(launcher, 'return window.solidLauncher.workspace.snapshot().apps.map(a=>a.state.folder);');
   assert(states.includes(base + '/storage/notes/'));
   assert(states.includes(base + '/storage/'));
@@ -319,7 +319,7 @@ try {
   await wait(launcher, 'document.querySelector(".managed-workspace [role=status]")' +
     '.textContent.toLowerCase().includes("fetch")');
   await wait(launcher, '[...window.solidLauncher.workspace.instances.values()]' +
-    '.filter(record=>record.registered).length===2');
+    '.filter(record=>record.ready).length===2');
   await authorizeWorkspace(launcher);
   await changePodWorkspace(base + '/remote-version');
   await click(launcher, '[data-simply-command=closeWorkspace]');
@@ -375,7 +375,7 @@ try {
   await wait(launcher, 'document.querySelector(".launch-profile [name=resource]")' +
     '.value===' + JSON.stringify(base + '/use-pod-version'));
   await wait(launcher, '[...window.solidLauncher.workspace.instances.values()]' +
-    '.filter(record=>record.registered).length===2');
+    '.filter(record=>record.ready).length===2');
   assert.equal(puts.length, beforeUsePod, 'Using Pod state must not PUT app data.');
   await click(launcher, '[data-simply-command=closeWorkspace]');
   for (let i = 0; i < 150; i++) {
@@ -419,7 +419,7 @@ try {
   await evaluate(launcher, 'window.solidLauncher.workspace.launcherState.closeProbe="latest";' +
     'await window.solidLauncher.workspace.changed();await window.solidLauncher.persistence.work;');
   await wait(launcher, '[...window.solidLauncher.workspace.instances.values()]' +
-    '.filter(record=>record.registered).length===2');
+    '.filter(record=>record.ready).length===2');
   const beforeClose = puts.length;
   delayPut = 200;
   await launcher.send('Page.close');

@@ -615,3 +615,10 @@ review of local/Pod versions and explicit conditional resolution. EVD12 verifies
 reload recovery and newer-remote-version refusal. The original differing Pod
 version's cause is unknown, and choosing the maintainer's version remains their
 UI decision. The active cycle has not been accepted or merged.
+
+The next maintainer evaluation reported an app checkpoint timeout (FBK13).
+IMP6 now separates ready/restoring state, allows ten seconds, identifies failed
+apps and reconnects current-client ports without replaying saved state over live
+drafts. EVD14 verifies slow capture, stale-port recovery and failure preservation.
+Existing open tabs may require reload to use the correction. Actual user-case
+attribution and human acceptance remain pending in the same Active cycle.
