@@ -6,7 +6,7 @@
       class="ds-button"
       href="../contacts/"
       target="_blank"
-      rel="noopener"
+      rel="opener"
       data-simply-command="launchApp"
       data-simply-field="contactsLink"
       data-simply-transform="attributes"
@@ -21,7 +21,7 @@
       class="ds-button"
       href="../files/"
       target="_blank"
-      rel="noopener"
+      rel="opener"
       data-simply-command="launchApp"
       data-simply-field="filesLink"
       data-simply-transform="attributes"
@@ -36,7 +36,7 @@
       class="ds-button"
       href="../profile/"
       target="_blank"
-      rel="noopener"
+      rel="opener"
       data-simply-command="launchApp"
       data-simply-field="profileLink"
       data-simply-transform="attributes"
@@ -53,7 +53,8 @@
         name="resource"
         type="url"
         placeholder="https://example.org/contacts.ttl#alice"
-        data-simply-field="resource" /></label
+        data-simply-field="resource" data-simply-command="workspaceChanged"
+        data-simply-immediate="true" /></label
     ><label
       ><input type="checkbox" name="anonymous" /> Launch anonymously
       (omit WebID)</label
@@ -69,7 +70,34 @@
     data-simply-transform="escape_html"></p>
   <p class="muted">Uses your connected WebID unless anonymous is selected.</p>
 </section>
-{{capabilities}}
+<section class="managed-workspace">
+  <h2>Workspace session</h2>
+  <p class="muted">Apps opened here belong to this workspace. Allow popups to
+    restore several apps. Participating apps share restoration state with Launcher.</p>
+  <div class="actions">
+    <button class="ds-button" data-simply-command="restoreWorkspace">Restore apps</button>
+    <button class="ds-button" data-simply-command="saveWorkspace">Save to Pod</button>
+    <button class="ds-button ds-button-primary" data-simply-command="closeWorkspace">
+      Save &amp; close workspace</button>
+    <button class="ds-button" data-simply-command="closeLocally">Close locally</button>
+  </div>
+  <p role="status" data-simply-field="workspaceMessage"
+    data-simply-transform="escape_html"></p>
+  <ul class="person-list" data-simply-list="workspaceEntries">
+    <template><li>
+      <span data-simply-field="label" data-simply-transform="escape_html"></span>
+      <span class="muted" data-simply-field="status"
+        data-simply-transform="escape_html"></span>
+      <label><input type="checkbox" data-simply-field="allowBrowse"
+        data-simply-command="allowBrowse" data-simply-value=":value.id" />
+        Allow resource selection</label>
+      <button class="ds-button" data-simply-command="restoreInstance"
+        data-simply-value=":value.id">Open / focus</button>
+      <button class="ds-button" data-simply-command="closeInstance"
+        data-simply-value=":value.id">Close / remove</button>
+    </li></template>
+  </ul>
+</section>
 <section class="saved-apps">
   <h2>Your shortcuts</h2>
   <form class="form-grid app-toolbar" data-simply-command="add">

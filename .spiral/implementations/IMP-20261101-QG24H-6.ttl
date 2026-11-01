@@ -4,12 +4,22 @@
 project:IMP-20261101-QG24H-6 a sd:Implementation ;
     dcterms:identifier "IMP-20261101-QG24H-6" ;
     sd:repositoryPath ".spiral/implementations/IMP-20261101-QG24H-6.md" ;
-    sd:status sd:Suspect ;
-    sd:implementationLocation "broker/server.mjs",
-        "packages/solid-app-data/src/capabilities.mjs",
-        "packages/solid-app-ui/src/capabilities.mjs",
+    sd:status sd:Active ;
+    sd:implementationLocation "packages/solid-app-data/src/capabilities.mjs",
+        "packages/solid-app-data/src/workspace-broker.mjs",
+        "packages/solid-app-data/src/workspace-state.mjs",
+        "packages/solid-app-ui/src/index.mjs",
         "apps/launcher/src/index.mjs", "apps/files/src/index.mjs",
+        "apps/contacts/src/index.mjs", "apps/profile/src/index.mjs",
+        "packages/solid-profile/src/view.mjs",
         "packages/solid-preferences/src/index.mjs", "scripts/build.mjs" ;
     sd:implements [ a sd:ArtifactReference ;
-        sd:artifact project:DES-20261101-QG24H-5 ;
-        sd:gitCommit "eb4c89e206bac22d85ba1f513b80ad057d135376" ] .
+        sd:artifact project:DES-20261101-QG24H-9 ;
+        sd:gitCommit "91c637847d879b755d7f136de41a7c2b22f7f2bf" ] ;
+    sd:transforms [ a sd:ArtifactReference ;
+        sd:artifact project:IMP-20261101-QG24H-6 ;
+        sd:gitCommit "a759f6ff1b803f538d48062a0523f9fb039f8fca" ] ;
+    sd:changeCausedBy [ a sd:ArtifactReference ;
+        sd:artifact project:REQ-20261101-QG24H-4 ;
+        sd:gitCommit "a759f6ff1b803f538d48062a0523f9fb039f8fca" ] ;
+    sd:implementationChangeKind sd:SemanticChange .

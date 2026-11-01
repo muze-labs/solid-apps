@@ -61,14 +61,11 @@ const preferences = await readFile(
   path.join(root, 'packages/solid-preferences/src/dialog.html'),
   'utf8'
 );
-const capabilities = await readFile(
-  path.join(root, 'packages/solid-app-ui/src/capabilities.html'), 'utf8'
-);
 for (const name of ['launcher', 'contacts', 'files', 'profile']) {
   const title = name[0].toUpperCase() + name.slice(1);
   const content = (
     await readFile(path.join(root, `apps/${name}/src/index.html`), 'utf8')
-  ).replace('{{profile}}', profile).replace('{{capabilities}}', capabilities);
+  ).replace('{{profile}}', profile);
   let body = shell
     .replace('{{title}}', title)
     .replace('{{content}}', content)

@@ -7,13 +7,11 @@ build time. `shell()` binds its header and preferences scopes and returns the ap
 content container, session/settings access, status reporting, and operation runner.
 The application mounts its own SimplyFlow scope inside `host.main`.
 
-Launcher and Files also compose `src/capabilities.html` and mount
-`appServices(host, options)` from `capabilities.mjs`. It owns the SimplyFlow
-connection panel, reads the Pod-backed `brokerUrl` preference and clears the
-entered app key after use. The returned `client` getter requires an active
-connection. Page exit or a changed broker preference disconnects; keys and
-connection tokens are never persisted. This panel uses `host.onPreferences`;
-future consumers needing another listener should compose their callbacks.
+Apps call `host.manage({ getState, restoreState, ... })` to participate in a
+Launcher-managed workspace. It creates the renderer-independent `ManagedApp`
+client after shell startup. Apps own their state and capability UI; the shell
+reports connection errors through the shared status area. Standalone apps still
+work without an opener. No server connection panel or provisioned keys are used.
 
 `shell({ acceptLaunch: true })` opts a receiving app into validated launch
 context, available as `host.launch`; `host.launchError` describes invalid
@@ -31,7 +29,7 @@ changes after consumption do not trigger a reload.
 `host.onConnect` attaches app-specific behavior to a connected session;
 `host.onPreferences` receives changed settings. `host.run(operation, {network})`
 reports operation failures to the shared status area. `host.resource(name)`
-resolves a Contacts/Launcher location; `host.requireSession()` explains missing
+resolves a Contacts/Launcher/workspace location; `host.requireSession()` explains missing
 connections. These are suite choices, not intended as general framework APIs.
 
 Runtime content is rendered only through SimplyFlow. Native dialog/popover lifecycle,

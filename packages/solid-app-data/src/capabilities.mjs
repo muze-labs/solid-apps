@@ -2,131 +2,113 @@ export const browseCapability = 'https://vocab.muze.nl/capabilities/browse';
 export const browseInput = Object.freeze({
   '@context': { '@vocab': 'https://vocab.muze.nl/capability#' }
 });
-export function selectionUrl(result) {
-  if (!result || typeof result['@id'] !== 'string') {
-    throw new Error('capabilities: Provider did not return a resource URL.');
-  }
-  const url = new URL(result['@id']);
-  if (!['https:', 'http:'].includes(url.protocol) ||
-    url.username || url.password) {
-    throw new Error('capabilities: Provider returned an unsafe resource URL.');
-  }
-  return url.href;
-}
-export function brokerUrl(value) {
-  if (!value) {
-    throw new Error('capabilities: Set the capability broker URL in Preferences.');
-  }
-  const url = new URL(value);
-  const loopback = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
-  if ((url.protocol !== 'https:' && !(url.protocol === 'http:' && loopback)) ||
-    url.username || url.password || url.search || url.hash ||
-    url.pathname !== '/') {
-    throw new Error('capabilities: Use an HTTPS broker origin (HTTP on localhost).');
-  }
-  return url.origin;
-}
-function failure(message, code = 'failed') {
+export function capabilityError(message, code = 'failed') {
   const error = new Error('capabilities: ' + message);
   error.code = code;
   return error;
 }
+export function selectionUrl(result) {
+  try {
+    const url = new URL(result?.['@id']);
+    if (!['https:', 'http:'].includes(url.protocol) ||
+      url.username || url.password) {
+      throw new Error();
+    }
+    return url.href;
+  }
+  catch {
+    throw capabilityError('Provider did not return a safe resource URL.');
+  }
+}
+export function serializable(value) {
+  function visit(item, depth) {
+    if (depth > 30) {
+      throw capabilityError('State nesting is too deep.');
+    }
+    if (item === null || typeof item === 'string' || typeof item === 'boolean' ||
+      (typeof item === 'number' && Number.isFinite(item))) {
+      return;
+    }
+    if (typeof item !== 'object' || (!Array.isArray(item) &&
+      ![Object.prototype, null].includes(Object.getPrototypeOf(item)))) {
+      throw capabilityError('State must contain only JSON values.');
+    }
+    for (const child of Object.values(item)) {
+      visit(child, depth + 1);
+    }
+  }
+  visit(value, 0);
+  const text = JSON.stringify(value);
+  if (new TextEncoder().encode(text).byteLength > 65536) {
+    throw capabilityError('State exceeds 64 KB.');
+  }
+  return JSON.parse(text);
+}
 
-export class CapabilityClient {
-  constructor(url, { capabilities = [], onRequest, onCancel, onState } = {}) {
-    this.url = brokerUrl(url);
-    this.capabilities = capabilities;
-    this.onRequest = onRequest;
-    this.onCancel = onCancel;
-    this.onState = onState;
+// A private MessagePort owns its calls, cancellation and exactly-once replies.
+export class PortConnection {
+  constructor(port, handle, { timeout = 60000 } = {}) {
+    this.port = port;
+    this.handle = handle;
+    this.timeout = timeout;
     this.pending = new Map();
-    this.incoming = new Set();
-    this.connection = null;
+    this.active = new Map();
+    this.closed = false;
+    port.onmessage = event => this.receive(event.data);
+    port.onmessageerror = () => this.close('Message could not be decoded.');
+    port.start?.();
   }
-  async http(path, { method = 'POST', body, key, signal, keepalive } = {}) {
-    const response = await fetch(this.url + path, {
-      method, signal, keepalive, credentials: 'omit', cache: 'no-store',
-      headers: { Authorization: 'Bearer ' + (key || this.connection?.token),
-        'Content-Type': 'application/json' },
-      body: body === undefined ? undefined : JSON.stringify(body)
-    });
-    const value = await response.json();
-    if (!response.ok) {
-      throw failure(value.error || 'Broker request failed.');
+  async receive(message) {
+    if (this.closed || !message || typeof message.id !== 'string') {
+      return;
     }
-    return value;
-  }
-  async connect(key) {
-    if (this.connection || (this.controller && !this.controller.signal.aborted)) {
-      throw failure('Disconnect before connecting again.');
-    }
-    this.controller = new AbortController();
-    const controller = this.controller;
-    try {
-      this.connection = await this.http('/connect', {
-        key, signal: AbortSignal.any([
-          controller.signal, AbortSignal.timeout(10000)
-        ])
-      });
-      await this.send('register', { capabilities: this.capabilities });
-      this.onState?.('Connected to app services.');
-      this.poll(this.connection, controller).catch(error => {
-        if (!controller.signal.aborted) {
-          this.disconnect(error.message);
+    if (message.type === 'reply') {
+      const pending = this.pending.get(message.id);
+      if (pending) {
+        if (message.error) {
+          pending.reject(capabilityError(message.error.message, message.error.code));
         }
+        else {
+          pending.resolve(message.result);
+        }
+      }
+      return;
+    }
+    if (message.type === 'cancel') {
+      this.active.get(message.id)?.abort();
+      return;
+    }
+    if (message.type !== 'call' || this.active.has(message.id)) {
+      return;
+    }
+    if (this.active.size >= 32) {
+      this.port.postMessage({ type: 'reply', id: message.id,
+        error: { code: 'busy', message: 'capabilities: Too many active calls.' } });
+      return;
+    }
+    const controller = new AbortController();
+    this.active.set(message.id, controller);
+    try {
+      const result = await this.handle(message.method, message.input, {
+        signal: controller.signal
       });
+      if (!this.closed) {
+        this.port.postMessage({ type: 'reply', id: message.id, result });
+      }
     }
     catch (error) {
-      this.disconnect(error.message);
-      throw error;
-    }
-    return this.connection.identity;
-  }
-  send(operation, body) {
-    if (!this.connection) {
-      return Promise.reject(failure('Connect to app services first.'));
-    }
-    return this.http('/connections/' + this.connection.id + '/' + operation,
-      { body, signal: this.controller.signal });
-  }
-  async poll(connection, controller) {
-    while (!controller.signal.aborted) {
-      const signal = AbortSignal.any([
-        controller.signal, AbortSignal.timeout(35000)
-      ]);
-      const events = await this.http(
-        '/connections/' + connection.id + '/events',
-        { method: 'GET', signal, key: connection.token }
-      );
-      if (controller.signal.aborted) {
-        return;
-      }
-      for (const event of events) {
-        if (event.type === 'response') {
-          const pending = this.pending.get(event.id);
-          if (pending) {
-            if (event.error) {
-              pending.reject(failure(event.error.message, event.error.code));
-            }
-            else {
-              pending.resolve(event.result);
-            }
-          }
-        }
-        else if (event.type === 'request') {
-          this.incoming.add(event.id);
-          this.onRequest?.(event);
-        }
-        else if (event.type === 'cancel') {
-          this.incoming.delete(event.id);
-          this.onCancel?.(event);
-        }
+      if (!this.closed) {
+        this.port.postMessage({ type: 'reply', id: message.id,
+          error: { code: error.code || 'failed', message: error.message } });
       }
     }
+    finally {
+      this.active.delete(message.id);
+    }
   }
-  request(capability, input, { signal } = {}) {
-    if (!this.connection || signal?.aborted) {
-      return Promise.reject(failure('Not connected or request cancelled.'));
+  call(method, input, { signal, timeout = this.timeout } = {}) {
+    if (this.closed || signal?.aborted || this.pending.size >= 32) {
+      return Promise.reject(capabilityError('Connection unavailable or cancelled.'));
     }
     const id = crypto.randomUUID();
     return new Promise((resolve, reject) => {
@@ -138,51 +120,134 @@ export class CapabilityClient {
         }
       };
       const cancel = () => {
-        finish(reject, failure('Selection cancelled.', 'cancelled'));
-        this.send('cancel', { id }).catch(() => {});
+        this.port.postMessage({ type: 'cancel', id });
+        finish(reject, capabilityError('Selection cancelled.', 'cancelled'));
       };
       const timer = setTimeout(() => {
-        finish(reject, failure('Selection timed out.', 'timeout'));
-        this.send('cancel', { id }).catch(() => {});
-      }, 65000);
+        this.port.postMessage({ type: 'cancel', id });
+        finish(reject, capabilityError('Request timed out.', 'timeout'));
+      }, timeout);
       this.pending.set(id, {
         resolve: value => finish(resolve, value),
         reject: error => finish(reject, error)
       });
       signal?.addEventListener('abort', cancel, { once: true });
-      this.send('request', { id, capability, input }).then(() => {
-        // A cancellation can precede acknowledgement of the request.
-        if (!this.pending.has(id)) {
-          this.send('cancel', { id }).catch(() => {});
-        }
-      }).catch(error => finish(reject, error));
+      try {
+        this.port.postMessage({ type: 'call', id, method, input });
+      }
+      catch (error) {
+        finish(reject, error);
+      }
     });
   }
-  async respond(id, response) {
-    if (!this.incoming.has(id)) {
-      throw failure('Selection request is no longer active.');
-    }
-    await this.send('respond', { id, ...response });
-    this.incoming.delete(id);
-  }
-  disconnect(message = 'Disconnected from app services.') {
-    const connection = this.connection;
-    this.controller?.abort();
-    if (!connection) {
-      this.onState?.(message);
+  close(message = 'Application disconnected.') {
+    if (this.closed) {
       return;
     }
-    this.connection = null;
-    for (const pending of this.pending.values()) {
-      pending.reject(failure(message, 'disconnected'));
+    this.closed = true;
+    for (const call of this.pending.values()) {
+      call.reject(capabilityError(message, 'disconnected'));
     }
-    for (const id of this.incoming) {
-      this.onCancel?.({ id, error: { message } });
+    for (const controller of this.active.values()) {
+      controller.abort();
     }
-    this.incoming.clear();
-    this.onState?.(message);
-    this.http('/connections/' + connection.id, {
-      method: 'DELETE', key: connection.token, keepalive: true
-    }).catch(() => {});
+    this.port.close();
+  }
+}
+
+export class ManagedApp {
+  constructor({ name, capabilities = [], getState = () => ({}),
+    restoreState = () => {}, onRequest, onCancel, onState } = {}) {
+    Object.assign(this, { name, capabilities, getState, restoreState,
+      onRequest, onCancel, onState });
+    this.incoming = new Map();
+    this.parent = window.opener;
+    this.generation = crypto.randomUUID();
+    this.listen = event => this.offer(event);
+    window.addEventListener('message', this.listen);
+    try {
+      this.resume = JSON.parse(sessionStorage.getItem('solid-apps.managed') || 'null');
+    }
+    catch {}
+    this.tick = setInterval(() => {
+      if (this.resume && this.parent?.closed) {
+        this.peer?.close('Workspace closed.');
+        window.close();
+      }
+      else if (this.resume && this.parent) {
+        this.parent.postMessage({ type: 'solid-apps:resume', ...this.resume,
+          generation: this.generation },
+          this.resume.origin);
+      }
+    }, 400);
+    window.addEventListener('pagehide', () => this.peer?.close());
+  }
+  async offer(event) {
+    const message = event.data;
+    if (!this.parent || event.source !== this.parent ||
+      message?.type !== 'solid-apps:offer' || !event.ports[0] ||
+      typeof message.id !== 'string' || typeof message.key !== 'string') {
+      return;
+    }
+    this.peer?.close();
+    this.resume = { id: message.id, key: message.key, origin: event.origin };
+    sessionStorage.setItem('solid-apps.managed', JSON.stringify(this.resume));
+    this.peer = new PortConnection(event.ports[0], (method, input, options) =>
+      this.handle(method, input, options));
+    try {
+      await this.peer.call('register', { name: this.name,
+        generation: this.generation,
+        capabilities: this.capabilities });
+      this.restoring = Promise.resolve(this.restoreState(message.state));
+      await this.restoring;
+      await this.publish();
+      this.onState?.('Connected to this workspace.');
+    }
+    catch (error) {
+      this.onState?.(error.message);
+    }
+  }
+  async handle(method, input, { signal }) {
+    if (method === 'checkpoint') {
+      await this.restoring;
+      return serializable(await this.getState());
+    }
+    if (method !== 'capability' || !this.capabilities.includes(input.capability)) {
+      throw capabilityError('Unsupported operation.', 'denied');
+    }
+    const id = crypto.randomUUID();
+    return new Promise((resolve, reject) => {
+      const cancel = () => {
+        this.incoming.delete(id);
+        this.onCancel?.({ id });
+        reject(capabilityError('Selection cancelled.', 'cancelled'));
+      };
+      signal.addEventListener('abort', cancel, { once: true });
+      const complete = result => {
+        signal.removeEventListener('abort', cancel);
+        resolve(result);
+      };
+      this.incoming.set(id, { complete });
+      this.onRequest?.({ ...input, id });
+    });
+  }
+  async publish() {
+    if (this.peer && !this.peer.closed) {
+      return this.peer.call('state', serializable(await this.getState()));
+    }
+  }
+  async respond(id, response) {
+    const request = this.incoming.get(id);
+    if (!request) {
+      throw capabilityError('Selection request is no longer active.');
+    }
+    this.incoming.delete(id);
+    request.complete(response);
+  }
+  request(capability, input, options) {
+    if (!this.peer) {
+      return Promise.reject(capabilityError('Open this app through Launcher.'));
+    }
+    return this.peer.call('request', { capability, input }, options);
   }
 }

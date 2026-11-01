@@ -4,6 +4,7 @@ import { connectSession, httpUrl } from '@muze-labs/solid-app-data';
 import { defaults, applyPreferences } from '@muze-labs/solid-preferences';
 import { preferencesDialog } from '@muze-labs/solid-preferences/dialog.mjs';
 import { parseLaunchUrl } from '@muze-labs/solid-app-data/launch.mjs';
+import { ManagedApp } from '@muze-labs/solid-app-data/capabilities.mjs';
 export function shell({ acceptLaunch = false } = {}) {
   const root = document.querySelector('#app');
   let launch = { webId: '', resource: '' };
@@ -37,6 +38,21 @@ export function shell({ acceptLaunch = false } = {}) {
     },
     onConnect: null,
     onPreferences: null,
+    manage(options) {
+      host.managed = new ManagedApp({ name: document.title, ...options,
+        getState: async () => {
+          await host.ready;
+          return options.getState();
+        },
+        restoreState: async state => {
+          await host.ready;
+          if (state !== null) {
+            return options.restoreState(state);
+          }
+        },
+        onState: message => host.message(message) });
+      return host.managed;
+    },
     message(text) {
       view.data.message = text;
     },

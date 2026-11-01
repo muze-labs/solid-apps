@@ -1,6 +1,5 @@
 import { app } from '@muze-labs/simplyflow/app';
 import { shell } from '@muze-labs/solid-app-ui';
-import { appServices } from '@muze-labs/solid-app-ui/capabilities.mjs';
 import { browseCapability } from '@muze-labs/solid-app-data/capabilities.mjs';
 import { SolidAdapter, requireOk, httpUrl } from '@muze-labs/solid-app-data';
 import {
@@ -16,6 +15,7 @@ let current = '',
   busy = false;
 let pending = null;
 let selecting = false;
+let restoredFolder = '';
 function renderPicker() {
   ui.data.picker = { hidden: pending ? null : '' };
   ui.data.editing = { hidden: pending ? '' : null };
@@ -26,7 +26,7 @@ function renderPicker() {
     edit: { hidden: pending ? '' : null }
   }));
 }
-const services = appServices(host, {
+const managedOptions = {
   capabilities: [browseCapability],
   onRequest(event) {
     let error;
@@ -41,7 +41,7 @@ const services = appServices(host, {
       error = { code: 'invalid', message: 'Unsupported selection request.' };
     }
     if (error) {
-      host.run(() => services.client.respond(event.id, { error }));
+      host.run(() => host.managed.respond(event.id, { error }));
       return;
     }
     pending = event;
@@ -55,7 +55,7 @@ const services = appServices(host, {
       host.message(event.error?.message || 'Selection cancelled.');
     }
   }
-});
+};
 async function finishSelection(response) {
   if (!pending || selecting) {
     return;
@@ -63,7 +63,7 @@ async function finishSelection(response) {
   const id = pending.id;
   selecting = true;
   try {
-    await services.client.respond(id, response);
+    await host.managed.respond(id, response);
     host.message(response.error ? 'Selection cancelled.' : 'Resource URL returned.');
   }
   finally {
@@ -117,6 +117,7 @@ async function browse(url) {
       ? 'Folder loaded.'
       : 'Folder loaded. This server did not advertise link metadata; deletion is unavailable.'
   );
+  host.managed?.publish().catch(error => host.message(error.message));
 }
 function decodeName(url) {
   try {
@@ -274,9 +275,18 @@ const ui = app({
   }
 });
 host.onConnect = async () => {
-  const url = locationValue();
+  const url = restoredFolder || locationValue();
   if (url) {
     await browse(url);
   }
 };
+host.manage({ ...managedOptions,
+  getState: () => ({ folder: current || restoredFolder }),
+  restoreState: async state => {
+    restoredFolder = state?.folder || '';
+    if (host.session && restoredFolder) {
+      await browse(restoredFolder);
+    }
+  }
+});
 window.solidFiles = { host, ui };

@@ -12,7 +12,8 @@ import { scalarPredicates, applyProfileEdits } from '@muze-labs/solid-profile';
 const host = shell({ acceptLaunch: true });
 const container = host.main.querySelector('.profile-content');
 const widget = profileView(container, {
-  emptyText: 'Enter a profile URL or connect to view your own profile.'
+  emptyText: 'Enter a profile URL or connect to view your own profile.',
+  onChange: () => host.managed?.publish().catch(error => host.message(error.message))
 });
 async function showRemote(url) {
   url = httpUrl(url);
@@ -39,6 +40,7 @@ async function showRemote(url) {
       host.message('Profile saved to Solid.');
     }
   });
+  host.managed?.publish().catch(error => host.message(error.message));
 }
 const ui = app({
   container: host.main.querySelector('.profile-controls'),
@@ -107,3 +109,13 @@ if (!launchAttempted) {
   await host.run(openLaunch, { network: true });
 }
 window.solidProfile = { host, ui };
+host.manage({
+  getState: () => ({ url: ui.data.url, contact: contactId, draft: widget.draft() }),
+  restoreState: async state => {
+    if (state?.url && !contactId) {
+      launchPending = false;
+      await showRemote(state.url);
+    }
+    widget.restoreDraft(state?.draft);
+  }
+});

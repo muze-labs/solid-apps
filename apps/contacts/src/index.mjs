@@ -34,7 +34,8 @@ function render(filter = '') {
   ui.data.empty = people.length ? '' : 'No contacts yet.';
 }
 const widget = profileView(profileRoot, {
-  emptyText: 'Select a contact to view their profile.'
+  emptyText: 'Select a contact to view their profile.',
+  onChange: () => host.managed?.publish().catch(error => host.message(error.message))
 });
 const newContactDialog = listRoot.querySelector('.new-contact-dialog');
 const actions = app({
@@ -75,10 +76,11 @@ function show(id) {
       host.message('Saved on this device. Use Sync with Solid to synchronize.');
     }
   });
+  host.managed?.publish().catch(error => host.message(error.message));
 }
 const ui = app({
   container: listRoot,
-  data: { people: [], empty: '' },
+  data: { people: [], empty: '', search: '' },
   commands: {
     newContact() {
       newContactDialog.showModal();
@@ -109,6 +111,7 @@ const ui = app({
     search(element) {
       if (store) {
         render(element.value);
+        host.managed?.publish().catch(error => host.message(error.message));
       }
     },
     sync() {
@@ -143,3 +146,13 @@ window.solidContacts = {
     return store;
   }
 };
+host.manage({
+  getState: () => ({ selected: selected || null, filter: ui.data.search,
+    draft: widget.draft() }),
+  restoreState: state => {
+    ui.data.search = state?.filter || '';
+    render(ui.data.search);
+    show(state?.selected || null);
+    widget.restoreDraft(state?.draft);
+  }
+});

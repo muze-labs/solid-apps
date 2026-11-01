@@ -1,6 +1,7 @@
 import { app } from '@muze-labs/simplyflow/app';
 import { shell } from '@muze-labs/solid-app-ui';
-import { appServices } from '@muze-labs/solid-app-ui/capabilities.mjs';
+import { WorkspaceBroker } from '@muze-labs/solid-app-data/workspace-broker.mjs';
+import { WorkspaceState } from '@muze-labs/solid-app-data/workspace-state.mjs';
 import {
   browseCapability, browseInput, selectionUrl
 } from '@muze-labs/solid-app-data/capabilities.mjs';
@@ -14,13 +15,64 @@ import {
 const host = shell();
 let store;
 let selection;
-const services = appServices(host);
+let workspace, persistence;
 const container = host.main;
-function openApplication(href) {
-  const features = host.preferences.launchTarget === 'window'
-    ? 'popup,noopener'
-    : 'noopener';
-  window.open(href, '_blank', features);
+function openApplication(href, options) {
+  if (!workspace) {
+    throw new Error('launcher: Workspace is still loading.');
+  }
+  return workspace.open(href, options);
+}
+function renderWorkspace() {
+  ui.data.workspaceEntries = [...workspace.instances.values()].map(record => ({
+    id: record.entry.id, label: record.entry.label || record.entry.url,
+    allowBrowse: record.entry.allowBrowse,
+    status: record.registered ? 'Connected' :
+      record.win && !record.win.closed ? 'Opening' : 'Saved'
+  }));
+}
+function createWorkspace() {
+  workspace?.dispose();
+  workspace = new WorkspaceBroker({ snapshot: persistence.snapshot,
+    keys: persistence.keys,
+    authorize: (requester, entry, capability) => requester === 'launcher' &&
+      entry.allowBrowse && capability === browseCapability,
+    onMessage: message => { ui.data.workspaceMessage = message; },
+    onChange: async (snapshot, keys) => {
+      await persistence.stage(snapshot, keys);
+      renderWorkspace();
+    }
+  });
+  workspace.presentation = host.preferences.launchTarget;
+  ui.data.resource = persistence.snapshot.launcher?.resource || '';
+  renderWorkspace();
+}
+async function preparePod() {
+  const session = host.requireSession();
+  const url = host.resource('workspace');
+  if (persistence.session !== session || persistence.url !== url ||
+    !persistence.document) {
+    await persistence.bind(session, url);
+    if (![...workspace.instances.values()].some(record => record.win)) {
+      createWorkspace();
+    }
+  }
+  return { session, url };
+}
+async function saveWorkspace(close = false) {
+  await workspace.checkpoint();
+  const { session, url } = await preparePod();
+  if (!await persistence.save(session, url)) {
+    throw new Error('launcher: State changed during saving. Save again before closing.');
+  }
+  ui.data.workspaceMessage = 'Workspace saved to your Solid Pod.';
+  if (close) {
+    persistence.skipExit = true;
+    workspace.closeApps();
+    renderWorkspace();
+    host.message('Workspace saved and managed apps closed.');
+    window.close();
+  }
 }
 function renderLinks() {
   for (const name of ['contacts', 'files', 'profile']) {
@@ -65,7 +117,7 @@ function render() {
       anonymous: settings.anonymous,
       modeNote,
       problem,
-      link: { href: settings.href, target: '_blank', rel: 'noopener' }
+      link: { href: settings.href, target: '_blank', rel: 'opener' }
     };
   });
   ui.data.empty = nodes.length
@@ -81,26 +133,66 @@ const ui = app({
     pickerMessage: '',
     pickState: { disabled: null },
     cancelState: { hidden: '' },
+    workspaceEntries: [],
+    workspaceMessage: 'Loading workspace…',
     contactsLink: { href: '../contacts/' },
     filesLink: { href: '../files/' },
     profileLink: { href: '../profile/' }
   },
   commands: {
+    workspaceChanged(element) {
+      if (workspace) {
+        workspace.launcherState.resource = element.value;
+        host.run(() => workspace.changed());
+      }
+    },
+    restoreWorkspace() {
+      workspace?.restore();
+    },
+    restoreInstance(_element, id) {
+      const record = workspace.instances.get(id);
+      workspace.open(record.entry.url, { id });
+    },
+    allowBrowse(element, id) {
+      host.run(() => workspace.allow(id, element.checked));
+    },
+    closeInstance(_element, id) {
+      host.run(() => workspace.remove(id));
+    },
+    saveWorkspace() {
+      host.run(() => saveWorkspace(), { network: true });
+    },
+    closeWorkspace() {
+      host.run(() => saveWorkspace(true), { network: true });
+    },
+    closeLocally() {
+      host.run(async () => {
+        await workspace.checkpoint();
+        await persistence.work.catch(() => {});
+        await persistence.persist();
+        persistence.skipExit = true;
+        workspace.closeApps();
+        renderWorkspace();
+        host.message('Locally saved workspace retained; managed apps closed.');
+        window.close();
+      });
+    },
     pickResource() {
       if (selection) {
         return;
       }
       host.run(async () => {
-        const client = services.client;
         selection = new AbortController();
         ui.data.pickState = { disabled: '' };
         ui.data.cancelState = { hidden: null };
         ui.data.pickerMessage = 'Choose a resource in the connected Files app.';
         try {
-          const result = await client.request(browseCapability, browseInput, {
+          const result = await workspace.request(browseCapability, browseInput, {
             signal: selection.signal
           });
           ui.data.resource = selectionUrl(result);
+          workspace.launcherState.resource = ui.data.resource;
+          await workspace.changed();
           ui.data.pickerMessage = 'Resource selected. Review the URL before opening.';
         }
         catch (error) {
@@ -139,7 +231,10 @@ const ui = app({
         if (!element.getAttribute('href')) {
           throw new Error('launcher: Connect to Solid to open this resource.');
         }
-        openApplication(element.href);
+        const isFiles = element.closest('.app-grid') &&
+          element === host.main.querySelector('.app-grid a[href*=files]');
+        openApplication(element.href, { label: element.textContent.trim(),
+          allowBrowse: Boolean(isFiles) });
       });
     },
     launchProfile(form) {
@@ -204,10 +299,13 @@ const ui = app({
     }
   }
 });
-host.onConnect = () => {
+host.onConnect = async () => {
   renderLinks();
   if (store) {
     render();
+  }
+  if (persistence) {
+    await preparePod();
   }
 };
 renderLinks();
@@ -222,9 +320,37 @@ await host.run(async () => {
   });
   render();
 });
+await host.ready;
+await host.run(async () => {
+  persistence = new WorkspaceState({ owner: host.session?.webId || '' });
+  await persistence.open();
+  createWorkspace();
+  if (host.session) {
+    await preparePod();
+  }
+  ui.data.workspaceMessage = 'App state is saved locally. Pod saves happen at checkpoints and closure.';
+  setTimeout(() => workspace.restore(), 900);
+});
+host.onPreferences = values => {
+  if (workspace) {
+    workspace.presentation = values.launchTarget;
+  }
+};
+let exitAttempted = false;
+function attemptExit() {
+  if (exitAttempted || !persistence || !host.session) {
+    return;
+  }
+  exitAttempted = true;
+  persistence.attemptExit(host.session, host.resource('workspace'));
+}
+window.addEventListener('beforeunload', attemptExit);
+window.addEventListener('pagehide', attemptExit);
 window.solidLauncher = {
   host,
   ui,
+  get workspace() { return workspace; },
+  get persistence() { return persistence; },
   get store() {
     return store;
   }

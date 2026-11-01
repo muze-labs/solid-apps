@@ -564,6 +564,16 @@ First answers received on 2026-11-01:
     routing. The result is implemented and automated verification is recorded
     in the cycle; human acceptance is pending. No agent merge is authorized.
 
+39. During evaluation the maintainer questioned the server bottleneck and
+    proposed a service worker, then selected Launcher itself as browser-local
+    broker and workspace owner. Ordinary opener access is explicitly accepted.
+    SRC-20261101-QG24H-8 retains the revised commitment; REQ4 and DES9 replace
+    the server architecture for this still-Active cycle. Managed apps close and
+    restore with Launcher. State updates remain local; explicit Save & close
+    acknowledges a conditional Pod checkpoint before closing. Browser-X saving
+    is a bounded best-effort keepalive attempt, not confirmed success. Named
+    workspaces and full offline/PWA/app-data sync remain future work.
+
 Conversation/documentation language: **English**, explicitly requested by the
 maintainer. Conversation preference: ask **one question at a time** until intake is
 finished. Persist answers and continue through the remaining topics without

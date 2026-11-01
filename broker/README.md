@@ -1,75 +1,79 @@
-# Initial capability broker
+# Browser-local capability broker and workspace
 
-Experimental, manually provisioned broker for the resource-picker proof. It
-routes messages between already-open apps; it does not discover or start them,
-store Pod data, or receive Solid access tokens. The
-[protocol and authority boundaries](../design/solid-resource-picker.md) describe
-the contract and its current limits.
+Launcher coordinates apps inside the browser. No broker server, connection keys
+or broker URL setting is required. The previous network relay is superseded;
+its implementation and evaluation remain in Git history.
 
-## Local setup
+## Try it locally
 
-Run the apps with `npm run dev`. For a cross-origin demonstration use Launcher
-at `http://127.0.0.1:4174/launcher/` and Files at
-`http://localhost:4174/files/`. Connect each app to Solid.
+Run `npm run dev` and open `http://127.0.0.1:4174/launcher/`. Connect Launcher
+through **WebID / connection**, then open Files from its built-in link. Files
+keeps its own Solid connection. **Choose in Files** displays selection controls
+in that managed Files instance and returns a URL to Launcher. Cancellation
+preserves the previous field; selecting does not download or write the resource.
 
-Create a private configuration outside the repository. This example refuses to
-overwrite an existing file and prints the generated app keys to your terminal:
+For a cross-origin demonstration, add a shortcut to
+`http://localhost:4174/files/`, open it through Launcher, and enable **Allow
+resource selection** for that instance in the workspace list. Built-in Files
+gets this permission automatically. Exactly one allowed connected provider must
+match; multiple providers produce an ambiguity error. An app opened directly
+continues to work independently, but does not join this managed session.
 
-```sh
-node --input-type=module <<'JS'
-import { randomBytes } from 'node:crypto';
-import { writeFileSync } from 'node:fs';
-const clients = [
-  { application: 'launcher', origin: 'http://127.0.0.1:4174' },
-  { application: 'files', origin: 'http://localhost:4174' }
-].map(client => ({ ...client, workspace: 'personal',
-  key: randomBytes(32).toString('base64url') }));
-const routes = [{ workspace: 'personal', requester: 'launcher', provider: 'files',
-  capability: 'https://vocab.muze.nl/capabilities/browse' }];
-writeFileSync('/tmp/solid-apps-broker.json', JSON.stringify({ clients, routes }),
-  { mode: 0o600, flag: 'wx' });
-for (const client of clients) {
-  console.log(client.application + ': ' + client.key);
-}
-JS
-SOLID_APPS_BROKER_CONFIG=/tmp/solid-apps-broker.json npm run broker
-```
+Each launch creates a fresh instance. **Preferences → Open apps in** chooses
+tabs (default) or windows. The workspace list can focus/restore an instance or
+close it individually. Closing an individual instance removes it from the saved
+set. Closing the workspace retains the set for reopening. Allow popups for
+multiple-app restoration; **Restore apps** and individual restore buttons provide
+recovery when the browser blocks automatic startup.
 
-Keep this configuration private. Each application/workspace identity and key
-must be unique. The initial application names identify provisioned broker
-principals; publisher-controlled application descriptions and the provider
-registry are future work. A route explicitly permits a requester/provider pair
-for a capability, within a workspace. Unlisted relationships cannot communicate.
+## Save and restore
 
-In Preferences, save **Capability broker URL** as `http://127.0.0.1:4175/`.
-Both app origins load this from the same linked Pod preferences. In each app,
-expand **App services connection**, enter its own key and connect. The key is
-cleared from the input and kept only for the connection attempt; the issued
-connection token remains in memory. Reconnect manually after a page reload.
+State updates are stored locally in account-scoped IndexedDB. Files publishes
+its folder; Profile publishes its subject; Contacts publishes selection/search.
+Profile/Contacts also retain an open profile-edit draft without applying it to
+the underlying RDF. Temporary dialogs, active capability requests and in-flight
+operations are not resumed. External apps need the managed-app protocol to
+publish their own restoration state.
 
-In Launcher, choose **Choose in Files**. In the already-open Files app, select a
-file or the current folder, or cancel. Launcher receives only the selected URL
-and leaves opening it as a separate user action. Selecting a file's document URL
-does not automatically identify an RDF subject within it; append a fragment
-where the receiving app needs one.
+The default Pod document is `apps/solid-apps/workspace.ttl` beneath the connected
+WebID's advertised storage root. **Preferences → Workspace resource** can name
+another document. The existing linked `pim:preferencesFile` remains the source
+of settings. Ensure the parent container exists and the account can write there.
+The document stores one default workspace; named workspace creation is future
+work. Shortcut collection sync remains a separate operation.
 
-## Hosting and limits
+- **Save to Pod** checkpoints participating apps and waits for a conditional PUT.
+- **Save & close** waits for that acknowledgement, then closes managed apps.
+  Failed/conflicting/offline writes leave apps open and retain local state.
+- **Close locally** checkpoints locally and closes apps without a Pod write.
+- The browser's ordinary close button attempts a prepared conditional PUT with
+  `keepalive` and noninteractive authentication. This is best effort, capped at
+  60 KB of Turtle, and never marks the local snapshot as remotely confirmed.
 
-Node 20.6+ serves HTTP on loopback, using `PORT` (default 4175). For remote use,
-put it behind an HTTPS proxy and configure exact public app origins. The proxy
-must allow long-poll responses lasting 25 seconds. CORS reflects only configured
-origins. Never put connection keys in launch links or shared preferences.
+If the browser refuses to close a manually opened Launcher tab, it reports that
+the managed apps have closed and leaves the Launcher for you to close. On
+reopening, local pending state wins over an unconfirmed remote result; conflicting
+Pod changes are reported rather than overwritten. A fresh browser can restore
+an acknowledged snapshot after connecting to the same account.
 
-Connections have random scoped bearer tokens and a 60-second inactivity lease.
-Requests expire after 60 seconds. Disconnect cancels associated work, and
-shutdown rejects new connections. Multiple matching live providers are an
-explicit error. Routing and event queues are memory-only and bounded; a restart
-loses connections and pending requests. There is no automatic invocation replay.
+## Boundaries and evidence
 
-The broker operator provisions workspace membership. A supplied WebID is not
-broker authentication. Files continues to use its own Solid authorization;
-broker routing grants no right to read or write the selected resource.
+Origin-targeted `postMessage` offers transfer private MessagePorts. Launcher
+binds each connection to an exact window, origin and local instance identity.
+Reconnect secrets stay in browser storage, outside Pod snapshots and launch
+URLs. Apps cannot grant themselves access to other instances. Capability routing
+conveys no Solid permissions; each provider retains its own authentication.
 
-`npm run check` covers protocol/authority contracts without network listeners.
-`npm run test:browser` runs the real broker against distinct app origins and a
-fixture Pod, including an independent client with every Launcher tab closed.
+Ordinary opener access is intentional. A malicious external app may navigate
+its opener; use trusted managed links. COOP can sever opener relationships, and
+uncooperative apps cannot provide state or reliable self-closure after a browser
+crash. Participating apps monitor a captured opener reference to close after a
+normal Launcher close. This is browser lifecycle behavior, not a crash guarantee.
+
+`npm run check` covers routing, state and RDF preservation contracts.
+`npm run test:browser` covers cross-origin routing, reload/reconnection, distinct
+instances, failure recovery, closure and fresh-browser Pod restoration. Chrome
+131 received an authorized close-time write in the local fixture. The fixture
+uses a test bearer credential through Metro; it does not establish real Solid
+OIDC/DPoP behavior at shutdown. Validate that manually with your own provider.
+See the [workspace design](../design/solid-managed-workspace.md).

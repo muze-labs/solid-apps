@@ -21,7 +21,9 @@ remain explicit. No capability conveys Pod authorization.
 
 Apps publish JSON-serializable UI/restoration state and accept restored state.
 Files demonstrates folder restoration; Profile demonstrates subject restoration;
-Contacts demonstrates selected contact/search restoration. Documents and native
+Contacts demonstrates selected contact/search restoration. Profile/Contacts
+also restore open field-edit drafts without applying them to native RDF.
+Temporary dialogs and in-flight operations are not restored. Documents and native
 RDF remain authoritative in the apps' existing storage. Tokens, clients, DOM
 objects, WindowProxy handles and ports are not serialized. Ordinary third-party
 links can still open and be tracked, but app-specific restoration requires the

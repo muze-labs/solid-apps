@@ -3,16 +3,21 @@
 Experimental application integration package. This is the suite's composition
 of published Solid libraries, not a new persistence framework.
 
-`capabilities.mjs` provides the initial renderer-independent `CapabilityClient`
-and the browse capability contract. Connect with a provisioned app key, then
-`request(browseCapability, browseInput, { signal })`; validate the result with
-`selectionUrl(result)`. Providers advertise `capabilities` in constructor
-options, receive `onRequest(event)` and answer with `respond(event.id, { result })`
-or `{ error: { code, message } }`. `onCancel` clears provider UI and
-`disconnect()` rejects pending work. No invocation is automatically replayed.
-See the [protocol](../../design/solid-resource-picker.md) and
-[broker setup](../../broker/README.md). These are experimental suite interfaces,
-not independently published packages or Solid authorization grants.
+`capabilities.mjs` exposes renderer-independent `ManagedApp`, `PortConnection`
+and the browse capability contract. `ManagedApp` connects to its Launcher opener,
+registers capabilities, publishes `getState()` JSON and calls `restoreState(state)`.
+Providers receive `onRequest(event)`, answer with `respond(event.id, { result })`
+or `{ error: { code, message } }`, and clear selection UI through `onCancel`.
+Validate returned URLs with `selectionUrl`. Calls have cancellation, timeout and
+disconnect handling; invocations are not replayed on reconnect.
+
+`workspace-broker.mjs` owns browser windows, instance identity, private ports and
+explicit route policy. `workspace-state.mjs` uses the published Solid Workspace
+IndexedDB source for local state and native RDF for conditional Pod checkpoints.
+Live updates do not write the Pod. Credentials and reconnect keys are excluded
+from public snapshots. See the [workspace guide](../../broker/README.md) and
+[design](../../design/solid-managed-workspace.md). These are experimental suite
+interfaces; capability routing grants no Solid authorization.
 
 - Root export: native `oldm` context with the Turtle backend, shared vocabulary
   prefixes, URI helpers, conditional `loadDocument`/`copyDocument`/`saveDocument`,

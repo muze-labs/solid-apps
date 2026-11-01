@@ -8,36 +8,33 @@ import {
   saveDocument,
   httpUrl
 } from '@muze-labs/solid-app-data';
-import { brokerUrl } from '@muze-labs/solid-app-data/capabilities.mjs';
 export const defaults = Object.freeze({
   theme: 'system',
   textScale: '100',
   density: 'comfortable',
   language: 'en',
   launchTarget: 'tab',
-  brokerUrl: '',
+  workspaceResource: '',
   contactsResource: '',
   launcherResource: '',
   filesRoot: ''
 });
 const namespace = prefixes.apps;
-function readBrokerUrl(subject) {
-  let value = valueAt(subject, namespace + 'brokerUrl');
+function readWorkspaceResource(subject) {
+  let value = valueAt(subject, namespace + 'workspaceResource');
   if (value === undefined) {
     return '';
   }
   if (Array.isArray(value)) {
     if (value.length !== 1) {
-      throw new Error('solid-preferences: Broker URL has multiple values.');
+      throw new Error('solid-preferences: Workspace resource has multiple values.');
     }
     value = value[0];
   }
-  if (!(typeof value === 'string' || value instanceof String) ||
-    value.language || (value.type && String(value.type) !==
-      'http://www.w3.org/2001/XMLSchema#string')) {
-    throw new Error('solid-preferences: Broker URL must be a plain literal.');
+  if (!value?.id || String(value.id).startsWith('_:')) {
+    throw new Error('solid-preferences: Workspace resource must be a named URL.');
   }
-  return brokerUrl(String(value));
+  return httpUrl(value.id);
 }
 function readLaunchTarget(subject) {
   let value = valueAt(subject, namespace + 'launchTarget');
@@ -66,8 +63,8 @@ export function readPreferences(document) {
   return Object.fromEntries(
     Object.entries(defaults).map(([key, fallback]) => {
       let value;
-      if (key === 'brokerUrl') {
-        value = readBrokerUrl(subject);
+      if (key === 'workspaceResource') {
+        value = readWorkspaceResource(subject);
       }
       else if (key === 'launchTarget') {
         value = readLaunchTarget(subject);
@@ -80,9 +77,6 @@ export function readPreferences(document) {
   );
 }
 export function validatePreferences(settings) {
-  if (settings.brokerUrl) {
-    brokerUrl(settings.brokerUrl);
-  }
   if (!['tab', 'window'].includes(settings.launchTarget)) {
     throw new Error('solid-preferences: Choose new tabs or new windows.');
   }
@@ -98,7 +92,7 @@ export function validatePreferences(settings) {
   if (!/^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/.test(settings.language)) {
     throw new Error('solid-preferences: Use a language tag such as en or nl.');
   }
-  for (const key of ['contactsResource', 'launcherResource', 'filesRoot']) {
+  for (const key of ['contactsResource', 'launcherResource', 'workspaceResource', 'filesRoot']) {
     if (!settings[key]) {
       continue;
     }
@@ -128,7 +122,7 @@ export async function loadPreferences(session) {
 export async function savePreferences(session, document, settings) {
   validatePreferences(settings);
   readLaunchTarget(document.graph.get(document.url + '#solid-apps'));
-  readBrokerUrl(document.graph.get(document.url + '#solid-apps'));
+  readWorkspaceResource(document.graph.get(document.url + '#solid-apps'));
   const draft = await copyDocument(document);
   const id = draft.url + '#solid-apps';
   const node =
@@ -140,7 +134,7 @@ export async function savePreferences(session, document, settings) {
       draft.graph.set(
         id,
         namespace + key,
-        ['contactsResource', 'launcherResource', 'filesRoot'].includes(key)
+        ['contactsResource', 'launcherResource', 'workspaceResource', 'filesRoot'].includes(key)
           ? draft.graph.addNamedNode(settings[key])
           : oldm.literal(String(settings[key]))
       );
