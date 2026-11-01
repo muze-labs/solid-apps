@@ -677,3 +677,11 @@ startup in CYC2. FBK20 records the reproduction and scoped revision; current
 cycle status is Active again, while ACC19 preserves the earlier acceptance.
 Provider registry work remains later and DEF18 remains Open. Verification of
 this routing/UI correction must avoid the known JSON-in-Turtle serializer.
+
+IMP6 now provides the scoped one-click Files flow (implementation 2167765).
+EVD21 verifies cold/warm provider activation and selection/cancel routing through
+isolated fixtures that do not invoke the forbidden persistence encoder. Return
+focus to Launcher is requested but browser-dependent; Chrome headless refused it,
+so the UI includes manual-return guidance. Full persistence suites remain pending
+native RDF fixture correction under DEF18. CYC2 stays Active for renewed human
+evaluation; prior ACC19, the open RDF issue and deferred starter page are retained.
