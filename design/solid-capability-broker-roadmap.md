@@ -59,7 +59,9 @@ context. It grants no authentication or capability authority. The
 server proof with Launcher-owned windows, origin/instance-bound channels,
 restoration state and conditional Pod checkpoints. The
 [browse contract](solid-resource-picker.md) retains its URI/result semantics.
-See the [local guide](../broker/README.md); human acceptance is pending.
+The maintainer merged the managed-workspace cycle as `798d59b` (PR #3).
+See the [local guide](../broker/README.md) and retained verification limits in
+[EVD30](../.spiral/evidence/EVD-20261101-QG24H-30.md).
 
 Service workers were explored as an alternative: same-origin workers/storage
 can be partitioned across different top-level sites, and workers have no
@@ -285,7 +287,10 @@ It does not establish the persistent preferred-provider registry described below
 One default workspace now checkpoints the open app set, context and restoration
 state locally and to a Pod on explicit save/close; browser-X attempts a prepared
 keepalive write. Named workspace creation, selection and full definition/shortcut
-portability remain deferred. This is not continuous app-data synchronization.
+portability remain future work. The latest
+[suite roadmap](solid-apps-roadmap.md#workspaces-launcher-dashboard-and-logout)
+places creation/switching in Launcher-specific preferences and defines the
+sparse shortcut home and per-storage-root Files defaults. This is not continuous app-data synchronization.
 
 The maintainer noticed “Shortcut saved on this device” and requested that the
 workspace also sync to their Solid Pod, with the option to create new
@@ -295,8 +300,12 @@ workspaces.
 
 Desired outcome:
 
-- Create named workspaces and switch between them, each with its own collection
-  of app links and dataset/resource contexts.
+- Create named workspaces and switch between them through Launcher-specific
+  preferences, offering workspace choice when multiple exist. Each has its own
+  collection of app links, dataset/resource contexts and restoration state.
+- Launcher logout closes the active workspace and managed apps. Closing Launcher
+  still closes managed apps; logout in another managed app does not close the
+  whole workspace. Define save/logout ordering and failure recovery in the cycle.
 - Sync workspace definitions and their launch links to the user's Solid Pod,
   then reopen them in another browser or device. Retain local use before
   connecting and communicate whether changes are local or synced.
@@ -323,7 +332,10 @@ offline changes and sync conflicts. These criteria remain prospective.
 - Embedded desktop/layout management beyond the managed top-level app set.
 - An app store, installer or pod-provisioning system as part of the initial
   broker proof. Simple decentralized app catalogs are separately planned in
-  the suite roadmap.
+  the suite roadmap. Its first catalog format is now a static Turtle index plus
+  one manifest per app, including stable external Solid apps without requiring
+  ecosystem support. This product feature does not introduce a provider registry
+  or reorder these broker phases.
 - A central mandatory Muze broker.
 - A universal UI component framework or renderer.
 - Automatic capability matchmaking by inferred similarity.
