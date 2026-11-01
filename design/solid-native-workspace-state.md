@@ -54,3 +54,9 @@ terms, opaque round-trip, malformed-state refusal, baseline reload/conflicts,
 401/offline/412 and edits during PUT. Update existing browser fixtures and run
 full check/browser suites and JavaScript budget checks. No new UI renderer,
 continuous sync, migration, catalog, publication or merge is included.
+
+
+The [generated example](examples/workspace.ttl) is emitted by the implementation
+and independently parsed with RDFLib. It contains one Files instance, its folder
+IRI and a launcher resource with fragment; no reconnect key or opaque field is
+present. Raw triple output is valid Turtle and keeps graph identity inspectable.

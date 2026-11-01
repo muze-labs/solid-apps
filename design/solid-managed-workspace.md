@@ -1,14 +1,9 @@
 # Launcher-managed browser workspace
 
-**Persistence encoding requires correction.** The maintainer's
-[native Turtle rule](../.spiral/sources/SRC-20261101-QG24H-17.md) unconditionally
-forbids JSON in main-state Turtle strings, with only a narrow experimental
-app-owned opaque field permitted. The JSON-literal persistence described below is
-current implementation evidence, not an approved design. Replace it with native
-RDF for both Pod state and local caches/baselines; preserve existing data during
-that correction. The maintainer accepted the cycle while retaining
-[DEF18](../.spiral/defects/DEF-20261101-QG24H-18.md) as Open; that acceptance does
-not resolve the native RDF correction.
+Persistence uses [native workspace/app RDF](solid-native-workspace-state.md),
+including the current local cache and acknowledged baseline. This supersedes the
+pre-release JSON-literal format under SRC24; no migration is required. The
+optional opaque app-owned string remains the sole experimental exception.
 
 Confirmed revision of the resource-picker cycle, 2026-11-01. This replaces the
 server relay for managed sessions; the earlier proof remains in Git history.
@@ -29,7 +24,8 @@ other instances' state or event queues. Results belong to the selected provider
 and pending caller. Cancellation, disconnect, ambiguity, timeout and busy state
 remain explicit. No capability conveys Pod authorization.
 
-Apps publish JSON-serializable UI/restoration state and accept restored state.
+Apps publish their own RDF state as Turtle transport text, plus an optional
+opaque string, and accept the restored graph. It is persisted as native triples.
 Files demonstrates folder restoration; Profile demonstrates subject restoration;
 Contacts demonstrates selected contact/search restoration. Profile/Contacts
 also restore open field-edit drafts without applying them to native RDF.
@@ -50,10 +46,10 @@ opener's `closed` flag, allowing shutdown even if parent unload cleanup is lost.
 
 Pod storage is a conditional Turtle document from `workspaceResource` in the
 existing linked preferences, defaulting to `apps/solid-apps/workspace.ttl` below
-the advertised storage root. One `apps:snapshot` RDF JSON literal stores public
-restoration state on `<document#workspace>`. Unknown triples, identities and
-other subjects are preserved. Unsupported structured/multiple snapshot values
-fail before writing. The account and remote resource must match the prepared
+the advertised storage root. Native Workspace/AppInstance nodes, an ordered RDF
+list, resource IRIs, typed flags and per-instance state graphs store restoration
+state on `<document#workspace>`. Unknown triples, identities and other subjects
+are preserved. Unsupported structured/multiple scalar fields fail before writing. The account and remote resource must match the prepared
 target. Loading a remote snapshot does not overwrite pending local changes.
 
 Live state updates write locally and prepare serialized Turtle; they do not PUT
@@ -163,3 +159,12 @@ that exact handle on completion/failure. A blocked popup fails visibly; backgrou
 operations still refuse interactive authentication. Preserve the library's state
 and origin checks and existing session/logout behavior. No callback URL, token or
 authorization code is logged or persisted by this correction.
+
+
+## Native-format correction
+
+DES25 specifies the native persistence and app-state contract. Both Pod state and
+local current/baseline graphs use RDF statements. Private reconnect keys remain
+local. The maintainer explicitly declined migration for this unreleased prototype;
+use a new native cache and refuse old-format Pod targets rather than overwriting
+or importing them. Existing conditional-write and lifecycle contracts remain.
