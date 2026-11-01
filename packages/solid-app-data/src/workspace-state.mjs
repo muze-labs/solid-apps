@@ -78,6 +78,9 @@ export class WorkspaceState {
     this.keys = {};
     this.dirty = false;
     this.baseETag = null;
+    this.baseSnapshotText = null;
+    this.baseUrl = null;
+    this.needsValidatorRefresh = false;
     this.work = Promise.resolve();
   }
   localSource(owner) {
@@ -94,13 +97,17 @@ export class WorkspaceState {
       this.snapshot = validateWorkspace(saved.snapshot);
       this.keys = saved.keys || {};
       this.baseETag = saved.baseETag || null;
+      this.baseSnapshotText = saved.baseSnapshotText || null;
+      this.baseUrl = saved.baseUrl || null;
       this.dirty = Boolean(saved.dirty);
     }
     return this.snapshot;
   }
   async persist() {
     setJSON(this.localGraph, localId, { snapshot: this.snapshot,
-      keys: this.keys, baseETag: this.baseETag, dirty: this.dirty });
+      keys: this.keys, baseETag: this.baseETag,
+      baseSnapshotText: this.baseSnapshotText, baseUrl: this.baseUrl,
+      dirty: this.dirty });
     await this.source.save(await this.localGraph.write());
   }
   stage(snapshot, keys = this.keys) {
@@ -119,7 +126,7 @@ export class WorkspaceState {
     });
     return this.work;
   }
-  async bind(session, url) {
+  async bind(session, url, { forWrite = false } = {}) {
     await this.work;
     if (this.owner && session.webId !== this.owner) {
       throw new Error('workspace-state: Reopen Launcher to switch workspace accounts.');
@@ -138,9 +145,11 @@ export class WorkspaceState {
       this.snapshot.owner = this.owner;
     }
     url = httpUrl(url);
-    const changedTarget = this.url && this.url !== url;
+    const previousTarget = this.url || this.baseUrl;
+    const changedTarget = previousTarget && previousTarget !== url;
     if (changedTarget) {
       this.baseETag = null;
+      this.baseSnapshotText = null;
     }
     this.session = session;
     this.url = url;
@@ -156,9 +165,15 @@ export class WorkspaceState {
       }
     }
     const equal = remote && textOf(remote) === textOf(this.snapshot);
-    this.conflict = Boolean(remote && this.dirty && !equal &&
-      document.etag !== this.baseETag);
-    if (!this.dirty && remote) {
+    const remoteText = remote ? textOf(remote) : null;
+    const sameBaseline = this.baseUrl === url && this.baseSnapshotText !== null &&
+      remoteText === this.baseSnapshotText;
+    this.conflict = Boolean(remote && (this.dirty || forWrite) && !equal &&
+      document.etag !== this.baseETag && !sameBaseline);
+    if (this.conflict) {
+      this.dirty = true;
+    }
+    if (!this.dirty && !forWrite && remote) {
       const previous = new Map(this.snapshot.apps.map(entry => [entry.id, entry.url]));
       this.keys = Object.fromEntries(remote.apps.filter(entry =>
         previous.get(entry.id) === entry.url && this.keys[entry.id])
@@ -169,9 +184,12 @@ export class WorkspaceState {
       this.dirty = false;
     }
     this.document = document;
+    this.baseUrl = url;
+    this.needsValidatorRefresh = false;
     this.remoteSnapshot = remote;
     if (!this.conflict) {
       this.baseETag = document.etag;
+      this.baseSnapshotText = remoteText;
     }
     await this.persist();
     await this.prepare();
@@ -182,7 +200,7 @@ export class WorkspaceState {
   }
   async reviewConflict(session, url) {
     try {
-      await this.bind(session, url);
+      await this.bind(session, url, { forWrite: true });
     }
     catch (error) {
       if (error.code !== 'workspace-conflict') {
@@ -214,17 +232,21 @@ export class WorkspaceState {
     this.conflict = false;
     this.reviewedDocument = null;
     this.baseETag = this.document.etag;
+    this.baseSnapshotText = this.remoteSnapshot
+      ? textOf(this.remoteSnapshot) : null;
     this.dirty = choice === 'local';
     await this.persist();
     await this.prepare();
   }
   async prepare() {
     this.prepared = null;
-    if (!this.document || this.conflict) {
+    if (!this.document || this.conflict || this.needsValidatorRefresh) {
       return;
     }
     if (!this.document.missing && !this.document.etag) {
-      throw new Error('workspace-state: Pod supplied no ETag for a safe write.');
+      throw new Error('workspace-state: Pod GET supplied no ETag for a safe ' +
+        'write at ' + this.url + '. Check that GET returns and exposes ETag. ' +
+        'Local state is retained; Close locally remains available.');
     }
     const draft = await copyDocument(this.document);
     setJSON(draft.graph, this.url + '#workspace', this.snapshot);
@@ -244,6 +266,13 @@ export class WorkspaceState {
   }
   async save(session, url) {
     await this.work;
+    if (this.needsValidatorRefresh) {
+      if (session?.webId !== this.owner || url !== this.url) {
+        throw new Error('workspace-state: Connect and load this workspace ' +
+          'target before saving.');
+      }
+      await this.bind(session, url, { forWrite: true });
+    }
     if (this.conflict) {
       throw conflictError();
     }
@@ -265,6 +294,8 @@ export class WorkspaceState {
     this.document = { ...prepared.draft, missing: false,
       etag: response.headers.get('ETag') };
     this.baseETag = this.document.etag;
+    this.baseSnapshotText = prepared.snapshotText;
+    this.needsValidatorRefresh = !this.document.etag;
     this.dirty = prepared.snapshotText !== textOf(this.snapshot);
     await this.persist();
     await this.prepare();

@@ -50,7 +50,9 @@ const pod = http.createServer(async (req, res) => {
     }
     records.set(path, body);
     workspaceETag = '"' + (puts.length + 1) + '"';
-    res.writeHead(204, { ETag: workspaceETag }).end();
+    // CSS can acknowledge transformed RDF with 205 and no write validator.
+    // GET still returns the current representation's ETag.
+    res.writeHead(205).end();
     return;
   }
   let body = records.get(path);

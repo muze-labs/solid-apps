@@ -97,12 +97,12 @@ function createWorkspace() {
   ui.data.resource = persistence.snapshot.launcher?.resource || '';
   renderWorkspace();
 }
-async function preparePod() {
+async function preparePod({ forWrite = false } = {}) {
   const session = host.requireSession();
   const url = host.resource('workspace');
   if (persistence.session !== session || persistence.url !== url ||
     !persistence.document || (!persistence.prepared && !persistence.conflict)) {
-    await persistence.bind(session, url);
+    await persistence.bind(session, url, { forWrite });
     if (![...workspace.instances.values()].some(record => record.win)) {
       createWorkspace();
     }
@@ -112,7 +112,7 @@ async function preparePod() {
 async function saveWorkspace(close = false) {
   workspaceMessage('Collecting the latest app state…');
   await workspace.checkpoint();
-  const { session, url } = await preparePod();
+  const { session, url } = await preparePod({ forWrite: true });
   workspaceMessage('Saving workspace to your Pod… Complete sign-in if requested.');
   if (!await persistence.save(session, url)) {
     throw new Error('launcher: State changed during saving. Save again before closing.');

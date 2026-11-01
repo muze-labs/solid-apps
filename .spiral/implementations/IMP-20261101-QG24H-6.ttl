@@ -15,11 +15,11 @@ project:IMP-20261101-QG24H-6 a sd:Implementation ;
         "packages/solid-preferences/src/index.mjs", "scripts/build.mjs" ;
     sd:implements [ a sd:ArtifactReference ;
         sd:artifact project:DES-20261101-QG24H-9 ;
-        sd:gitCommit "299096912edb747c5c896b7861b4403df70d82bd" ] ;
+        sd:gitCommit "86928c97d7a06b9b4d6c64f4ce590a83328cb5ad" ] ;
     sd:transforms [ a sd:ArtifactReference ;
         sd:artifact project:IMP-20261101-QG24H-6 ;
-        sd:gitCommit "bbc2da571c008221b012c4b60eec2a052bcd8ddf" ] ;
+        sd:gitCommit "d793986128971d1d65d5630f81ba75ea8e647e17" ] ;
     sd:changeCausedBy [ a sd:ArtifactReference ;
-        sd:artifact project:FBK-20261101-QG24H-13 ;
-        sd:gitCommit "1cb163483a7865451edf94099f55c4ded14c50b8" ] ;
+        sd:artifact project:FBK-20261101-QG24H-15 ;
+        sd:gitCommit "b98620ed76dd2f60a21fb2a20f5fb62fbe3dc1d9" ] ;
     sd:implementationChangeKind sd:SemanticChange .

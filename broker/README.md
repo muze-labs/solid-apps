@@ -48,6 +48,10 @@ The document stores one default workspace; named workspace creation is future
 work. Shortcut collection sync remains a separate operation.
 
 - **Save to Pod** checkpoints participating apps and waits for a conditional PUT.
+  A successful response without an ETag (including CSS's 205 response) still
+  confirms the save. Before a later write, Launcher reads the current native
+  document for a fresh ETag. It retains the acknowledged snapshot baseline so
+  pending local edits do not create a false conflict against its own last save.
 - **Save & close** waits for that acknowledgement, then closes managed apps.
   Failed/conflicting/offline writes leave apps open and retain local state.
 - **Close locally** checkpoints locally and closes apps without a Pod write.

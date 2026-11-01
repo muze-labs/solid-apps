@@ -20,7 +20,13 @@ failures per app and never closes apps using a silently substituted cached state
 `workspace-broker.mjs` owns browser windows, instance identity, private ports and
 explicit route policy. `workspace-state.mjs` uses the published Solid Workspace
 IndexedDB source for local state and native RDF for conditional Pod checkpoints.
-Live updates do not write the Pod. `reviewConflict(session, url)` loads the
+A successful workspace PUT can omit its ETag. That checkpoint stays acknowledged;
+its old validator is discarded. A later explicit write refreshes the native
+resource/validator, comparing its snapshot with the target-scoped acknowledged
+baseline to distinguish pending local edits from concurrent remote edits.
+Validator refresh for a write preserves the caller's snapshot rather than
+silently adopting a different remote workspace. Closure requires an already
+prepared valid conditional body. Live updates do not write the Pod. `reviewConflict(session, url)` loads the
 current native Pod document; `resolveConflict(session, url, 'local' | 'pod')`
 requires that review. Keeping local prepares a conditional save against the
 reviewed ETag; using Pod changes the local snapshot without a PUT. A subsequent
@@ -51,7 +57,8 @@ interfaces; capability routing grants no Solid authorization.
   `design/solid-app-launch-context.md` contract for independent consumers.
 
 `saveDocument` rejects existing documents without an ETag and uses If-Match;
-new documents use If-None-Match. It returns the new ETag. A failed write does not
+new documents use If-None-Match. It returns the new ETag when supplied; callers
+must reload before another edit when that response omits its validator. A failed write does not
 imply rollback of a server-side change; reload before retrying an uncertain result.
 
 `session.perform(operation, { interactive })` owns the authentication popup for
