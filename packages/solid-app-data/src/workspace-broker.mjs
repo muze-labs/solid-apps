@@ -1,7 +1,8 @@
-import { PortConnection, capabilityError, serializable } from './capabilities.mjs';
+import { PortConnection, capabilityError, serializable, restorationState }
+  from './capabilities.mjs';
 
 export class WorkspaceBroker {
-  constructor({ snapshot = { version: 1, apps: [], launcher: {} }, keys = {},
+  constructor({ snapshot = { version: 2, apps: [], launcher: {} }, keys = {},
     onChange = () => {}, onMessage = () => {}, authorize = () => false,
     target = window, checkpointTimeout = 10000 } = {}) {
     Object.assign(this, { onChange, onMessage, authorize, target,
@@ -27,7 +28,7 @@ export class WorkspaceBroker {
     return record;
   }
   snapshot() {
-    return { ...this.extra, version: 1, launcher: serializable(this.launcherState),
+    return { ...this.extra, version: 2, launcher: serializable(this.launcherState),
       apps: [...this.instances.values()].map(record => serializable(record.entry)) };
   }
   keys() {
@@ -140,8 +141,15 @@ export class WorkspaceBroker {
       return { ready: false };
     }
     if (method === 'state') {
-      record.entry.state = serializable(input);
-      await this.changed();
+      const previous = record.entry.state;
+      record.entry.state = restorationState(input);
+      try {
+        await this.changed();
+      }
+      catch (error) {
+        record.entry.state = previous;
+        throw error;
+      }
       return { saved: true };
     }
     if (method === 'request' && record.registered) {
@@ -218,6 +226,8 @@ export class WorkspaceBroker {
     return result.result;
   }
   async checkpoint() {
+    const previous = new Map([...this.instances.values()].map(record =>
+      [record, record.entry.state]));
     const results = await Promise.allSettled(
       [...this.instances.values()].map(async record => {
         const label = record.entry.label
@@ -230,7 +240,7 @@ export class WorkspaceBroker {
         }
         if (record.registered && record.peer && !record.peer.closed) {
           try {
-            record.entry.state = serializable(await record.peer.call(
+            record.entry.state = restorationState(await record.peer.call(
               'checkpoint', null, { timeout: this.checkpointTimeout }
             ));
           }
@@ -254,7 +264,15 @@ export class WorkspaceBroker {
         }
       })
     );
-    await this.changed();
+    try {
+      await this.changed();
+    }
+    catch (error) {
+      for (const [record, state] of previous) {
+        record.entry.state = state;
+      }
+      throw error;
+    }
     const failures = results.filter(result => result.status === 'rejected');
     if (failures.length) {
       throw new Error(failures.map(result => result.reason.message).join('\n'));

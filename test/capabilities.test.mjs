@@ -4,6 +4,9 @@ import { PortConnection, capabilityError, selectionUrl,
   serializable } from '../packages/solid-app-data/src/capabilities.mjs';
 import { WorkspaceBroker } from '../packages/solid-app-data/src/workspace-broker.mjs';
 
+const restoration = value => ({ turtle:
+  '<urn:muze:solid-apps:state:root> <https://example.org/draft> "' + value + '" .' });
+
 function pair(t, handle, options) {
   const channel = new MessageChannel();
   const caller = new PortConnection(channel.port1, () => {}, options);
@@ -43,7 +46,7 @@ test('cancel, timeout and disconnect settle outstanding calls', async t => {
   provider.close();
   await assert.rejects(outstanding, error => error.code === 'disconnected');
 });
-test('JSON restoration state rejects lossy or unsafe representations', () => {
+test('Transport values reject lossy or unsafe representations', () => {
   const value = { selected: 'https://pod.example/#me', extra: ['unknown', null] };
   assert.deepEqual(serializable(value), value);
   for (const unsupported of [undefined, { f() {} }, new Date(), { n: NaN }]) {
@@ -55,16 +58,16 @@ test('JSON restoration state rejects lossy or unsafe representations', () => {
   assert.throws(() => selectionUrl({ '@id': 'javascript:alert(1)' }));
 });
 test('workspace drafts cannot mutate a clean persistence snapshot by alias', t => {
-  const snapshot = { version: 1, launcher: { resource: '' }, apps: [{
-    id: 'one', url: 'https://files.example/', state: { folder: 'original' }
+  const snapshot = { version: 2, launcher: { resource: '' }, apps: [{
+    id: 'one', url: 'https://files.example/', state: restoration('original')
   }] };
   const broker = new WorkspaceBroker({ snapshot,
     target: { addEventListener() {}, removeEventListener() {} } });
   t.after(() => broker.dispose());
   broker.launcherState.resource = 'https://pod.example/latest';
-  broker.instances.get('one').entry.state.folder = 'changed';
+  broker.instances.get('one').entry.state.turtle = restoration('changed').turtle;
   assert.equal(snapshot.launcher.resource, '');
-  assert.equal(snapshot.apps[0].state.folder, 'original');
+  assert.deepEqual(snapshot.apps[0].state, restoration('original'));
   assert.equal(broker.snapshot().launcher.resource, 'https://pod.example/latest');
 });
 test('workspace routing requires an explicit grant and binds state to one instance', async t => {
@@ -107,8 +110,8 @@ test('workspace routing requires an explicit grant and binds state to one instan
   await assert.rejects(peer.call('request', {
     capability: 'https://example.org/select', input: {}
   }), /allow/);
-  await peer.call('state', { folder: 'https://pod.example/folder/', unknown: 42 });
-  assert.equal(broker.snapshot().apps[0].state.unknown, 42);
+  await peer.call('state', restoration('unknown-42'));
+  assert.deepEqual(broker.snapshot().apps[0].state, restoration('unknown-42'));
   assert(!JSON.stringify(broker.snapshot()).includes(record.key));
   const existingWindow = record.win;
   broker.resume({ data: { type: 'solid-apps:resume', id: record.entry.id,
@@ -118,8 +121,8 @@ test('workspace routing requires an explicit grant and binds state to one instan
     key: record.key }, origin: 'https://files.example', source: {} });
   assert.equal(record.win, existingWindow);
   broker.closing = true;
-  await assert.rejects(peer.call('state', { folder: 'stale state' }), /active/);
-  assert.equal(broker.snapshot().apps[0].state.unknown, 42);
+  await assert.rejects(peer.call('state', restoration('stale state')), /active/);
+  assert.deepEqual(broker.snapshot().apps[0].state, restoration('unknown-42'));
 });
 
 async function checkpointFixture(t, handle, options = {}) {
@@ -147,11 +150,11 @@ async function checkpointFixture(t, handle, options = {}) {
 test('a healthy three-second checkpoint captures fresh state', async t => {
   const { broker, record, peers } = await checkpointFixture(t, async () => {
     await new Promise(resolve => setTimeout(resolve, 3000));
-    return { draft: 'fresh' };
+    return restoration('fresh');
   });
   await peers[0].call('ready', null);
   await broker.checkpoint();
-  assert.equal(record.entry.state.draft, 'fresh');
+  assert.deepEqual(record.entry.state, restoration('fresh'));
 });
 
 test('restoration is distinct from readiness and failures name the app', async t => {
@@ -170,10 +173,10 @@ test('timeout keeps previous state and permits a fresh checkpoint after reconnec
   const { broker, record, peers } = await checkpointFixture(t,
     (_method, _input, _options, id) => {
     if (!responsive && id === slowId) { return new Promise(() => {}); }
-    return { draft: 'still-live' };
+    return restoration('still-live');
   }, { checkpointTimeout: 30 });
   slowId = record.entry.id;
-  await peers[0].call('state', { draft: 'previous' });
+  await peers[0].call('state', restoration('previous'));
   await peers[0].call('ready', null);
   const sibling = broker.open('https://contacts.example/', { label: 'Contacts' });
   broker.offer(sibling);
@@ -181,8 +184,8 @@ test('timeout keeps previous state and permits a fresh checkpoint after reconnec
     restoring: true });
   await peers[1].call('ready', null);
   await assert.rejects(broker.checkpoint(), /My Files.*timed out/);
-  assert.equal(record.entry.state.draft, 'previous');
-  assert.equal(sibling.entry.state.draft, 'still-live');
+  assert.deepEqual(record.entry.state, restoration('previous'));
+  assert.deepEqual(sibling.entry.state, restoration('still-live'));
   assert.equal(record.win.closed, false);
   assert.equal(record.registered, false);
   responsive = true;
@@ -191,7 +194,7 @@ test('timeout keeps previous state and permits a fresh checkpoint after reconnec
     restoring: true });
   await peers[2].call('ready', null);
   await broker.checkpoint();
-  assert.equal(record.entry.state.draft, 'still-live');
+  assert.deepEqual(record.entry.state, restoration('still-live'));
 });
 
 test('older clients require reload after timeout to protect their live drafts', async t => {

@@ -1,3 +1,6 @@
+import { writeDraft, readDraft } from '@muze-labs/solid-profile/state.mjs';
+import { AppState } from '@muze-labs/solid-app-data/app-state.mjs';
+import { apps } from '@muze-labs/solid-app-data/state-rdf.mjs';
 import { app } from '@muze-labs/simplyflow/app';
 import { shell } from '@muze-labs/solid-app-ui';
 import {
@@ -146,13 +149,19 @@ window.solidContacts = {
     return store;
   }
 };
+const appState = new AppState();
 host.manage({
-  getState: () => ({ selected: selected || null, filter: ui.data.search,
-    draft: widget.draft() }),
+  getState: () => {
+    appState.set(apps + 'selected', selected, 'iri');
+    appState.set(apps + 'filter', ui.data.search);
+    writeDraft(appState, widget.draft());
+    return appState.snapshot();
+  },
   restoreState: state => {
-    ui.data.search = state?.filter || '';
+    appState.restore(state);
+    ui.data.search = appState.read(apps + 'filter');
     render(ui.data.search);
-    show(state?.selected || null);
-    widget.restoreDraft(state?.draft);
+    show(appState.read(apps + 'selected', 'iri') || null);
+    widget.restoreDraft(readDraft(appState));
   }
 });

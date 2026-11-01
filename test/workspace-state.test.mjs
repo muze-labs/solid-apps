@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { WorkspaceState, emptyWorkspace } from '../packages/solid-app-data/src/workspace-state.mjs';
-import { oldm, prefixes, valueAt } from '../packages/solid-app-data/src/index.mjs';
+import { oldm, prefixes } from '../packages/solid-app-data/src/index.mjs';
+import { StateGraph, apps, stateRoot, named } from '../packages/solid-app-data/src/state-rdf.mjs';
+import { readWorkspace, writeWorkspace, sameWorkspace } from '../packages/solid-app-data/src/workspace-rdf.mjs';
 const owner = 'https://person.example/profile#me';
 const url = 'https://pod.example/workspace.ttl';
 function fixture(turtle = '<#other> <https://example.org/value> [<https://example.org/label> "keep"].') {
@@ -25,7 +27,7 @@ function fixture(turtle = '<#other> <https://example.org/value> [<https://exampl
 }
 const snapshot = () => ({ ...emptyWorkspace(), apps: [{ id: 'one',
   url: 'https://files.example/', allowBrowse: true,
-  state: { folder: 'https://pod.example/', unknown: ['preserve'] } }] });
+  state: { turtle: '<' + stateRoot + '> <' + apps + 'folder> <https://pod.example/>; <https://example.org/unknown> \"preserve\".' } }] });
 
 test('local updates do not write the Pod; a conditional checkpoint preserves native RDF', async () => {
   const { state, session, written } = fixture();
@@ -40,9 +42,10 @@ test('local updates do not write the Pod; a conditional checkpoint preserves nat
   const other = graph.get(url + '#other');
   assert(other);
   assert.match(await graph.write(), /keep/);
-  const data = JSON.parse(String(valueAt(graph.get(url + '#workspace'),
-    prefixes.apps + 'snapshot')));
-  assert.deepEqual(data.apps[0].state.unknown, ['preserve']);
+  const data = readWorkspace(new StateGraph(written().body, url), url + '#workspace');
+  const stateGraph = new StateGraph(data.apps[0].state.turtle);
+  assert.equal(stateGraph.one(named(stateRoot),
+    'https://example.org/unknown', 'string').value, 'preserve');
   assert.equal(data.owner, owner);
 });
 test('conflicts and wrong accounts retain pending local state without an unsafe write', async () => {
@@ -64,9 +67,9 @@ test('conflicts and wrong accounts retain pending local state without an unsafe 
 test('unsupported structured/multiple snapshot edits are refused', async () => {
   for (const object of ['[<https://example.org/p> "keep"]', '"x", "y"']) {
     const { state, session, written } = fixture('<#workspace> <' + prefixes.apps +
-      'snapshot> ' + object + '.');
+      'formatVersion> ' + object + '.');
     await state.open();
-    await assert.rejects(state.bind(session, url), /Snapshot/);
+    await assert.rejects(state.bind(session, url), /Expected one integer/);
     assert.equal(written(), undefined);
   }
 });
@@ -82,11 +85,10 @@ test('tab-close dispatch uses conditional keepalive and remains unconfirmed loca
   assert.equal(state.dirty, true);
 });
 
-function remoteTurtle(snapshot) {
-  return '<#other> <https://example.org/value> "preserve remote metadata". ' +
-    '<#workspace> <' + prefixes.apps + 'snapshot> ' +
-    JSON.stringify(JSON.stringify(snapshot)) +
-    '^^<http://www.w3.org/1999/02/22-rdf-syntax-ns#JSON>.';
+function remoteTurtle(snapshot, target = url) {
+  const graph = new StateGraph('<#other> <https://example.org/value> "preserve remote metadata".', target);
+  writeWorkspace(graph, target + '#workspace', snapshot);
+  return graph.write();
 }
 
 test('reload retains a conflict; explicit review allows a conditional local save', async () => {
@@ -135,7 +137,7 @@ test('using the reviewed Pod snapshot changes only local restoration state', asy
   remote(remoteTurtle(pod), '"remote"');
   await state.reviewConflict(session, url);
   await state.resolveConflict(session, url, 'pod');
-  assert.deepEqual(state.snapshot, pod);
+  assert(sameWorkspace(state.snapshot, pod));
   assert.equal(state.dirty, false);
   assert.equal(state.keys.one, 'keep-private');
   assert.equal(written(), undefined);
@@ -263,7 +265,8 @@ test('an acknowledged baseline cannot waive conflicts at a different target', as
   const next = snapshot();
   next.launcher.resource = 'https://pod.example/local';
   await state.stage(next);
-  remote(remoteTurtle({ ...snapshot(), owner }), '"other-resource"');
+  remote(remoteTurtle({ ...snapshot(), owner },
+    'https://pod.example/other-workspace.ttl'), '"other-resource"');
   await assert.rejects(state.bind(session, 'https://pod.example/other-workspace.ttl'),
     error => error.code === 'workspace-conflict');
 });
@@ -283,4 +286,32 @@ test('refresh during explicit saving cannot silently adopt a concurrent Pod chan
   assert.equal(written(), previous);
   assert.equal(state.snapshot.launcher.resource, undefined);
   assert.equal(state.dirty, true);
+});
+
+test('an edit during checkpoint preparation cannot be acknowledged with an older body', async () => {
+  const { state, session, written } = fixture();
+  await state.open();
+  await state.bind(session, url);
+  await state.stage(snapshot());
+  const next = snapshot();
+  next.launcher.resource = 'https://pod.example/edit-during-preparation';
+  let update;
+  const saving = state.save(session, url);
+  queueMicrotask(() => { update = state.stage(next); });
+  await Promise.allSettled([saving]);
+  await update;
+  if (!state.dirty) {
+    assert(written(), 'Clean state must have a Pod acknowledgement.');
+    const acknowledged = readWorkspace(new StateGraph(written().body, url),
+      url + '#workspace');
+    assert(sameWorkspace(acknowledged, state.snapshot),
+      'A clean checkpoint must describe exactly the data acknowledged by PUT.');
+  }
+  assert.equal(state.snapshot.launcher.resource, next.launcher.resource);
+  if (state.dirty) {
+    assert.equal(await state.save(session, url), true);
+  }
+  const acknowledged = readWorkspace(new StateGraph(written().body, url),
+    url + '#workspace');
+  assert(sameWorkspace(acknowledged, state.snapshot));
 });

@@ -640,14 +640,15 @@ representation cannot be found, explain the concrete issue and resolve it with
 the maintainer before writing. No general rdf:JSON exception is allowed. The source
 is SRC-20261101-QG24H-17; AGENTS.md and culture.md now retain this hard rule.
 
-Current workspace persistence violates the rule in both Pod snapshots and the
-local Turtle cache/baseline. DES9 and IMP6 explicitly flag this known noncompliance.
-The existing code/encoding is retained as evidence, not an approved exception.
-This request records the rule and noncompliance; no runtime migration is claimed.
-Native RDF correction remains required; the maintainer subsequently permits
-cycle acceptance with this issue explicitly retained as DEF18. No application
-tests were run for the documentation change because the current fixtures/codec
-write the newly forbidden encoding. Spiral metadata validation remains applicable.
+At that instruction, workspace persistence violated the rule in both Pod
+snapshots and the local cache/baseline. DEF18 retained that known noncompliance
+as a condition of the earlier cycle acceptance. SRC24 subsequently authorizes
+its correction without migration because nothing has been released. DES25 and
+the current IMP6 now use native workspace/app state and baseline graphs. A new
+native cache leaves development records untouched; old-format Pod targets are
+refused rather than copied or silently overwritten. Fixtures now use native RDF
+and the full application/browser checks are available again. Historical
+acceptance does not pre-accept this new correction or authorize merging it.
 
 The maintainer also explicitly permits a separate app-owned opaque state string
 for app-specific state that is not linked data. The workspace/broker must preserve
@@ -664,7 +665,7 @@ by the documentation update.
 
 On 2026-11-01 the maintainer explicitly accepted CYC-20261101-QG24H-2 provided
 the native RDF correction is kept. DEF-20261101-QG24H-18 is retained as Open;
-ACC-20261101-QG24H-19 records the acceptance and known gap. The cycle is Accepted,
+ACC-20261101-QG24H-19 records the acceptance and known gap. That snapshot was accepted,
 with no claim that the format has been corrected or the native Turtle rule waived.
 The starter page remains deferred. A subsequent request for file-selector test
 instructions does not establish a manual picker result; automated coverage is
@@ -685,3 +686,16 @@ focus to Launcher is requested but browser-dependent; Chrome headless refused it
 so the UI includes manual-return guidance. Full persistence suites remain pending
 native RDF fixture correction under DEF18. CYC2 stays Active for renewed human
 evaluation; prior ACC19, the open RDF issue and deferred starter page are retained.
+
+
+## Native RDF correction in the continued cycle
+
+The maintainer subsequently verified the picker-return/auth-popup correction,
+then requested implementing DEF18. SRC24 explicitly removes migration because
+the prototype is unreleased. DES25/current IMP6 use native workspace/app state,
+local cache and acknowledged-baseline graphs. Old development cache records are
+left alone; old-format Pod targets are refused and require a fresh URL. Native
+unknown statements, identities, state isolation and the optional opaque string
+are preserved, including during conflict and save-timing failures. Full check
+and browser suites now run on native fixtures. DEF18 is fixed on the branch;
+CYC2 remains Active for renewed evaluation, without merge or publication.

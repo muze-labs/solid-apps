@@ -45,6 +45,20 @@ export function serializable(value) {
   return JSON.parse(text);
 }
 
+// Wire validation stays independent of any RDF library. Persistence parses the
+// graph and enforces native terms before changing its authoritative checkpoint.
+export function restorationState(value) {
+  if (value === null) {
+    return null;
+  }
+  if (!value || typeof value.turtle !== 'string' ||
+    value.opaque !== undefined && typeof value.opaque !== 'string' ||
+    Object.keys(value).some(key => !['turtle', 'opaque'].includes(key))) {
+    throw capabilityError('App state requires Turtle and an optional opaque string.');
+  }
+  return serializable(value);
+}
+
 // A private MessagePort owns its calls, cancellation and exactly-once replies.
 export class PortConnection {
   constructor(port, handle, { timeout = 60000 } = {}) {
@@ -156,7 +170,7 @@ export class PortConnection {
 }
 
 export class ManagedApp {
-  constructor({ name, capabilities = [], getState = () => ({}),
+  constructor({ name, capabilities = [], getState = () => null,
     restoreState = () => {}, onRequest, onCancel, onState } = {}) {
     Object.assign(this, { name, capabilities, getState, restoreState,
       onRequest, onCancel, onState });
@@ -238,7 +252,7 @@ export class ManagedApp {
         throw capabilityError(this.restoreError ||
           'App is still restoring. Finish connecting or reload it.', 'restoring');
       }
-      return serializable(await this.getState());
+      return restorationState(await this.getState());
     }
     if (method !== 'capability' || !this.capabilities.includes(input.capability)) {
       throw capabilityError('Unsupported operation.', 'denied');
@@ -261,7 +275,7 @@ export class ManagedApp {
   }
   async publish(peer = this.peer) {
     if (this.ready && peer && !peer.closed) {
-      const state = serializable(await this.getState());
+      const state = restorationState(await this.getState());
       if (this.ready && this.peer === peer && !peer.closed) {
         return peer.call('state', state);
       }

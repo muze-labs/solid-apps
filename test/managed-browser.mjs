@@ -2,7 +2,9 @@ import { spawn } from 'node:child_process';
 import * as http from 'node:http';
 import * as fs from 'node:fs/promises';
 import assert from 'node:assert/strict';
-import oldm from '../packages/solid-app-data/src/oldm.mjs';
+import { StateGraph, apps } from '../packages/solid-app-data/src/state-rdf.mjs';
+import { AppState } from '../packages/solid-app-data/src/app-state.mjs';
+import { readWorkspace, writeWorkspace } from '../packages/solid-app-data/src/workspace-rdf.mjs';
 import { startChrome, freePort, waitForExit,
   formatBrowserException } from './support/chrome.mjs';
 
@@ -143,12 +145,9 @@ async function changePodWorkspace(resource) {
   const snapshot = readSnapshot();
   snapshot.launcher.resource = resource;
   const url = base + '/workspace.ttl';
-  const graph = oldm.context().parse(records.get('/workspace.ttl'), url, 'text/turtle');
-  graph.set(url + '#workspace', 'https://vocab.muze.nl/solid-apps#snapshot',
-    oldm.literal(JSON.stringify(snapshot), {
-      type: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#JSON'
-    }));
-  records.set('/workspace.ttl', await graph.write());
+  const graph = new StateGraph(records.get('/workspace.ttl'), url);
+  writeWorkspace(graph, url + '#workspace', snapshot);
+  records.set('/workspace.ttl', graph.write());
   workspaceETag = '"external-' + resource.split('/').pop() + '"';
 }
 async function connect(page, app) {
@@ -191,10 +190,13 @@ async function openFiles() {
 }
 function readSnapshot() {
   const url = base + '/workspace.ttl';
-  const graph = oldm.context().parse(records.get('/workspace.ttl'), url, 'text/turtle');
-  const value = graph.get(url + '#workspace')[graph.propertyName(
-    'https://vocab.muze.nl/solid-apps#snapshot')];
-  return JSON.parse(String(value));
+  return readWorkspace(new StateGraph(records.get('/workspace.ttl'), url),
+    url + '#workspace');
+}
+function folderOf(envelope) {
+  const state = new AppState();
+  state.restore(envelope);
+  return state.read(apps + 'folder', 'iri');
 }
 try {
   chrome = await startChrome('about:blank', { allowPopups: true });
@@ -240,7 +242,7 @@ try {
   assert.equal(puts.length, 0);
   await click(launcher, '[data-simply-command=saveWorkspace]');
   await wait(launcher, 'document.querySelector(".managed-workspace [role=status]").textContent.includes("saved to your Solid Pod")');
-  assert.equal(readSnapshot().apps[0].state.folder, base + '/storage/notes/');
+  assert.equal(folderOf(readSnapshot().apps[0].state), base + '/storage/notes/');
   assert.match(records.get('/workspace.ttl'), /preserve me/);
   const privateKeys = await evaluate(launcher, 'return window.solidLauncher.workspace.keys();');
   for (const key of Object.values(privateKeys)) {
@@ -248,13 +250,13 @@ try {
   }
   await evaluate(files, 'const managed=window.solidFiles.host.managed;' +
     'const getState=managed.getState;' +
-    'managed.getState=async()=>({...await getState(),draftProbe:"live-only"});' +
+    'managed.getState=async()=>({...await getState(),opaque:"live-only"});' +
     'window.replayedRestore=0;const restore=managed.restoreState;' +
     'managed.restoreState=async state=>{window.replayedRestore++;return restore(state);};' +
     'window.dispatchEvent(new PageTransitionEvent("pagehide",{persisted:true}));' +
     'window.dispatchEvent(new PageTransitionEvent("pageshow",{persisted:true}));');
   await wait(launcher, '[...window.solidLauncher.workspace.instances.values()]' +
-    '.some(record=>record.ready && record.entry.state?.draftProbe==="live-only")');
+    '.some(record=>record.ready && record.entry.state?.opaque==="live-only")');
   assert.equal(await evaluate(files, 'return window.replayedRestore;'), 0);
   await evaluate(files, 'const managed=window.solidFiles.host.managed;' +
     'window.normalGetState=managed.getState;' +
@@ -301,7 +303,7 @@ try {
   await wait(second.page, 'window.solidFiles?.host.session');
   await wait(launcher, '[...window.solidLauncher.workspace.instances.values()]' +
     '.filter(r=>r.ready).length===2');
-  const states = await evaluate(launcher, 'return window.solidLauncher.workspace.snapshot().apps.map(a=>a.state.folder);');
+  const states = (await evaluate(launcher, 'return window.solidLauncher.workspace.snapshot().apps.map(a=>a.state);')).map(folderOf);
   assert(states.includes(base + '/storage/notes/'));
   assert(states.includes(base + '/storage/'));
   for (const [status, message] of [[403, '403'],
@@ -418,7 +420,8 @@ try {
   });
   await wait(files, 'document.querySelector("tbody").textContent.includes("note.ttl")');
   await evaluate(files, 'await window.solidFiles.host.managed.publish();');
-  await evaluate(launcher, 'window.solidLauncher.workspace.launcherState.closeProbe="latest";' +
+  await evaluate(launcher, 'window.solidLauncher.workspace.launcherState.resource=' +
+    JSON.stringify(base + '/latest-close-probe') + ';' +
     'await window.solidLauncher.workspace.changed();await window.solidLauncher.persistence.work;');
   await wait(launcher, '[...window.solidLauncher.workspace.instances.values()]' +
     '.filter(record=>record.ready).length===2');
@@ -431,7 +434,7 @@ try {
   await new Promise(resolve => setTimeout(resolve, 300));
   const closeWriteReceived = puts.length > beforeClose;
   if (closeWriteReceived) {
-    assert.equal(readSnapshot().launcher.closeProbe, 'latest');
+    assert.equal(readSnapshot().launcher.resource, base + '/latest-close-probe');
   }
   for (let i = 0; i < 150; i++) {
     const targets = (await control.send('Target.getTargets')).targetInfos;

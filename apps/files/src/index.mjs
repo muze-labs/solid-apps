@@ -1,3 +1,5 @@
+import { AppState } from '@muze-labs/solid-app-data/app-state.mjs';
+import { apps } from '@muze-labs/solid-app-data/state-rdf.mjs';
 import { app } from '@muze-labs/simplyflow/app';
 import { shell } from '@muze-labs/solid-app-ui';
 import { browseCapability } from '@muze-labs/solid-app-data/capabilities.mjs';
@@ -282,10 +284,15 @@ host.onConnect = async () => {
     await browse(url);
   }
 };
+const appState = new AppState();
 host.manage({ ...managedOptions,
-  getState: () => ({ folder: current || restoredFolder }),
+  getState: () => {
+    appState.set(apps + 'folder', current || restoredFolder, 'iri');
+    return appState.snapshot();
+  },
   restoreState: async state => {
-    restoredFolder = state?.folder || '';
+    appState.restore(state);
+    restoredFolder = appState.read(apps + 'folder', 'iri');
     if (host.session && restoredFolder) {
       await browse(restoredFolder);
     }

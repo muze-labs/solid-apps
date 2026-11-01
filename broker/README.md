@@ -93,6 +93,37 @@ Last-operation errors survive a reload and appear beside the workspace buttons.
 A known conflict is checked before reserving a sign-in window. A fresh browser can restore
 an acknowledged snapshot after connecting to the same account.
 
+## Native workspace and app state
+
+Workspace version 2 stores workspaces, ordered app instances, resource links,
+UI state and draft inputs as native RDF. The local current workspace and accepted
+baseline are separate native graphs, with ETag/target/dirty metadata and local
+reconnect keys. No main-state snapshot or baseline is a JSON literal.
+
+An app supplies `{ turtle, opaque? }` to `ManagedApp.getState` and receives the
+same contract in `restoreState`. Turtle is transport text: the broker parses and
+merges its triples, never saves that text as a Turtle literal. Describe
+`urn:muze:solid-apps:state:root`; keep any other named subjects within
+`urn:muze:solid-apps:state:`. Blank nodes, lists, cycles, typed/language literals,
+multiple values and external resource IRI objects are supported. Each instance
+gets its own stored graph scope. An app cannot write workspace metadata through
+its state. Keep and edit the full graph so unknown terms survive UI updates.
+
+The optional `opaque` value is an app-owned string, returned verbatim. Only this
+field may experimentally contain JSON; main state must remain linked data. This
+exception is an interoperability experiment, not the preferred encoding.
+The suite's `AppState` helper is optional: other apps can use their own RDF stack
+and supply the same Turtle contract. Profile and Contacts share native draft
+handling; draft form strings do not alter the actual profile graph.
+
+There is deliberately no migration for this unreleased prototype. The native
+cache starts fresh in `solid-apps-managed-workspaces-native`; old development
+cache records are left untouched. If Preferences still point to an old JSON Pod
+workspace, select a fresh URL (for example `workspace-native.ttl`) before saving.
+The old target is refused, never silently overwritten or copied into new state.
+See the [format design](../design/solid-native-workspace-state.md) and
+[generated native example](../design/examples/workspace.ttl).
+
 ## Boundaries and evidence
 
 Origin-targeted `postMessage` offers transfer private MessagePorts. Launcher
@@ -109,12 +140,10 @@ normal Launcher close. This is browser lifecycle behavior, not a crash guarantee
 
 `npm run test:picker` exercises activation/startup policy, grants, cancellation
 and cross-origin tab handoff without invoking workspace persistence. The full
-`npm run check` / `npm run test:browser` persistence fixtures still use the
-JSON-in-Turtle format tracked by [DEF18](../.spiral/defects/DEF-20261101-QG24H-18.md);
-they need correction under the current native RDF rule. Earlier full-suite
-verification covers cross-origin routing, reload/reconnection, distinct
-instances, failure recovery, closure and fresh-browser Pod restoration. Chrome
-131 received an authorized close-time write in the local fixture. The fixture
-uses a test bearer credential through Metro; it does not establish real Solid
-OIDC/DPoP behavior at shutdown. Validate that manually with your own provider.
+`npm run check` and `npm run test:browser` now exercise native RDF fixtures,
+including graph preservation, local baselines, conditional saves, conflict
+recovery, reload/reconnection, distinct instances and fresh-browser restoration.
+Chrome 131 received an authorized close-time write in the local fixture. The
+fixture uses a test bearer credential through Metro; it does not establish real
+Solid OIDC/DPoP behavior at shutdown. Validate that manually with your provider.
 See the [workspace design](../design/solid-managed-workspace.md).

@@ -58,12 +58,12 @@ test('one click opens built-in Files before awaiting its ready connection', asyn
 test('saved and live Files instances are reused without duplicate windows', async t => {
   const { broker, calls } = fixture(t);
   broker.add({ id: 'saved', url: 'https://suite.example/files/',
-    label: 'My Files', allowBrowse: true, state: { folder: 'https://pod.example/' } });
+    label: 'My Files', allowBrowse: true, state: { turtle: '<urn:muze:solid-apps:state:root> <urn:folder> <https://pod.example/> .' } });
   await chooseFiles(broker, filesUrl);
   await chooseFiles(broker, filesUrl);
   assert.equal(broker.instances.size, 1);
   assert.equal(calls.filter(call => call.type === 'open').length, 1);
-  assert.equal(broker.instances.get('saved').entry.state.folder, 'https://pod.example/');
+  assert.match(broker.instances.get('saved').entry.state.turtle, /https:\/\/pod.example\//);
 });
 
 test('an existing denied Files instance is not silently granted or bypassed', async t => {

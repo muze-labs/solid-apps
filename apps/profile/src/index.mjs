@@ -1,3 +1,6 @@
+import { writeDraft, readDraft } from '@muze-labs/solid-profile/state.mjs';
+import { AppState } from '@muze-labs/solid-app-data/app-state.mjs';
+import { apps } from '@muze-labs/solid-app-data/state-rdf.mjs';
 import { app } from '@muze-labs/simplyflow/app';
 import { shell } from '@muze-labs/solid-app-ui';
 import { openCollection } from '@muze-labs/solid-app-data/collection.mjs';
@@ -109,13 +112,27 @@ if (!launchAttempted) {
   await host.run(openLaunch, { network: true });
 }
 window.solidProfile = { host, ui };
+const appState = new AppState();
 host.manage({
-  getState: () => ({ url: ui.data.url, contact: contactId, draft: widget.draft() }),
-  restoreState: async state => {
-    if (state?.url && !contactId) {
-      launchPending = false;
-      await showRemote(state.url);
+  getState: () => {
+    appState.set(apps + 'resourceInput', ui.data.url);
+    let resource;
+    try {
+      resource = httpUrl(ui.data.url);
     }
-    widget.restoreDraft(state?.draft);
+    catch {}
+    appState.set(apps + 'resource', resource, 'iri');
+    appState.set(apps + 'contact', contactId, 'iri');
+    writeDraft(appState, widget.draft());
+    return appState.snapshot();
+  },
+  restoreState: async state => {
+    appState.restore(state);
+    const url = appState.read(apps + 'resourceInput');
+    if (url && !contactId) {
+      launchPending = false;
+      await showRemote(url);
+    }
+    widget.restoreDraft(readDraft(appState));
   }
 });
