@@ -121,3 +121,25 @@ A GET genuinely lacking an exposed ETag still prevents updating that existing
 resource. A 401 is never parsed as workspace data. No pre-write ETag is reused,
 no unconditional replacement is introduced, and ordinary-close attempts require
 an already-prepared validator. This corrects FBK-20261101-QG24H-15.
+
+## File-picker activation and bounded on-demand startup
+
+Following FBK20, Choose in Files reuses one eligible, allowed live provider and
+focuses its WindowProxy synchronously from the user's click. If no live provider
+is available, reuse a saved built-in Files instance or open the suite's built-in
+Files URL with current launch context and its existing built-in browse grant.
+Never silently re-enable a denied existing instance. Multiple matching instances
+require an explicit user choice through the existing grants rather than ranking.
+
+Opening occurs before awaiting network/registration so popup policy is respected.
+Wait for the chosen instance's verified readiness, with cancellation, restoration
+failure, closed/blocked window and a bounded 30-second startup timeout. Bind the
+invocation to that instance, rechecking capability and route permission. Display
+opening/waiting/error state through SimplyFlow. Selection or provider cancellation
+requests focus on the captured Launcher opener within that user's action; browser
+focus restrictions retain manual-switch guidance as a fallback.
+
+This advances the existing cycle with built-in Files startup, not a durable
+provider registry, remote catalog discovery or arbitrary provider installation.
+DEF18 and the native RDF rule remain unchanged. Focus/startup verification uses
+protocol fixtures without invoking the noncompliant persistence encoder.

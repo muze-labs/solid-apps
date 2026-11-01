@@ -249,6 +249,11 @@ The former Launcher-closed exit applies only to the superseded server proof.
 
 ### Phase 2 — Persistent provider registration and on-demand start
 
+The maintainer explicitly keeps a bounded first step in CYC2: Choose in Files
+opens the built-in Files app when needed, focuses it, and returns focus after
+selection/cancellation. This avoids manual pre-opening for the built-in picker.
+It does not establish the persistent preferred-provider registry described below.
+
 - Add a provider-registry reference through existing linked Solid preferences.
 - Persist the user's chosen `browse` provider in their pod.
 - Resolve the configured provider, start it if absent, bind the new instance to the pending request and return the selection.
