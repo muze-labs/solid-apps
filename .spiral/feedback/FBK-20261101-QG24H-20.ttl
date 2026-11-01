@@ -1,0 +1,10 @@
+@prefix sd: <https://muze.nl/ns/spiral-developer#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix project: <urn:muze-labs:solid-apps:spiral:> .
+project:FBK-20261101-QG24H-20 a sd:Feedback ;
+    dcterms:identifier "FBK-20261101-QG24H-20" ;
+    sd:repositoryPath ".spiral/feedback/FBK-20261101-QG24H-20.md" ;
+    sd:status sd:Active ;
+    sd:observes [ a sd:ArtifactReference ;
+        sd:artifact project:IMP-20261101-QG24H-6 ;
+        sd:gitCommit "e2fe0ddc78c7f15d9a26b4a8aa5be4dc3cfb3d07" ] .

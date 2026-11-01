@@ -669,3 +669,11 @@ with no claim that the format has been corrected or the native Turtle rule waive
 The starter page remains deferred. A subsequent request for file-selector test
 instructions does not establish a manual picker result; automated coverage is
 retained in EVD16. No merge, publication or next cycle is authorized here.
+
+
+The maintainer's subsequent manual picker check found that routing works but
+Files is not focused. They explicitly keep focus and built-in on-demand Files
+startup in CYC2. FBK20 records the reproduction and scoped revision; current
+cycle status is Active again, while ACC19 preserves the earlier acceptance.
+Provider registry work remains later and DEF18 remains Open. Verification of
+this routing/UI correction must avoid the known JSON-in-Turtle serializer.
