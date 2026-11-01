@@ -72,6 +72,7 @@ are implemented.
 
 | Design | Document status / intent | Intake disposition |
 | --- | --- | --- |
+| [Solid Apps suite roadmap](../design/solid-apps-roadmap.md) | Maintainer additions after the launch-context merge: Zett, Notebook, profile/account consistency, mobile/size budget, local-first automatic sync, PWA, deferred collaboration and decentralized catalogs. | Future direction requested 2026-11-01; no new implementation cycle or delivery order selected. Supplements the broker roadmap. |
 | [Capability broker](../design/solid-capability-broker-roadmap.md) | Proposal v0.1; cross-origin resource browser and recipient picker, self-hostable broker, persistent provider choice and cold launch. | Governing direction confirmed by maintainer, 2026-11-01. Initial reality assessment finds Phase 0 exit not yet established; characterize launch context and pilot contracts before relying on them. |
 | [Semantic clipboard](../design/solid-semantic-clipboard-design.md) | Proposal v0.1; history of references, explicit selection, destination-owned relationships, initially ephemeral. | Future proposal; priority pending. Calendar/task examples are not evidence those apps exist here. |
 | [Semantic Open With](../design/solid-semantic-open-with-design.md) | Proposal v0.1; immediate manual actions and bounded RDF inspection, shape recognition separate from validation. | Future proposal; priority pending. |
@@ -538,8 +539,20 @@ First answers received on 2026-11-01:
 35. Repository operations: the maintainer explicitly authorized the agent to
     commit changes itself, but prohibited merging. This supersedes the earlier
     no-commit instruction for authorized work; publishing is not authorized.
+36. The maintainer merged the accepted launch-context cycle; repository state
+    confirmed `main` at `c906322`. They then requested roadmap additions before
+    a new cycle: Zett, a cobalt-note-based Notebook, a Profile link on the
+    top-right name, immediate name updates across apps, mobile-first design
+    with JavaScript below 200 KB gzip, offline operation and automatic sync
+    when connectivity returns, explicit PWA support in every app, collaboration
+    later, and a simple decentralized app store with multiple catalog URLs.
+    Git is a possibility for catalog publication, not a selected requirement.
+    This direction is recorded in `design/solid-apps-roadmap.md`; implementation
+    remains future work. The update uses a documentation branch without
+    opening a new implementation cycle.
 
-Conversation preference: ask **one question at a time** until intake is
+Conversation/documentation language: **English**, explicitly requested by the
+maintainer. Conversation preference: ask **one question at a time** until intake is
 finished. Persist answers and continue through the remaining topics without
 presenting a bundled questionnaire.
 

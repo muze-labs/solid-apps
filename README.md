@@ -4,6 +4,10 @@ Four small browser applications using SimplyFlow, the Muze design system and the
 Solid stack. This is an experimental, private npm workspace: no packages need to
 be published to run it.
 
+See the [Solid Apps roadmap](design/solid-apps-roadmap.md) for planned apps,
+mobile/local-first and PWA requirements, account improvements and decentralized
+app catalogs. These are future direction, not current feature claims.
+
 ## Try it
 
 ```sh
