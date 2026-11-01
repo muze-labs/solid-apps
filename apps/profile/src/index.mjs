@@ -1,7 +1,7 @@
 import { app } from '@muze-labs/simplyflow/app';
 import { shell } from '@muze-labs/solid-app-ui';
 import { openCollection } from '@muze-labs/solid-app-data/collection.mjs';
-import { createSolidMetroClient } from '@muze-labs/solid-app-data';
+import { createSolidMetroClient, httpUrl } from '@muze-labs/solid-app-data';
 import {
   loadDocument,
   copyDocument,
@@ -9,12 +9,14 @@ import {
 } from '@muze-labs/solid-app-data';
 import { profileView } from '@muze-labs/solid-profile/view.mjs';
 import { scalarPredicates, applyProfileEdits } from '@muze-labs/solid-profile';
-const host = shell();
+const host = shell({ acceptLaunch: true });
 const container = host.main.querySelector('.profile-content');
 const widget = profileView(container, {
   emptyText: 'Enter a profile URL or connect to view your own profile.'
 });
 async function showRemote(url) {
+  url = httpUrl(url);
+  ui.data.url = url;
   const client =
     host.session?.client ||
     createSolidMetroClient(url, { oidc: false, oldm: false });
@@ -40,20 +42,28 @@ async function showRemote(url) {
 }
 const ui = app({
   container: host.main.querySelector('.profile-controls'),
-  data: {},
+  data: { url: '' },
   commands: {
     load(form) {
+      launchPending = false;
       host.run(() => showRemote(form.elements.url.value), { network: true });
     },
     mine() {
+      launchPending = false;
       host.run(() => showRemote(host.requireSession().webId), {
         network: true
       });
     }
   }
 });
+let launchPending = Boolean(host.launch.resource);
+let launchAttempted = false;
 const contactId = new URL(location.href).searchParams.get('contact');
-if (contactId) {
+if (contactId && launchPending) {
+  launchPending = false;
+  host.message('profile: This link mixes a local contact with a Pod resource.');
+}
+else if (contactId && !host.launchError) {
   await host.run(async () => {
     const store = await openCollection('contacts', { scalarPredicates });
     const render = () => {
@@ -77,5 +87,23 @@ if (contactId) {
     render();
   });
 }
-host.onConnect = () => {};
+async function openLaunch() {
+  if (!launchPending || host.launchError) {
+    return;
+  }
+  launchAttempted = true;
+  ui.data.url = host.launch.resource;
+  if (host.launch.webId && host.session?.webId !== host.launch.webId) {
+    throw new Error(
+      'profile: Use WebID / connection to connect as the WebID in this link.'
+    );
+  }
+  await showRemote(host.launch.resource);
+  launchPending = false;
+}
+host.onConnect = openLaunch;
+await host.ready;
+if (!launchAttempted) {
+  await host.run(openLaunch, { network: true });
+}
 window.solidProfile = { host, ui };

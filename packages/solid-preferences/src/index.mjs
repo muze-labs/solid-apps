@@ -13,21 +13,49 @@ export const defaults = Object.freeze({
   textScale: '100',
   density: 'comfortable',
   language: 'en',
+  launchTarget: 'tab',
   contactsResource: '',
   launcherResource: '',
   filesRoot: ''
 });
 const namespace = prefixes.apps;
+function readLaunchTarget(subject) {
+  let value = valueAt(subject, namespace + 'launchTarget');
+  if (value === undefined) {
+    return defaults.launchTarget;
+  }
+  if (Array.isArray(value)) {
+    if (value.length !== 1) {
+      throw new Error('solid-preferences: App launch target has multiple values.');
+    }
+    value = value[0];
+  }
+  if (
+    !(typeof value === 'string' || value instanceof String) ||
+    value.language ||
+    (value.type && String(value.type) !==
+      'http://www.w3.org/2001/XMLSchema#string') ||
+    !['tab', 'window'].includes(String(value))
+  ) {
+    throw new Error('solid-preferences: Unsupported app launch target.');
+  }
+  return String(value);
+}
 export function readPreferences(document) {
   const subject = document.graph.get(document.url + '#solid-apps');
   return Object.fromEntries(
     Object.entries(defaults).map(([key, fallback]) => [
       key,
-      idOf(valueAt(subject, namespace + key) ?? fallback)
+      key === 'launchTarget'
+        ? readLaunchTarget(subject)
+        : idOf(valueAt(subject, namespace + key) ?? fallback)
     ])
   );
 }
 export function validatePreferences(settings) {
+  if (!['tab', 'window'].includes(settings.launchTarget)) {
+    throw new Error('solid-preferences: Choose new tabs or new windows.');
+  }
   if (!['system', 'light', 'dark'].includes(settings.theme)) {
     throw new Error('solid-preferences: Choose a supported theme.');
   }
@@ -69,6 +97,7 @@ export async function loadPreferences(session) {
 }
 export async function savePreferences(session, document, settings) {
   validatePreferences(settings);
+  readLaunchTarget(document.graph.get(document.url + '#solid-apps'));
   const draft = await copyDocument(document);
   const id = draft.url + '#solid-apps';
   const node =

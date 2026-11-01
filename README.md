@@ -23,6 +23,11 @@ through **Connect Solid**, then choose **Sync with Solid** in Contacts or Launch
 The connected WebID is remembered on this origin. Background restoration does not
 open a login popup; a user gesture is required when sign-in is needed.
 
+Creating multiple workspaces and syncing their definitions to a Pod is
+[planned roadmap work](design/solid-capability-broker-roadmap.md#retained-roadmap-item--pod-synced-workspaces),
+not implemented yet. Current Launcher sync covers its configured shortcut
+collection.
+
 When connected, **WebID / connection** also offers **Log out**. It clears the
 current account's cached access, refresh and ID tokens and the remembered WebID.
 The app reloads to discard connected clients; other open suite tabs on the same
@@ -44,6 +49,41 @@ that person's public profile. Remote profile editing is offered only for your
 connected WebID; server authorization remains authoritative. Structured vCard
 values are displayed and preserved but cannot yet be edited.
 
+## Launch a profile resource
+
+In Launcher, enter a full resource URL under **Open a profile resource**, then
+choose **Open in Profile**. Connect to Solid unless selecting anonymous launch.
+A fresh Profile tab (or window, if selected in Preferences)
+opens the requested subject, including a fragment such as `contacts.ttl#alice`.
+Launcher supplies its current WebID for identified launches and remains open.
+Allow new tabs if your browser blocks the launch.
+
+Profile reports inaccessible resources or missing subjects. Opening a resource
+does not save changes or change preferences. A launch link names account
+context; it does not grant access. If a different account is remembered, use
+**WebID / connection** to connect explicitly before opening the resource.
+
+The [launch-context contract](design/solid-app-launch-context.md) documents how
+independent apps can construct compatible links using their own libraries.
+This first resource-opening slice supports Profile; Contacts and Files resource
+selection remain later work.
+
+Each shortcut has a **Launch mode** choice. **Follow application** uses the
+mode declared in its RDF description, falling back to URL fragments when none
+is set. You can override it with **URL query (?)** for a server-side app or
+**URL fragment (#)**, then return to Follow application. Query mode sends your
+WebID and resource URL to the app's server; fragment mode keeps them in the
+browser's launch fragment, outside that HTTP request. These declarations
+currently come from the launcher collection;
+remote application-description discovery is later work.
+
+**Launch anonymously (omit WebID)** is saved separately for each shortcut,
+so you can link the same app more than once with different choices. Anonymous
+links contain no WebID and include a resource only when specified. They work
+without connecting Launcher. The Profile launch form also offers this option
+and accepts an optional resource. Omitting WebID does not sign you out of a
+receiving app that already has its own session.
+
 ## Shared preferences
 
 Every app opens the same preferences dialog. It loads the URL linked by
@@ -53,7 +93,11 @@ the dialog explains the missing prerequisite; profile-link creation is not part
 of this first version.
 
 Settings cover system/light/dark appearance, text size, density, preferred
-language, and Contacts/Launcher/Files storage locations. Language is stored and
+language, app launch presentation, and Contacts/Launcher/Files storage locations.
+**Open apps in** chooses new tabs (the default) or new windows for Launcher links
+and the Profile resource form. The choice is saved in your linked preferences
+file and used when Launcher loads it. Browser settings can affect presentation.
+Language is stored and
 applied as the document language; the interface currently remains English.
 Changing a storage location does not migrate existing data.
 
@@ -88,8 +132,9 @@ included; all dynamic content rendering uses SimplyFlow. Shared HTML is composed
 at build time, with no extra runtime template engine.
 
 Native DOM calls handle dialog/popover opening/closing, focus, form reset and file
-selection, browser downloads, and document-wide appearance/language. Content,
-list items, visibility and button state are SimplyFlow bindings.
+selection, browser downloads, app-window navigation, and document-wide
+appearance/language. Content, list items, visibility and button state are
+SimplyFlow bindings.
 
 The adopted engineering and stewardship rules, with their source links, are in
 [AGENTS.md](AGENTS.md). We favor inspectable code, replaceable boundaries, open
@@ -112,7 +157,9 @@ type indexes. Large file uploads are sequential and never overwrite an existing
 resource; a partial upload reports how many files succeeded.
 
 Authentication uses the published Metro OIDC popup flow. The integration test uses
-an isolated mock Pod; live-provider sign-in still needs a manual test in this suite.
+an isolated mock Pod. The maintainer reports successful manual connection and
+authentication with solidcommunity.net; other provider/browser combinations
+and the new launch flow still need their own live verification.
 
 ## Verification
 

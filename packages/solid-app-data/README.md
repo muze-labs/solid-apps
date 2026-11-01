@@ -12,6 +12,17 @@ of published Solid libraries, not a new persistence framework.
 - `link-metadata.mjs`: discovers the parent container description from HTTP Link
   headers and writes conditional `lm:deleted` metadata. It never physically
   deletes resource bytes. Missing descriptions and conflicts are failures.
+- `launch.mjs`: validates and reads launch fragments, and builds application
+  URLs carrying the current WebID and a full resource URL. Nested resource
+  fragments survive. `parseLaunchUrl()` also returns the remaining URL for the
+  optional `#app-fragment?parameters` form; `%3F` is not a separator. The codec
+  is pure; receivers apply any address cleanup. URL context grants no authority.
+  Pass `parameterLocation: 'query'` to the builder context or reader options
+  for explicit server-side query support; the default remains `fragment`.
+  Omit `webId` for anonymous generation. Reserved WebIDs are removed from both
+  locations; `resource` is emitted only if supplied.
+  See the suite's
+  `design/solid-app-launch-context.md` contract for independent consumers.
 
 `saveDocument` rejects existing documents without an ETag and uses If-Match;
 new documents use If-None-Match. It returns the new ETag. A failed write does not
