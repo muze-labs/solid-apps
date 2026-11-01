@@ -1,0 +1,10 @@
+@prefix sd: <https://muze.nl/ns/spiral-developer#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix project: <urn:muze-labs:solid-apps:spiral:> .
+project:EVD-20261101-QG24H-7 a sd:VerificationEvidence ;
+    dcterms:identifier "EVD-20261101-QG24H-7" ;
+    sd:repositoryPath ".spiral/evidence/EVD-20261101-QG24H-7.md" ;
+    sd:status sd:Active ;
+    sd:verifies [ a sd:ArtifactReference ;
+        sd:artifact project:IMP-20261101-QG24H-6 ;
+        sd:gitCommit "81df7ec8203d1bb6502d850b113d1934fcc7c1cd" ] .
