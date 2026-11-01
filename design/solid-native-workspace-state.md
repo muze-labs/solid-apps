@@ -68,3 +68,15 @@ The [generated example](examples/workspace.ttl) is emitted by the implementation
 and independently parsed with RDFLib. It contains one Files instance, its folder
 IRI and a launcher resource with fragment; no reconnect key or opaque field is
 present. Raw triple output is valid Turtle and keeps graph identity inspectable.
+
+## Readable Turtle output
+
+SRC29 requests a document @base, vocabulary prefixes and less repeated full IRI
+text. Retain the supplied document base and resolved input prefixes through raw
+cloning. Add common vocabulary bindings without rebinding source aliases, emit
+only used prefixes and group each subject's properties. Use installed OLDM URI
+helpers for Turtle prefix escaping and exact relative IRI resolution. Keep the
+canonical absolute-term representation for graph comparison separate from this
+output formatting. Raw blank-node labels, cycles, lists, lexical values and
+unknown statements remain unchanged. This changes spelling only, not schema or
+identity; independently compare old/new example graphs and test prefix clashes.
