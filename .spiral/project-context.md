@@ -644,9 +644,10 @@ Current workspace persistence violates the rule in both Pod snapshots and the
 local Turtle cache/baseline. DES9 and IMP6 explicitly flag this known noncompliance.
 The existing code/encoding is retained as evidence, not an approved exception.
 This request records the rule and noncompliance; no runtime migration is claimed.
-Native RDF correction is required before cycle acceptance. No application tests
-were run for this documentation change because the current fixtures/codec write
-the newly forbidden encoding. Spiral metadata validation remains applicable.
+Native RDF correction remains required; the maintainer subsequently permits
+cycle acceptance with this issue explicitly retained as DEF18. No application
+tests were run for the documentation change because the current fixtures/codec
+write the newly forbidden encoding. Spiral metadata validation remains applicable.
 
 The maintainer also explicitly permits a separate app-owned opaque state string
 for app-specific state that is not linked data. The workspace/broker must preserve
@@ -657,3 +658,14 @@ maintainer considers that ugly and expects others to object. This is not a
 preferred persistence pattern and does not exempt main state, whole-workspace
 snapshots or baselines. No runtime encoding change or migration is implemented
 by the documentation update.
+
+
+## Cycle acceptance with an open native RDF issue
+
+On 2026-11-01 the maintainer explicitly accepted CYC-20261101-QG24H-2 provided
+the native RDF correction is kept. DEF-20261101-QG24H-18 is retained as Open;
+ACC-20261101-QG24H-19 records the acceptance and known gap. The cycle is Accepted,
+with no claim that the format has been corrected or the native Turtle rule waived.
+The starter page remains deferred. A subsequent request for file-selector test
+instructions does not establish a manual picker result; automated coverage is
+retained in EVD16. No merge, publication or next cycle is authorized here.

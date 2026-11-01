@@ -6,7 +6,9 @@ forbids JSON in main-state Turtle strings, with only a narrow experimental
 app-owned opaque field permitted. The JSON-literal persistence described below is
 current implementation evidence, not an approved design. Replace it with native
 RDF for both Pod state and local caches/baselines; preserve existing data during
-that correction. The existing encoding requires native RDF correction before acceptance.
+that correction. The maintainer accepted the cycle while retaining
+[DEF18](../.spiral/defects/DEF-20261101-QG24H-18.md) as Open; that acceptance does
+not resolve the native RDF correction.
 
 Confirmed revision of the resource-picker cycle, 2026-11-01. This replaces the
 server relay for managed sessions; the earlier proof remains in Git history.
