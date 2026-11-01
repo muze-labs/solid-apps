@@ -106,7 +106,7 @@ the README. These are already instructions, not new approval questions.
 - Run `npm run check`, plus browser tests for UI changes. Do not commit or
   publish without a request. Other repositories' user work stays outside scope.
 
-AGENTS.md explicitly adopts the parent Muze architecture philosophy, Muze
+AGENTS.md explicitly adopts the repository's Muze architecture philosophy, Muze
 engineering culture and maturity policy; library stewardship applies to shared
 packages and tooling. The bundled culture profiles were consulted at the
 Spiral submodule commit above. This records the inspected copies, not a claim
@@ -550,6 +550,12 @@ First answers received on 2026-11-01:
     This direction is recorded in `design/solid-apps-roadmap.md`; implementation
     remains future work. The update uses a documentation branch without
     opening a new implementation cycle.
+37. The maintainer requested that the Muze architecture philosophy be read and
+    included in this repository as another engineering culture document. The
+    complete parent-directory guide was read and copied unchanged to
+    `ARCHITECTURE-PHILOSOPHY.md`; AGENTS.md and `.spiral/culture.md` now reference
+    that copy, with source dates and a checksum recorded in the culture index.
+    This makes the existing adoption self-contained.
 
 Conversation/documentation language: **English**, explicitly requested by the
 maintainer. Conversation preference: ask **one question at a time** until intake is
