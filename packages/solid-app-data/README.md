@@ -9,7 +9,13 @@ registers capabilities, publishes `getState()` JSON and calls `restoreState(stat
 Providers receive `onRequest(event)`, answer with `respond(event.id, { result })`
 or `{ error: { code, message } }`, and clear selection UI through `onCancel`.
 Validate returned URLs with `selectionUrl`. Calls have cancellation, timeout and
-disconnect handling; invocations are not replayed on reconnect.
+disconnect handling; invocations are not replayed on reconnect. A new client
+registers with `restoring: true`, then publishes state and sends `ready` after
+restoration. `restore-error` reports setup failure. Closed-port resumes explicitly
+request reconnection; same-instance reconnection reuses live state/restoration
+rather than resetting UI drafts. Stale channel tasks cannot publish into a new
+channel. Launcher checkpoints ready apps with a ten-second deadline, reports
+failures per app and never closes apps using a silently substituted cached state.
 
 `workspace-broker.mjs` owns browser windows, instance identity, private ports and
 explicit route policy. `workspace-state.mjs` uses the published Solid Workspace

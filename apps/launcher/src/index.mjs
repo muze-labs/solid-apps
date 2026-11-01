@@ -73,7 +73,8 @@ function renderWorkspace() {
   ui.data.workspaceEntries = [...workspace.instances.values()].map(record => ({
     id: record.entry.id, label: record.entry.label || record.entry.url,
     allowBrowse: record.entry.allowBrowse,
-    status: record.registered ? 'Connected' :
+    status: record.restoreError ? 'Needs attention: ' + record.restoreError :
+      record.registered ? (record.ready ? 'Connected' : 'Restoring') :
       record.win && !record.win.closed ? 'Opening' : 'Saved'
   }));
 }

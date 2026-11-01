@@ -244,6 +244,47 @@ try {
   for (const key of Object.values(privateKeys)) {
     assert(!records.get('/workspace.ttl').includes(key));
   }
+  await evaluate(files, 'const managed=window.solidFiles.host.managed;' +
+    'const getState=managed.getState;' +
+    'managed.getState=async()=>({...await getState(),draftProbe:"live-only"});' +
+    'window.replayedRestore=0;const restore=managed.restoreState;' +
+    'managed.restoreState=async state=>{window.replayedRestore++;return restore(state);};' +
+    'window.dispatchEvent(new PageTransitionEvent("pagehide",{persisted:true}));' +
+    'window.dispatchEvent(new PageTransitionEvent("pageshow",{persisted:true}));');
+  await wait(launcher, '[...window.solidLauncher.workspace.instances.values()]' +
+    '.some(record=>record.ready && record.entry.state?.draftProbe==="live-only")');
+  assert.equal(await evaluate(files, 'return window.replayedRestore;'), 0);
+  await evaluate(files, 'const managed=window.solidFiles.host.managed;' +
+    'window.normalGetState=managed.getState;' +
+    'managed.getState=async()=>{await new Promise(resolve=>setTimeout(resolve,3000));' +
+    'return window.normalGetState();};');
+  const beforeSlowSave = puts.length;
+  await click(launcher, '[data-simply-command=saveWorkspace]');
+  await wait(launcher, 'document.querySelector("[data-simply-command=saveWorkspace]").disabled');
+  await wait(launcher, '!document.querySelector("[data-simply-command=saveWorkspace]").disabled && ' +
+    'document.querySelector(".managed-workspace [role=status]")' +
+    '.textContent.includes("saved to your Solid Pod")');
+  assert.equal(puts.length, beforeSlowSave + 1);
+  await evaluate(files, 'window.solidFiles.host.managed.getState=()=>new Promise(()=>{});');
+  await evaluate(launcher, 'window.solidLauncher.workspace.checkpointTimeout=50;');
+  const beforeTimeout = puts.length;
+  await click(launcher, '[data-simply-command=closeWorkspace]');
+  await wait(launcher, 'document.querySelector(".managed-workspace [role=status]")' +
+    '.textContent.includes("Managed Files") && ' +
+    'document.querySelector(".managed-workspace [role=status]").textContent.includes("timed out")');
+  assert.equal(puts.length, beforeTimeout);
+  assert((await control.send('Target.getTargets')).targetInfos
+    .some(target => target.targetId === child.id));
+  await evaluate(files, 'window.solidFiles.host.managed.getState=window.normalGetState;' +
+    'window.dispatchEvent(new PageTransitionEvent("pagehide",{persisted:true}));' +
+    'window.dispatchEvent(new PageTransitionEvent("pageshow",{persisted:true}));');
+  await wait(launcher, '[...window.solidLauncher.workspace.instances.values()]' +
+    '.some(record=>record.ready)');
+  await evaluate(launcher, 'window.solidLauncher.workspace.checkpointTimeout=10000;');
+  await click(launcher, '[data-simply-command=saveWorkspace]');
+  await wait(launcher, 'document.querySelector(".managed-workspace [role=status]")' +
+    '.textContent.includes("saved to your Solid Pod")');
+  assert.equal(await evaluate(files, 'return window.replayedRestore;'), 0);
   await reload(launcher);
   await wait(launcher, 'window.solidLauncher?.workspace && ' +
     '[...window.solidLauncher.workspace.instances.values()].some(r=>r.registered)');

@@ -3,8 +3,9 @@ import { PortConnection, capabilityError, serializable } from './capabilities.mj
 export class WorkspaceBroker {
   constructor({ snapshot = { version: 1, apps: [], launcher: {} }, keys = {},
     onChange = () => {}, onMessage = () => {}, authorize = () => false,
-    target = window } = {}) {
-    Object.assign(this, { onChange, onMessage, authorize, target });
+    target = window, checkpointTimeout = 10000 } = {}) {
+    Object.assign(this, { onChange, onMessage, authorize, target,
+      checkpointTimeout });
     this.instances = new Map();
     this.extra = structuredClone(snapshot);
     this.launcherState = structuredClone(snapshot.launcher || {});
@@ -18,7 +19,8 @@ export class WorkspaceBroker {
   }
   add(entry, key = crypto.randomUUID() + crypto.randomUUID()) {
     const record = { entry: structuredClone(entry), key, win: null, peer: null,
-      registered: false, capabilities: [], lastOffer: 0 };
+      registered: false, ready: false, restoreError: '', capabilities: [],
+      lastOffer: 0 };
     this.instances.set(entry.id, record);
     return record;
   }
@@ -82,7 +84,11 @@ export class WorkspaceBroker {
       (record.win && record.win !== event.source) || !event.source) {
       return;
     }
-    if (record.registered && record.generation === data.generation) {
+    if (record.registered && record.generation === data.generation &&
+      !data.reconnect && !record.peer?.closed) {
+      return;
+    }
+    if (!record.registered && Date.now() - record.lastOffer < 1500) {
       return;
     }
     record.win = event.source;
@@ -90,6 +96,9 @@ export class WorkspaceBroker {
   }
   offer(record) {
     record.peer?.close('Application reconnected.');
+    record.registered = false;
+    record.ready = false;
+    record.restoreError = '';
     const channel = new MessageChannel();
     record.lastOffer = Date.now();
     record.peer = new PortConnection(channel.port1,
@@ -110,8 +119,23 @@ export class WorkspaceBroker {
       record.capabilities = [...new Set(input.capabilities)];
       record.generation = input.generation;
       record.registered = true;
+      record.managed = true;
+      record.canResume = input.restoring === true;
+      record.ready = input.restoring !== true;
       await this.changed();
       return { id: record.entry.id };
+    }
+    if (method === 'ready' && record.registered) {
+      record.ready = true;
+      record.restoreError = '';
+      await this.changed();
+      return { ready: true };
+    }
+    if (method === 'restore-error' && record.registered) {
+      record.ready = false;
+      record.restoreError = String(input.message).slice(0, 1000);
+      await this.changed();
+      return { ready: false };
     }
     if (method === 'state') {
       record.entry.state = serializable(input);
@@ -127,7 +151,7 @@ export class WorkspaceBroker {
   }
   async request(capability, input, { requester = 'launcher', signal } = {}) {
     const providers = [...this.instances.values()].filter(record =>
-      record.registered && record.peer && !record.peer.closed &&
+      record.registered && record.ready && record.peer && !record.peer.closed &&
       record.capabilities.includes(capability) &&
       this.authorize(requester, record.entry, capability));
     if (providers.length !== 1) {
@@ -144,13 +168,47 @@ export class WorkspaceBroker {
     return result.result;
   }
   async checkpoint() {
-    await Promise.all([...this.instances.values()].map(async record => {
-      if (record.registered && record.peer && !record.peer.closed) {
-        record.entry.state = serializable(await record.peer.call('checkpoint', null,
-          { timeout: 2500 }));
-      }
-    }));
+    const results = await Promise.allSettled(
+      [...this.instances.values()].map(async record => {
+        const label = record.entry.label
+          ? record.entry.label + ' (' + record.entry.url + ')'
+          : record.entry.url;
+        if (record.registered && !record.ready) {
+          const reason = record.restoreError ||
+            'App is still restoring. Finish connecting or reload it, then retry.';
+          throw new Error('workspace-broker: ' + label + ' is not ready. ' + reason);
+        }
+        if (record.registered && record.peer && !record.peer.closed) {
+          try {
+            record.entry.state = serializable(await record.peer.call(
+              'checkpoint', null, { timeout: this.checkpointTimeout }
+            ));
+          }
+          catch (error) {
+            if (['timeout', 'disconnected'].includes(error.code)) {
+              record.peer.close();
+              record.registered = !record.canResume;
+              record.ready = false;
+              if (!record.canResume) {
+                record.restoreError = 'Reload this app to reconnect safely.';
+              }
+            }
+            throw new Error('workspace-broker: Could not collect state from ' +
+              label + '. ' + error.message + ' Open that app, then retry.');
+          }
+        }
+        else if (record.win && !record.win.closed &&
+          (record.managed || record.entry.state !== null)) {
+          throw new Error('workspace-broker: ' + label +
+            ' is reconnecting. Open that app, then retry.');
+        }
+      })
+    );
     await this.changed();
+    const failures = results.filter(result => result.status === 'rejected');
+    if (failures.length) {
+      throw new Error(failures.map(result => result.reason.message).join('\n'));
+    }
   }
   async allow(id, value) {
     this.instances.get(id).entry.allowBrowse = Boolean(value);
@@ -161,6 +219,7 @@ export class WorkspaceBroker {
     record.peer = null;
     record.win = null;
     record.registered = false;
+    record.ready = false;
     record.capabilities = [];
   }
   async remove(id) {

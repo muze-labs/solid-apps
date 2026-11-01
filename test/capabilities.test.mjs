@@ -113,3 +113,86 @@ test('workspace routing requires an explicit grant and binds state to one instan
   await assert.rejects(peer.call('state', { folder: 'stale state' }), /active/);
   assert.equal(broker.snapshot().apps[0].state.unknown, 42);
 });
+
+async function checkpointFixture(t, handle, options = {}) {
+  const peers = [];
+  const target = { addEventListener() {}, removeEventListener() {},
+    open() {
+      return { closed: false, focus() {}, close() { this.closed = true; },
+        postMessage(message, _origin, ports) {
+          peers.push(new PortConnection(ports[0], (method, input, options) =>
+            handle(method, input, options, message.id)));
+        } };
+    }
+  };
+  const snapshots = [];
+  const broker = new WorkspaceBroker({ target, ...options,
+    onChange: async snapshot => { snapshots.push(snapshot); } });
+  t.after(() => { broker.dispose(); peers.forEach(peer => peer.close()); });
+  const record = broker.open('https://files.example/', { label: 'My Files' });
+  broker.offer(record);
+  await peers[0].call('register', { capabilities: [], generation: 'one',
+    restoring: true });
+  return { broker, record, peers, snapshots };
+}
+
+test('a healthy three-second checkpoint captures fresh state', async t => {
+  const { broker, record, peers } = await checkpointFixture(t, async () => {
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    return { draft: 'fresh' };
+  });
+  await peers[0].call('ready', null);
+  await broker.checkpoint();
+  assert.equal(record.entry.state.draft, 'fresh');
+});
+
+test('restoration is distinct from readiness and failures name the app', async t => {
+  let calls = 0;
+  const { broker, record, peers } = await checkpointFixture(t, () => { calls++; });
+  await assert.rejects(broker.checkpoint(), /My Files.*still restoring/);
+  assert.equal(calls, 0);
+  await peers[0].call('restore-error', { message: 'Pod sign-in required.' });
+  await assert.rejects(broker.checkpoint(), /My Files.*Pod sign-in required/);
+  assert.equal(record.entry.state, null);
+});
+
+test('timeout keeps previous state and permits a fresh checkpoint after reconnect', async t => {
+  let responsive = false;
+  let slowId;
+  const { broker, record, peers } = await checkpointFixture(t,
+    (_method, _input, _options, id) => {
+    if (!responsive && id === slowId) { return new Promise(() => {}); }
+    return { draft: 'still-live' };
+  }, { checkpointTimeout: 30 });
+  slowId = record.entry.id;
+  await peers[0].call('state', { draft: 'previous' });
+  await peers[0].call('ready', null);
+  const sibling = broker.open('https://contacts.example/', { label: 'Contacts' });
+  broker.offer(sibling);
+  await peers[1].call('register', { capabilities: [], generation: 'sibling',
+    restoring: true });
+  await peers[1].call('ready', null);
+  await assert.rejects(broker.checkpoint(), /My Files.*timed out/);
+  assert.equal(record.entry.state.draft, 'previous');
+  assert.equal(sibling.entry.state.draft, 'still-live');
+  assert.equal(record.win.closed, false);
+  assert.equal(record.registered, false);
+  responsive = true;
+  broker.offer(record);
+  await peers[2].call('register', { capabilities: [], generation: 'one',
+    restoring: true });
+  await peers[2].call('ready', null);
+  await broker.checkpoint();
+  assert.equal(record.entry.state.draft, 'still-live');
+});
+
+test('older clients require reload after timeout to protect their live drafts', async t => {
+  const { broker, record, peers } = await checkpointFixture(t,
+    () => new Promise(() => {}), { checkpointTimeout: 30 });
+  await peers[0].call('register', { capabilities: [], generation: 'old-client' });
+  await assert.rejects(broker.checkpoint(), /timed out/);
+  broker.inspect();
+  assert.equal(peers.length, 1);
+  assert.match(record.restoreError, /Reload this app/);
+  assert.equal(record.win.closed, false);
+});

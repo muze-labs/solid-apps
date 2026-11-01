@@ -21,7 +21,12 @@ continues to work independently, but does not join this managed session.
 
 Each launch creates a fresh instance. **Preferences → Open apps in** chooses
 tabs (default) or windows. The workspace list can focus/restore an instance or
-close it individually. Closing an individual instance removes it from the saved
+close it individually. It distinguishes Restoring, Connected and setup errors.
+Save collects fresh state from ready apps with a ten-second deadline. A failed
+checkpoint names the app and leaves apps open; successfully collected sibling
+state stays local. Reconnecting a current client preserves its live UI and does
+not replay old restoration state. An older already-open client may need a reload
+to reconnect safely; save its in-app edits before reloading. Closing an individual instance removes it from the saved
 set. Closing the workspace retains the set for reopening. Allow popups for
 multiple-app restoration; **Restore apps** and individual restore buttons provide
 recovery when the browser blocks automatic startup.

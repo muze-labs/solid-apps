@@ -161,6 +161,7 @@ export class ManagedApp {
     Object.assign(this, { name, capabilities, getState, restoreState,
       onRequest, onCancel, onState });
     this.incoming = new Map();
+    this.ready = false;
     this.parent = window.opener;
     this.generation = crypto.randomUUID();
     this.listen = event => this.offer(event);
@@ -169,18 +170,20 @@ export class ManagedApp {
       this.resume = JSON.parse(sessionStorage.getItem('solid-apps.managed') || 'null');
     }
     catch {}
-    this.tick = setInterval(() => {
-      if (this.resume && this.parent?.closed) {
-        this.peer?.close('Workspace closed.');
-        window.close();
-      }
-      else if (this.resume && this.parent) {
-        this.parent.postMessage({ type: 'solid-apps:resume', ...this.resume,
-          generation: this.generation },
-          this.resume.origin);
-      }
-    }, 400);
+    this.tick = setInterval(() => this.announce(), 400);
+    window.addEventListener('pageshow', () => this.announce());
     window.addEventListener('pagehide', () => this.peer?.close());
+  }
+  announce() {
+    if (this.resume && this.parent?.closed) {
+      this.peer?.close('Workspace closed.');
+      window.close();
+    }
+    else if (this.resume && this.parent) {
+      this.parent.postMessage({ type: 'solid-apps:resume', ...this.resume,
+        generation: this.generation, reconnect: !this.peer || this.peer.closed },
+      this.resume.origin);
+    }
   }
   async offer(event) {
     const message = event.data;
@@ -190,26 +193,48 @@ export class ManagedApp {
       return;
     }
     this.peer?.close();
+    this.ready = false;
     this.resume = { id: message.id, key: message.key, origin: event.origin };
     sessionStorage.setItem('solid-apps.managed', JSON.stringify(this.resume));
-    this.peer = new PortConnection(event.ports[0], (method, input, options) =>
+    const peer = new PortConnection(event.ports[0], (method, input, options) =>
       this.handle(method, input, options));
+    this.peer = peer;
     try {
-      await this.peer.call('register', { name: this.name,
+      await peer.call('register', { name: this.name, restoring: true,
         generation: this.generation,
         capabilities: this.capabilities });
-      this.restoring = Promise.resolve(this.restoreState(message.state));
+      const identity = JSON.stringify(this.resume);
+      if (identity !== this.restorationIdentity) {
+        this.restorationIdentity = identity;
+        this.restoreError = '';
+        this.restoring = Promise.resolve().then(() =>
+          this.restoreState(message.state));
+      }
       await this.restoring;
-      await this.publish();
+      if (this.peer !== peer || peer.closed) {
+        return;
+      }
+      this.ready = true;
+      await this.publish(peer);
+      await peer.call('ready', null);
       this.onState?.('Connected to this workspace.');
     }
     catch (error) {
+      if (this.peer !== peer || peer.closed) {
+        return;
+      }
+      this.ready = false;
+      this.restoreError = error.message;
+      await peer.call('restore-error', { message: error.message }).catch(() => {});
       this.onState?.(error.message);
     }
   }
   async handle(method, input, { signal }) {
     if (method === 'checkpoint') {
-      await this.restoring;
+      if (!this.ready) {
+        throw capabilityError(this.restoreError ||
+          'App is still restoring. Finish connecting or reload it.', 'restoring');
+      }
       return serializable(await this.getState());
     }
     if (method !== 'capability' || !this.capabilities.includes(input.capability)) {
@@ -231,9 +256,12 @@ export class ManagedApp {
       this.onRequest?.({ ...input, id });
     });
   }
-  async publish() {
-    if (this.peer && !this.peer.closed) {
-      return this.peer.call('state', serializable(await this.getState()));
+  async publish(peer = this.peer) {
+    if (this.ready && peer && !peer.closed) {
+      const state = serializable(await this.getState());
+      if (this.ready && this.peer === peer && !peer.closed) {
+        return peer.call('state', state);
+      }
     }
   }
   async respond(id, response) {

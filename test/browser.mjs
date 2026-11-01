@@ -1105,6 +1105,11 @@ try {
 }
 catch (error) {
   console.error('Pod requests:', calls);
+  console.error('Current app:', await page.evaluate(() => ({
+    url: location.href,
+    launch: window.solidProfile?.host.launch,
+    connected: Boolean(window.solidProfile?.host.session)
+  })));
   console.error(
     await page.evaluate(() => document.querySelector('tbody')?.outerHTML)
   );
