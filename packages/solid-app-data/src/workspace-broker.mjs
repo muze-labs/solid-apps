@@ -6,6 +6,8 @@ export class WorkspaceBroker {
     target = window, checkpointTimeout = 10000 } = {}) {
     Object.assign(this, { onChange, onMessage, authorize, target,
       checkpointTimeout });
+    this.focusTarget = 'solid-apps-launcher-' + crypto.randomUUID();
+    target.name = this.focusTarget;
     this.instances = new Map();
     this.extra = structuredClone(snapshot);
     this.launcherState = structuredClone(snapshot.launcher || {});
@@ -104,7 +106,7 @@ export class WorkspaceBroker {
     record.peer = new PortConnection(channel.port1,
       (method, input, options) => this.handle(record, method, input, options));
     record.win.postMessage({ type: 'solid-apps:offer', id: record.entry.id,
-      key: record.key, state: record.entry.state },
+      key: record.key, state: record.entry.state, focusTarget: this.focusTarget },
     new URL(record.entry.url).origin, [channel.port2]);
   }
   async handle(record, method, input, options) {

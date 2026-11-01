@@ -132,6 +132,11 @@ try {
   await until(launcher, 'Boolean(window.result)');
   const returnedAfterSelection = await value(launcher,
     'document.visibilityState === "visible"');
+  assert.equal(returnedAfterSelection, true,
+    'Selection activates the existing Launcher tab.');
+  assert.equal((await control.send('Target.getTargets')).targetInfos
+    .filter(target => target.type === 'page').length, 3,
+  'Returning must not create another Launcher or blank tab.');
   assert.equal(await value(launcher, 'window.result["@id"]'),
     'https://pod.example/file.ttl#subject');
   // Verify reuse after the provider's earlier transient activation has expired.
@@ -145,12 +150,14 @@ try {
   await until(launcher, 'window.failure?.code === "cancelled"');
   const returnedAfterCancellation = await value(launcher,
     'document.visibilityState === "visible"');
+  assert.equal(returnedAfterCancellation, true,
+    'Cancellation activates the existing Launcher tab.');
   assert.equal(await value(launcher, 'window.result'), null);
   assert.equal((await fileTargets()).length, 1);
   console.log('PASS: one-click cross-origin Files startup, warm-instance reuse, ' +
     'provider tab activation and selection/cancellation results; ' +
     'no workspace persistence invoked.');
-  console.log('Advisory return-focus observations:', JSON.stringify({
+  console.log('Verified return activation:', JSON.stringify({
     returnedAfterSelection, returnedAfterCancellation
   }));
 }

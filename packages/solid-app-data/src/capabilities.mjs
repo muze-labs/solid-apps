@@ -194,6 +194,9 @@ export class ManagedApp {
     }
     this.peer?.close();
     this.ready = false;
+    this.parentTarget = typeof message.focusTarget === 'string' &&
+      /^solid-apps-launcher-[0-9a-f-]{36}$/.test(message.focusTarget)
+      ? message.focusTarget : null;
     this.resume = { id: message.id, key: message.key, origin: event.origin };
     sessionStorage.setItem('solid-apps.managed', JSON.stringify(this.resume));
     const peer = new PortConnection(event.ports[0], (method, input, options) =>
@@ -272,6 +275,15 @@ export class ManagedApp {
     this.incoming.delete(id);
     request.complete(response);
     try {
+      // Targeting the existing context during this gesture activates tabs in
+      // browsers which ignore cross-origin opener.focus(). Never navigate it.
+      if (this.parent && !this.parent.closed && this.parentTarget &&
+        window.navigator.userActivation?.isActive) {
+        const destination = window.open('', this.parentTarget);
+        if (destination && destination !== this.parent) {
+          destination.close();
+        }
+      }
       this.parent?.focus();
     }
     catch {}

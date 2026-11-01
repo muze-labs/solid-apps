@@ -22,7 +22,17 @@ workspace's **Allow resource selection** for just one instance.
 Focus is requested for Files and, after selection/cancellation, for Launcher.
 Browsers can refuse focus requests; the UI tells you to switch tabs if needed.
 The isolated Chrome proof verifies Files tab activation and returned results;
-it does not guarantee the return-to-Launcher focus on every browser.
+it does not guarantee the return-to-Launcher focus on every browser. Launcher
+advertises a unique live window name through its verified opener handshake;
+selection/cancellation targets that existing tab during the user's click. The
+isolated Chrome test verifies the return without opening another tab. This hint
+is separate from stored workspace state and does not grant a capability.
+
+Protected browsing may still require the provider's sign-in window. The Solid
+session retains and closes that window even when authorization first becomes
+necessary after an identity token was cached. The callback's “Completing
+sign-in…” page should disappear after the response is handled. Popup blocking,
+denied consent and noninteractive sign-in refusal remain visible errors.
 
 For a cross-origin demonstration, add a shortcut to
 `http://localhost:4174/files/`, open it through Launcher, and enable **Allow
