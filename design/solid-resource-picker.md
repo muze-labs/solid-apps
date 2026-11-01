@@ -40,3 +40,15 @@ its existing data policy. SimplyFlow renders content; no second renderer is
 introduced. Test cross-origin routing, cancellation, provider loss, denied reads,
 source/origin/instance checks and per-instance grants. The browser proof uses
 fixture data; see [setup and evidence limits](../broker/README.md).
+
+
+## One-click Launcher activation
+
+The same cycle now focuses an eligible existing Files instance or opens/reuses
+the built-in Files app when absent. This is bounded built-in startup, not the
+future provider registry. Opening/focus starts in the user's click; readiness
+waiting is cancellable and bound to the selected instance. Grants are checked
+again before invocation, and ambiguity is visible. Selection/cancellation asks
+for focus back to Launcher, with manual-switch guidance when browser policy
+refuses. The isolated protocol/browser proof avoids workspace persistence while
+DEF18's native RDF correction remains open.

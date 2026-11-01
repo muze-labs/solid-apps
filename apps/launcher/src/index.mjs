@@ -3,8 +3,9 @@ import { shell } from '@muze-labs/solid-app-ui';
 import { WorkspaceBroker } from '@muze-labs/solid-app-data/workspace-broker.mjs';
 import { WorkspaceState } from '@muze-labs/solid-app-data/workspace-state.mjs';
 import {
-  browseCapability, browseInput, selectionUrl
+  browseCapability, selectionUrl
 } from '@muze-labs/solid-app-data/capabilities.mjs';
+import { chooseFiles } from './picker.mjs';
 import { openCollection } from '@muze-labs/solid-app-data/collection.mjs';
 import { prefixes, valueAt, idOf, httpUrl } from '@muze-labs/solid-app-data';
 import { launchUrl } from '@muze-labs/solid-app-data/launch.mjs';
@@ -298,10 +299,14 @@ const ui = app({
         selection = new AbortController();
         ui.data.pickState = { disabled: '' };
         ui.data.cancelState = { hidden: null };
-        ui.data.pickerMessage = 'Choose a resource in the connected Files app.';
+        ui.data.pickerMessage = 'Opening Files…';
         try {
-          const result = await workspace.request(browseCapability, browseInput, {
-            signal: selection.signal
+          const target = new URL('../files/', location.href).href;
+          const filesUrl = host.session
+            ? launchUrl(target, { webId: host.session.webId }) : target;
+          const result = await chooseFiles(workspace, filesUrl, {
+            signal: selection.signal,
+            onWait: message => { ui.data.pickerMessage = message; }
           });
           ui.data.resource = selectionUrl(result);
           workspace.launcherState.resource = ui.data.resource;

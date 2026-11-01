@@ -9,17 +9,18 @@ project:IMP-20261101-QG24H-6 a sd:Implementation ;
         "packages/solid-app-data/src/workspace-broker.mjs",
         "packages/solid-app-data/src/workspace-state.mjs",
         "packages/solid-app-ui/src/index.mjs",
-        "apps/launcher/src/index.mjs", "apps/files/src/index.mjs",
+        "apps/launcher/src/index.mjs", "apps/launcher/src/picker.mjs",
+        "apps/files/src/index.mjs",
         "apps/contacts/src/index.mjs", "apps/profile/src/index.mjs",
         "packages/solid-profile/src/view.mjs",
         "packages/solid-preferences/src/index.mjs", "scripts/build.mjs" ;
     sd:implements [ a sd:ArtifactReference ;
         sd:artifact project:DES-20261101-QG24H-9 ;
-        sd:gitCommit "86928c97d7a06b9b4d6c64f4ce590a83328cb5ad" ] ;
+        sd:gitCommit "23bbfa6e185fd04a7e8b3c18c244db3093e98632" ] ;
     sd:transforms [ a sd:ArtifactReference ;
         sd:artifact project:IMP-20261101-QG24H-6 ;
-        sd:gitCommit "d793986128971d1d65d5630f81ba75ea8e647e17" ] ;
+        sd:gitCommit "23bbfa6e185fd04a7e8b3c18c244db3093e98632" ] ;
     sd:changeCausedBy [ a sd:ArtifactReference ;
-        sd:artifact project:FBK-20261101-QG24H-15 ;
-        sd:gitCommit "b98620ed76dd2f60a21fb2a20f5fb62fbe3dc1d9" ] ;
+        sd:artifact project:FBK-20261101-QG24H-20 ;
+        sd:gitCommit "9cc25ee0f96732e70e9238a8bfae403e32c07507" ] ;
     sd:implementationChangeKind sd:SemanticChange .

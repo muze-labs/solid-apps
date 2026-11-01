@@ -271,6 +271,10 @@ export class ManagedApp {
     }
     this.incoming.delete(id);
     request.complete(response);
+    try {
+      this.parent?.focus();
+    }
+    catch {}
   }
   request(capability, input, options) {
     if (!this.peer) {

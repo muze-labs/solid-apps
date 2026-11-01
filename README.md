@@ -93,8 +93,9 @@ receiving app that already has its own session.
 
 ## Shared preferences
 
-Launcher can request a resource selection from a Files instance opened through
-it, using private browser message channels. See the [workspace guide](broker/README.md)
+**Choose in Files** opens the built-in Files app on demand or focuses an allowed
+existing instance, using private browser message channels. Files need not already
+be open. It retains its own Solid connection. See the [workspace guide](broker/README.md)
 for connection and permission steps. Selection returns a URL into Launcher's
 resource field; cancellation preserves its previous value. Both apps keep their
 own Solid sessions.

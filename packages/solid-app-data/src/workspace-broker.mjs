@@ -149,8 +149,52 @@ export class WorkspaceBroker {
     }
     throw capabilityError('Unsupported workspace operation.', 'denied');
   }
-  async request(capability, input, { requester = 'launcher', signal } = {}) {
+  whenReady(id, { signal, timeout = 30000 } = {}) {
+    const deadline = Date.now() + timeout;
+    return new Promise((resolve, reject) => {
+      const finish = (error, record) => {
+        clearInterval(timer);
+        signal?.removeEventListener('abort', cancel);
+        if (error) {
+          reject(error);
+        }
+        else {
+          resolve(record);
+        }
+      };
+      const cancel = () => finish(capabilityError('Selection cancelled.', 'cancelled'));
+      const check = () => {
+        const record = this.instances.get(id);
+        const label = record?.entry.label || 'Application';
+        if (signal?.aborted) {
+          cancel();
+        }
+        else if (!record?.win || record.win.closed) {
+          finish(capabilityError(label + ' did not open or was closed. Allow ' +
+            'popups or open it through Launcher, then retry.', 'disconnected'));
+        }
+        else if (record.restoreError) {
+          finish(capabilityError(record.restoreError, 'restoring'));
+        }
+        else if (record.registered && record.ready && record.peer &&
+          !record.peer.closed) {
+          finish(null, record);
+        }
+        else if (Date.now() >= deadline) {
+          finish(capabilityError(label + ' did not become ready. Check its tab ' +
+            'and connection, then retry.', 'timeout'));
+        }
+      };
+      const timer = setInterval(check, 100);
+      signal?.addEventListener('abort', cancel, { once: true });
+      check();
+    });
+  }
+  async request(capability, input, {
+    requester = 'launcher', signal, providerId
+  } = {}) {
     const providers = [...this.instances.values()].filter(record =>
+      (providerId === undefined || record.entry.id === providerId) &&
       record.registered && record.ready && record.peer && !record.peer.closed &&
       record.capabilities.includes(capability) &&
       this.authorize(requester, record.entry, capability));
@@ -158,6 +202,10 @@ export class WorkspaceBroker {
       throw capabilityError(providers.length ? 'More than one provider is available.' :
         'Open Files through Launcher and allow resource selection.');
     }
+    try {
+      providers[0].win?.focus();
+    }
+    catch {}
     const result = await providers[0].peer.call('capability', {
       capability, input: serializable(input),
       requester: { application: requester, origin: this.target.location.origin }

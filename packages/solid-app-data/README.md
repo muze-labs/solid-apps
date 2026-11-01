@@ -18,7 +18,12 @@ channel. Launcher checkpoints ready apps with a ten-second deadline, reports
 failures per app and never closes apps using a silently substituted cached state.
 
 `workspace-broker.mjs` owns browser windows, instance identity, private ports and
-explicit route policy. `workspace-state.mjs` uses the published Solid Workspace
+explicit route policy. `whenReady(id, { signal, timeout })` waits for a verified
+ready instance and reports cancellation, blocked/closed windows and setup errors.
+`request(..., { providerId })` can bind an invocation to that selected instance
+while still checking route permission. Requesting asks the provider window for
+focus; responding asks the opener for focus. Browser policy can refuse either.
+Launcher-specific built-in Files discovery/startup stays in its `picker.mjs`. `workspace-state.mjs` uses the published Solid Workspace
 IndexedDB source for local state and native RDF for conditional Pod checkpoints.
 A successful workspace PUT can omit its ETag. That checkpoint stays acknowledged;
 its old validator is discarded. A later explicit write refreshes the native

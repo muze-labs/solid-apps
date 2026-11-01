@@ -69,11 +69,13 @@ test('workspace drafts cannot mutate a clean persistence snapshot by alias', t =
 });
 test('workspace routing requires an explicit grant and binds state to one instance', async t => {
   const peers = [];
+  let focused = 0;
   const target = {
     location: { origin: 'https://launcher.example' },
     addEventListener() {}, removeEventListener() {},
     open() {
-      return { closed: false, focus() {}, close() { this.closed = true; },
+      return { closed: false, focus() { focused++; },
+        close() { this.closed = true; },
         postMessage(message, origin, ports) {
           assert.equal(origin, 'https://files.example');
           const peer = new PortConnection(ports[0], method => {
@@ -93,9 +95,15 @@ test('workspace routing requires an explicit grant and binds state to one instan
   const peer = peers[0];
   await peer.call('register', { capabilities: ['https://example.org/select'] });
   await assert.rejects(broker.request('https://example.org/select', {}), /allow/);
+  assert.equal(focused, 0);
   await broker.allow(record.entry.id, true);
   assert.deepEqual(await broker.request('https://example.org/select', {}),
     { '@id': 'https://pod.example/resource' });
+  assert.equal(focused, 1);
+  await assert.rejects(broker.request('https://example.org/select', {}, {
+    providerId: ''
+  }), /allow/);
+  assert.equal(focused, 1);
   await assert.rejects(peer.call('request', {
     capability: 'https://example.org/select', input: {}
   }), /allow/);

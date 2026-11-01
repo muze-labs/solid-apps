@@ -41,6 +41,7 @@ const managedOptions = {
       error = { code: 'invalid', message: 'Unsupported selection request.' };
     }
     if (error) {
+      host.message(error.message);
       host.run(() => host.managed.respond(event.id, { error }));
       return;
     }
@@ -64,7 +65,8 @@ async function finishSelection(response) {
   selecting = true;
   try {
     await host.managed.respond(id, response);
-    host.message(response.error ? 'Selection cancelled.' : 'Resource URL returned.');
+    host.message((response.error ? 'Selection cancelled.' : 'Resource URL returned.') +
+      ' Return to Launcher if your browser did not switch tabs.');
   }
   finally {
     selecting = false;

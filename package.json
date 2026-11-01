@@ -12,7 +12,8 @@
     "dev": "npm run build && node scripts/serve.mjs",
     "test": "node --import ./scripts/oldm-loader.mjs --test test/*.test.mjs",
     "check": "npm test && npm run build",
-    "test:browser": "npm run build && node test/browser.mjs && node test/managed-browser.mjs"
+    "test:browser": "npm run build && node test/browser.mjs && node test/managed-browser.mjs && node test/picker-browser.mjs",
+    "test:picker": "node --test test/capabilities.test.mjs test/launcher-picker.test.mjs && node test/picker-browser.mjs"
   },
   "devDependencies": {
     "esbuild": "^0.25.12",

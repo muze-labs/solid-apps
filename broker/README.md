@@ -7,10 +7,22 @@ its implementation and evaluation remain in Git history.
 ## Try it locally
 
 Run `npm run dev` and open `http://127.0.0.1:4174/launcher/`. Connect Launcher
-through **WebID / connection**, then open Files from its built-in link. Files
-keeps its own Solid connection. **Choose in Files** displays selection controls
-in that managed Files instance and returns a URL to Launcher. Cancellation
-preserves the previous field; selecting does not download or write the resource.
+through **WebID / connection**, then click **Choose in Files**. Launcher focuses
+one allowed live Files provider, or opens/reuses a built-in Files instance if
+needed. No manual pre-opening is required. Files keeps its own Solid connection;
+connect there if requested. Selection controls return a URL to Launcher without
+downloading or writing the selected resource. Cancellation preserves the field.
+
+Startup opens synchronously from the click and waits up to 30 seconds for the
+verified app connection. Cancel selection also cancels that wait. Blocked popups,
+closed apps, setup failures and timeouts are reported. Existing denied instances
+are never silently granted. Multiple eligible providers require enabling the
+workspace's **Allow resource selection** for just one instance.
+
+Focus is requested for Files and, after selection/cancellation, for Launcher.
+Browsers can refuse focus requests; the UI tells you to switch tabs if needed.
+The isolated Chrome proof verifies Files tab activation and returned results;
+it does not guarantee the return-to-Launcher focus on every browser.
 
 For a cross-origin demonstration, add a shortcut to
 `http://localhost:4174/files/`, open it through Launcher, and enable **Allow
@@ -85,8 +97,12 @@ uncooperative apps cannot provide state or reliable self-closure after a browser
 crash. Participating apps monitor a captured opener reference to close after a
 normal Launcher close. This is browser lifecycle behavior, not a crash guarantee.
 
-`npm run check` covers routing, state and RDF preservation contracts.
-`npm run test:browser` covers cross-origin routing, reload/reconnection, distinct
+`npm run test:picker` exercises activation/startup policy, grants, cancellation
+and cross-origin tab handoff without invoking workspace persistence. The full
+`npm run check` / `npm run test:browser` persistence fixtures still use the
+JSON-in-Turtle format tracked by [DEF18](../.spiral/defects/DEF-20261101-QG24H-18.md);
+they need correction under the current native RDF rule. Earlier full-suite
+verification covers cross-origin routing, reload/reconnection, distinct
 instances, failure recovery, closure and fresh-browser Pod restoration. Chrome
 131 received an authorized close-time write in the local fixture. The fixture
 uses a test bearer credential through Metro; it does not establish real Solid
