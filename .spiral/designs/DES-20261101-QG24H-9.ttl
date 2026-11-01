@@ -1,0 +1,13 @@
+@prefix sd: <https://muze.nl/ns/spiral-developer#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix project: <urn:muze-labs:solid-apps:spiral:> .
+project:DES-20261101-QG24H-9 a sd:Design ;
+    dcterms:identifier "DES-20261101-QG24H-9" ;
+    sd:repositoryPath "design/solid-managed-workspace.md" ;
+    sd:status sd:Active ;
+    sd:satisfies [ a sd:ArtifactReference ;
+        sd:artifact project:REQ-20261101-QG24H-4 ;
+        sd:gitCommit "a759f6ff1b803f538d48062a0523f9fb039f8fca" ] ;
+    sd:supersedes [ a sd:ArtifactReference ;
+        sd:artifact project:DES-20261101-QG24H-5 ;
+        sd:gitCommit "eb4c89e206bac22d85ba1f513b80ad057d135376" ] .
