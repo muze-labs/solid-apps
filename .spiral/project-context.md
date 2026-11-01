@@ -731,6 +731,11 @@ Files links for every profile-advertised storage root. The list is unordered;
 these refinements do not reorder broker phases or implement an app store now.
 Third-party curation/availability and exact auth policy remain future-cycle work.
 
+The maintainer also confirms that the account-name Profile action reuses an open
+editor, or follows the existing tabs/windows preference when opening one. The
+roadmap's presentation question is resolved; no special forced-window override
+is planned for this action.
+
 
 The maintainer's confirmed PR #3 merge is recorded in ACC32. CYC2 is now Accepted
 in current metadata; this post-merge documentation reconciliation does not claim

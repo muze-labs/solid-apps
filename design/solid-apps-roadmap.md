@@ -48,19 +48,16 @@ dependency policy; this roadmap does not add sibling repository links.
 ## Profile and account experience
 
 - Make the account name at the top right of every app open the Profile app for
-  the current WebID. Open a new editor window, or reuse/focus an existing editor
-  when available, navigating to the current WebID while preserving unsaved work.
-  This account shortcut is the requested extension to the existing shared header; general app navigation remains in Launcher.
+  the current WebID. Reuse/focus an existing editor when available, navigating
+  to the current WebID while preserving unsaved work. When opening an editor,
+  follow the existing tabs/windows preference. This account shortcut is the
+  requested extension to the shared header; general app navigation remains in
+  Launcher.
 - After the user changes their name, update the displayed name immediately in
   all already-open suite apps, without requiring reload or reconnect. Native
   profile RDF remains authoritative. Propagating the same user's profile change
   between apps is part of account consistency, independent of the deferred
   collaborative-editing feature.
-
-One presentation detail is pending clarification: when no editor is open,
-should this account-name action always create a separate window or follow the
-existing tabs/windows preference? Reusing an open editor is requested either way.
-Do not infer an answer from the suggested options in the clarification prompt.
 
 The communication mechanism and behavior across origins remain design choices.
 A future verification should open several apps, change the name in Profile,
