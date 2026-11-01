@@ -622,3 +622,9 @@ apps and reconnects current-client ports without replaying saved state over live
 drafts. EVD14 verifies slow capture, stale-port recovery and failure preservation.
 Existing open tabs may require reload to use the correction. Actual user-case
 attribution and human acceptance remain pending in the same Active cycle.
+
+FBK15 adds decisive provider response evidence: CSS PUT 205 omits ETag while
+its corrected authorized GET 200 returns and exposes a strong ETag. IMP6 now
+separates acknowledged saves from next-write validator acquisition and persists
+a target-scoped baseline. EVD16 verifies the exact pattern throughout the browser
+fixture, without accessing the user's Pod. Human acceptance remains pending.
