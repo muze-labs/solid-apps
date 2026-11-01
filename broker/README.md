@@ -53,7 +53,13 @@ work. Shortcut collection sync remains a separate operation.
 If the browser refuses to close a manually opened Launcher tab, it reports that
 the managed apps have closed and leaves the Launcher for you to close. On
 reopening, local pending state wins over an unconfirmed remote result; conflicting
-Pod changes are reported rather than overwritten. A fresh browser can restore
+Pod changes are reported rather than overwritten. **Review Pod conflict** reads
+the current Pod version and shows both snapshots. **Keep local and save to Pod**
+replaces that reviewed snapshot conditionally, preserving other RDF; another
+remote change requires another review. **Use Pod version and reopen apps**
+replaces the local session, including drafts, and restores the Pod app set.
+Last-operation errors survive a reload and appear beside the workspace buttons.
+A known conflict is checked before reserving a sign-in window. A fresh browser can restore
 an acknowledged snapshot after connecting to the same account.
 
 ## Boundaries and evidence

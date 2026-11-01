@@ -6,6 +6,13 @@ import { serializable } from './capabilities.mjs';
 const jsonType = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#JSON';
 const predicate = prefixes.apps + 'snapshot';
 const localId = 'urn:muze:solid-apps:workspace:cache';
+function conflictError() {
+  const error = new Error(
+    'workspace-state: Pod conflict; local state is retained. Review both versions.'
+  );
+  error.code = 'workspace-conflict';
+  return error;
+}
 function textOf(value) {
   return JSON.stringify(value, (_key, item) => {
     if (item && typeof item === 'object' && !Array.isArray(item)) {
@@ -103,7 +110,12 @@ export class WorkspaceState {
     this.keys = { ...keys };
     this.work = this.work.catch(() => {}).then(async () => {
       await this.persist();
-      await this.prepare();
+      try {
+        await this.prepare();
+      }
+      catch (error) {
+        this.onStatus(error.message);
+      }
     });
     return this.work;
   }
@@ -134,6 +146,7 @@ export class WorkspaceState {
     this.url = url;
     this.document = null;
     this.prepared = null;
+    this.reviewedDocument = null;
     const document = await loadDocument(session.client, url, { allowMissing: true });
     const remote = readJSON(document.graph, url + '#workspace');
     if (remote) {
@@ -156,15 +169,54 @@ export class WorkspaceState {
       this.dirty = false;
     }
     this.document = document;
+    this.remoteSnapshot = remote;
     if (!this.conflict) {
       this.baseETag = document.etag;
     }
     await this.persist();
     await this.prepare();
     if (this.conflict) {
-      throw new Error('workspace-state: Pod state changed elsewhere; local state is retained.');
+      throw conflictError();
     }
     return this.snapshot;
+  }
+  async reviewConflict(session, url) {
+    try {
+      await this.bind(session, url);
+    }
+    catch (error) {
+      if (error.code !== 'workspace-conflict') {
+        throw error;
+      }
+    }
+    this.reviewedDocument = this.document;
+    return { local: structuredClone(this.snapshot),
+      remote: structuredClone(this.remoteSnapshot) };
+  }
+  async resolveConflict(session, url, choice) {
+    await this.work;
+    if (!this.conflict || !this.reviewedDocument ||
+      this.reviewedDocument !== this.document || session.webId !== this.owner ||
+      url !== this.url || !['local', 'pod'].includes(choice)) {
+      throw new Error('workspace-state: Review the current Pod conflict first.');
+    }
+    if (choice === 'pod') {
+      if (!this.remoteSnapshot) {
+        throw new Error('workspace-state: No saved Pod workspace is available.');
+      }
+      const previous = new Map(this.snapshot.apps.map(entry =>
+        [entry.id, entry.url]));
+      this.snapshot = validateWorkspace(this.remoteSnapshot);
+      this.keys = Object.fromEntries(this.snapshot.apps.filter(entry =>
+        previous.get(entry.id) === entry.url && this.keys[entry.id])
+        .map(entry => [entry.id, this.keys[entry.id]]));
+    }
+    this.conflict = false;
+    this.reviewedDocument = null;
+    this.baseETag = this.document.etag;
+    this.dirty = choice === 'local';
+    await this.persist();
+    await this.prepare();
   }
   async prepare() {
     this.prepared = null;
@@ -193,13 +245,23 @@ export class WorkspaceState {
   async save(session, url) {
     await this.work;
     if (this.conflict) {
-      throw new Error('workspace-state: Pod conflict; local state is retained.');
+      throw conflictError();
     }
+    await this.prepare();
     this.checkTarget(session, url);
     const prepared = this.prepared;
-    const response = requireOk(await session.client.put(url, {
+    const response = await session.client.put(url, {
       headers: prepared.headers, body: prepared.body
-    }));
+    });
+    if (response.status === 412) {
+      this.conflict = true;
+      this.reviewedDocument = null;
+      this.prepared = null;
+      this.dirty = true;
+      await this.persist();
+      throw conflictError();
+    }
+    requireOk(response);
     this.document = { ...prepared.draft, missing: false,
       etag: response.headers.get('ETag') };
     this.baseETag = this.document.etag;

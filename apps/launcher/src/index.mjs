@@ -16,7 +16,53 @@ const host = shell();
 let store;
 let selection;
 let workspace, persistence;
+let workspaceBusy = false;
 const container = host.main;
+function workspaceMessage(message, remember = false) {
+  ui.data.workspaceMessage = message;
+  ui.data.conflictAction = { hidden: persistence?.conflict ? null : '' };
+  if (remember) {
+    try {
+      sessionStorage.setItem('solid-apps.workspace-message', JSON.stringify({
+        owner: host.session?.webId || '', message
+      }));
+    }
+    catch {}
+  }
+}
+function workspaceFailure(error) {
+  if (!persistence?.reviewedDocument) {
+    ui.data.conflictReview = { hidden: '' };
+  }
+  workspaceMessage(error.message || String(error), true);
+  host.message(error.message || String(error));
+}
+async function workspaceOperation(operation, {
+  network = false, allowConflict = false, message = 'Preparing workspace…'
+} = {}) {
+  if (workspaceBusy) {
+    return;
+  }
+  workspaceBusy = true;
+  ui.data.workspaceButtons = { disabled: '' };
+  try {
+    if (!workspace || !persistence) {
+      throw new Error('launcher: Workspace is still loading.');
+    }
+    if (network && persistence.conflict && !allowConflict) {
+      throw new Error('launcher: Pod conflict. Choose Review Pod conflict below.');
+    }
+    workspaceMessage(message);
+    await (network ? host.requireSession().perform(operation) : operation());
+  }
+  catch (error) {
+    workspaceFailure(error);
+  }
+  finally {
+    workspaceBusy = false;
+    ui.data.workspaceButtons = { disabled: null };
+  }
+}
 function openApplication(href, options) {
   if (!workspace) {
     throw new Error('launcher: Workspace is still loading.');
@@ -37,8 +83,11 @@ function createWorkspace() {
     keys: persistence.keys,
     authorize: (requester, entry, capability) => requester === 'launcher' &&
       entry.allowBrowse && capability === browseCapability,
-    onMessage: message => { ui.data.workspaceMessage = message; },
+    onMessage: message => workspaceMessage(message),
     onChange: async (snapshot, keys) => {
+      if (workspace?.closing) {
+        return;
+      }
       await persistence.stage(snapshot, keys);
       renderWorkspace();
     }
@@ -51,7 +100,7 @@ async function preparePod() {
   const session = host.requireSession();
   const url = host.resource('workspace');
   if (persistence.session !== session || persistence.url !== url ||
-    !persistence.document) {
+    !persistence.document || (!persistence.prepared && !persistence.conflict)) {
     await persistence.bind(session, url);
     if (![...workspace.instances.values()].some(record => record.win)) {
       createWorkspace();
@@ -60,17 +109,22 @@ async function preparePod() {
   return { session, url };
 }
 async function saveWorkspace(close = false) {
+  workspaceMessage('Collecting the latest app state…');
   await workspace.checkpoint();
   const { session, url } = await preparePod();
+  workspaceMessage('Saving workspace to your Pod… Complete sign-in if requested.');
   if (!await persistence.save(session, url)) {
     throw new Error('launcher: State changed during saving. Save again before closing.');
   }
-  ui.data.workspaceMessage = 'Workspace saved to your Solid Pod.';
+  workspaceMessage('Workspace saved to your Solid Pod.', true);
   if (close) {
     persistence.skipExit = true;
     workspace.closeApps();
     renderWorkspace();
     host.message('Workspace saved and managed apps closed.');
+    workspaceMessage(
+      'Workspace saved and managed apps closed. You can close this tab.', true
+    );
     window.close();
   }
 }
@@ -135,6 +189,11 @@ const ui = app({
     cancelState: { hidden: '' },
     workspaceEntries: [],
     workspaceMessage: 'Loading workspace…',
+    workspaceButtons: { disabled: null },
+    conflictAction: { hidden: '' },
+    conflictReview: { hidden: '' },
+    localVersion: '',
+    podVersion: '',
     contactsLink: { href: '../contacts/' },
     filesLink: { href: '../files/' },
     profileLink: { href: '../profile/' }
@@ -160,13 +219,62 @@ const ui = app({
       host.run(() => workspace.remove(id));
     },
     saveWorkspace() {
-      host.run(() => saveWorkspace(), { network: true });
+      workspaceOperation(() => saveWorkspace(), { network: true });
     },
     closeWorkspace() {
-      host.run(() => saveWorkspace(true), { network: true });
+      workspaceOperation(() => saveWorkspace(true), { network: true });
+    },
+    reviewConflict() {
+      workspaceOperation(async () => {
+        const { local, remote } = await persistence.reviewConflict(
+          host.requireSession(), host.resource('workspace')
+        );
+        if (!persistence.conflict) {
+          ui.data.conflictReview = { hidden: '' };
+          workspaceMessage(
+            'Latest Pod version loaded. You can retry Save & close.', true
+          );
+          return;
+        }
+        ui.data.localVersion = JSON.stringify(local, null, 2);
+        ui.data.podVersion = JSON.stringify(remote, null, 2);
+        ui.data.conflictReview = { hidden: null };
+        workspaceMessage(
+          'Review both versions, then choose which workspace to keep.'
+        );
+      }, { network: true, allowConflict: true,
+        message: 'Reading the latest Pod version…' });
+    },
+    keepLocalWorkspace() {
+      workspaceOperation(async () => {
+        await persistence.resolveConflict(host.requireSession(),
+          host.resource('workspace'), 'local');
+        ui.data.conflictReview = { hidden: '' };
+        await saveWorkspace();
+      }, { network: true, allowConflict: true });
+    },
+    usePodWorkspace() {
+      workspaceOperation(async () => {
+        workspace.closing = true;
+        try {
+          await persistence.resolveConflict(host.requireSession(),
+            host.resource('workspace'), 'pod');
+        }
+        catch (error) {
+          workspace.closing = false;
+          throw error;
+        }
+        workspace.closeApps();
+        createWorkspace();
+        ui.data.conflictReview = { hidden: '' };
+        workspace.restore();
+        workspaceMessage(
+          'Using the Pod workspace. Restore apps if popups were blocked.', true
+        );
+      });
     },
     closeLocally() {
-      host.run(async () => {
+      workspaceOperation(async () => {
         await workspace.checkpoint();
         await persistence.work.catch(() => {});
         await persistence.persist();
@@ -174,6 +282,10 @@ const ui = app({
         workspace.closeApps();
         renderWorkspace();
         host.message('Locally saved workspace retained; managed apps closed.');
+        workspaceMessage(
+          'Locally saved workspace retained; managed apps closed. ' +
+          'You can close this tab.', true
+        );
         window.close();
       });
     },
@@ -305,7 +417,12 @@ host.onConnect = async () => {
     render();
   }
   if (persistence) {
-    await preparePod();
+    try {
+      await preparePod();
+    }
+    catch (error) {
+      workspaceFailure(error);
+    }
   }
 };
 renderLinks();
@@ -322,13 +439,26 @@ await host.run(async () => {
 });
 await host.ready;
 await host.run(async () => {
-  persistence = new WorkspaceState({ owner: host.session?.webId || '' });
+  persistence = new WorkspaceState({ owner: host.session?.webId || '',
+    onStatus: message => workspaceFailure(new Error(message)) });
   await persistence.open();
   createWorkspace();
-  if (host.session) {
-    await preparePod();
+  workspaceMessage('App state is saved locally. Pod saves happen at checkpoints and closure.');
+  try {
+    const previous = JSON.parse(sessionStorage.getItem('solid-apps.workspace-message'));
+    if (previous?.owner === (host.session?.webId || '')) {
+      workspaceMessage('Previous attempt: ' + previous.message);
+    }
   }
-  ui.data.workspaceMessage = 'App state is saved locally. Pod saves happen at checkpoints and closure.';
+  catch {}
+  if (host.session) {
+    try {
+      await preparePod();
+    }
+    catch (error) {
+      workspaceFailure(error);
+    }
+  }
   setTimeout(() => workspace.restore(), 900);
 });
 host.onPreferences = values => {

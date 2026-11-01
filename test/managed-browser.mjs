@@ -111,7 +111,9 @@ async function wait(page, expression) {
     await evaluate(page, 'return document.body.innerText;'));
 }
 async function click(page, selector) {
-  await wait(page, 'document.querySelector(' + JSON.stringify(selector) + ')');
+  const element = 'document.querySelector(' + JSON.stringify(selector) + ')';
+  await wait(page, element + ' && !' + element + '.disabled && ' +
+    element + '.getClientRects().length');
   await page.send('Page.bringToFront');
   const point = await evaluate(page, 'const element=document.querySelector(' +
     JSON.stringify(selector) + ');element.scrollIntoView({block:"center"});' +
@@ -129,6 +131,23 @@ async function submit(page, selector, values) {
     ');for(const [key,value] of Object.entries(' + JSON.stringify(values) +
     ')){form.elements[key].value=value;}' +
     'form.dispatchEvent(new Event("submit",{bubbles:true,cancelable:true}));');
+}
+async function reload(page) {
+  const loaded = page.once('Page.loadEventFired');
+  await page.send('Page.reload');
+  await loaded;
+}
+async function changePodWorkspace(resource) {
+  const snapshot = readSnapshot();
+  snapshot.launcher.resource = resource;
+  const url = base + '/workspace.ttl';
+  const graph = oldm.context().parse(records.get('/workspace.ttl'), url, 'text/turtle');
+  graph.set(url + '#workspace', 'https://vocab.muze.nl/solid-apps#snapshot',
+    oldm.literal(JSON.stringify(snapshot), {
+      type: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#JSON'
+    }));
+  records.set('/workspace.ttl', await graph.write());
+  workspaceETag = '"external-' + resource.split('/').pop() + '"';
 }
 async function connect(page, app) {
   await click(page, '.account-button');
@@ -225,13 +244,13 @@ try {
   for (const key of Object.values(privateKeys)) {
     assert(!records.get('/workspace.ttl').includes(key));
   }
-  await launcher.send('Page.reload');
+  await reload(launcher);
   await wait(launcher, 'window.solidLauncher?.workspace && ' +
     '[...window.solidLauncher.workspace.instances.values()].some(r=>r.registered)');
   const liveFiles = (await control.send('Target.getTargets')).targetInfos
     .filter(target => target.url.startsWith(filesBase));
   assert.equal(liveFiles.length, 1, 'Launcher reload must reconnect without duplicate apps.');
-  await files.send('Page.reload');
+  await reload(files);
   await wait(files, 'window.solidFiles?.host.managed?.peer && ' +
     'document.querySelector("[name=url]").value===' + JSON.stringify(base + '/storage/notes/'));
   await authorizeWorkspace(launcher);
@@ -242,7 +261,7 @@ try {
   const states = await evaluate(launcher, 'return window.solidLauncher.workspace.snapshot().apps.map(a=>a.state.folder);');
   assert(states.includes(base + '/storage/notes/'));
   assert(states.includes(base + '/storage/'));
-  for (const [status, message] of [[412, 'changed elsewhere'], [403, '403'],
+  for (const [status, message] of [[403, '403'],
     ['offline', 'fetch']]) {
     rejectPut = status;
     await click(launcher, '[data-simply-command=closeWorkspace]');
@@ -254,6 +273,69 @@ try {
       'return window.solidLauncher.persistence.dirty;'), true);
   }
   rejectPut = 0;
+  await reload(launcher);
+  await wait(launcher, 'window.solidLauncher?.workspace');
+  await wait(launcher, 'document.querySelector(".managed-workspace [role=status]")' +
+    '.textContent.toLowerCase().includes("fetch")');
+  await wait(launcher, '[...window.solidLauncher.workspace.instances.values()]' +
+    '.filter(record=>record.registered).length===2');
+  await authorizeWorkspace(launcher);
+  await changePodWorkspace(base + '/remote-version');
+  await click(launcher, '[data-simply-command=closeWorkspace]');
+  await wait(launcher, 'window.solidLauncher.persistence.conflict');
+  await reload(launcher);
+  await wait(launcher, 'window.solidLauncher?.persistence?.conflict');
+  await wait(launcher, '!document.querySelector("[data-simply-command=reviewConflict]")' +
+    '.closest("section").hidden');
+  await authorizeWorkspace(launcher);
+  await evaluate(launcher, 'window.authOperations=0;' +
+    'const session=window.solidLauncher.host.session;' +
+    'const original=session.perform.bind(session);' +
+    'session.perform=(operation,options)=>{window.authOperations++;' +
+    'return original(operation,options);};');
+  await click(launcher, '[data-simply-command=closeWorkspace]');
+  await wait(launcher, 'document.querySelector(".managed-workspace [role=status]")' +
+    '.textContent.includes("Review Pod conflict")');
+  assert.equal(await evaluate(launcher, 'return window.authOperations;'), 0);
+  await click(launcher, '[data-simply-command=reviewConflict]');
+  await wait(launcher, 'document.querySelector("[data-simply-field=podVersion]")' +
+    '.textContent.includes("remote-version")');
+  await launcher.send('Emulation.setDeviceMetricsOverride', {
+    width: 390, height: 844, deviceScaleFactor: 1, mobile: true
+  });
+  await evaluate(launcher, 'document.querySelector(' +
+    '"[data-simply-command=reviewConflict]").scrollIntoView({block:"start"});');
+  assert(await evaluate(launcher, 'return document.documentElement.scrollWidth<=innerWidth;'));
+  const conflictShot = await launcher.send('Page.captureScreenshot', { format: 'png' });
+  await fs.writeFile('/tmp/solid-apps-review/workspace-conflict-mobile.png',
+    Buffer.from(conflictShot.data, 'base64'));
+  await changePodWorkspace(base + '/newer-version');
+  await click(launcher, '[data-simply-command=keepLocalWorkspace]');
+  await wait(launcher, 'window.solidLauncher.persistence.conflict && ' +
+    '!window.solidLauncher.persistence.reviewedDocument');
+  assert.equal(readSnapshot().launcher.resource, base + '/newer-version');
+  await click(launcher, '[data-simply-command=reviewConflict]');
+  await wait(launcher, 'window.solidLauncher.persistence.reviewedDocument');
+  delayPut = 250;
+  await click(launcher, '[data-simply-command=keepLocalWorkspace]');
+  await wait(launcher, 'document.querySelector("[data-simply-command=closeWorkspace]").disabled');
+  await wait(launcher, 'document.querySelector(".managed-workspace [role=status]")' +
+    '.textContent.includes("saved to your Solid Pod")');
+  delayPut = 0;
+  assert.equal(readSnapshot().launcher.resource, base + '/storage/notes/note.ttl');
+  assert.match(records.get('/workspace.ttl'), /preserve me/);
+  await changePodWorkspace(base + '/use-pod-version');
+  await click(launcher, '[data-simply-command=saveWorkspace]');
+  await wait(launcher, 'window.solidLauncher.persistence.conflict');
+  await click(launcher, '[data-simply-command=reviewConflict]');
+  await wait(launcher, 'window.solidLauncher.persistence.reviewedDocument');
+  const beforeUsePod = puts.length;
+  await click(launcher, '[data-simply-command=usePodWorkspace]');
+  await wait(launcher, 'document.querySelector(".launch-profile [name=resource]")' +
+    '.value===' + JSON.stringify(base + '/use-pod-version'));
+  await wait(launcher, '[...window.solidLauncher.workspace.instances.values()]' +
+    '.filter(record=>record.registered).length===2');
+  assert.equal(puts.length, beforeUsePod, 'Using Pod state must not PUT app data.');
   await click(launcher, '[data-simply-command=closeWorkspace]');
   for (let i = 0; i < 150; i++) {
     const targets = (await control.send('Target.getTargets')).targetInfos;
@@ -325,7 +407,8 @@ try {
   await fs.writeFile('/tmp/solid-apps-review/workspace-close-results.json',
     JSON.stringify(result, null, 2));
   console.log('PASS: browser-local routing, reload/reconnect, distinct instances, ' +
-    'local-only updates, acknowledged conditional Pod save and fresh-browser restore.');
+    'local-only updates, acknowledged conditional Pod save, fresh-browser restore, ' +
+    'retained errors and reviewable conditional conflict recovery.');
   console.log('Tab-close experiment:', JSON.stringify(result));
 }
 catch (error) {

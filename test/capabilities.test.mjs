@@ -109,4 +109,7 @@ test('workspace routing requires an explicit grant and binds state to one instan
   broker.resume({ data: { type: 'solid-apps:resume', id: record.entry.id,
     key: record.key }, origin: 'https://files.example', source: {} });
   assert.equal(record.win, existingWindow);
+  broker.closing = true;
+  await assert.rejects(peer.call('state', { folder: 'stale state' }), /active/);
+  assert.equal(broker.snapshot().apps[0].state.unknown, 42);
 });

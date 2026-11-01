@@ -14,7 +14,11 @@ disconnect handling; invocations are not replayed on reconnect.
 `workspace-broker.mjs` owns browser windows, instance identity, private ports and
 explicit route policy. `workspace-state.mjs` uses the published Solid Workspace
 IndexedDB source for local state and native RDF for conditional Pod checkpoints.
-Live updates do not write the Pod. Credentials and reconnect keys are excluded
+Live updates do not write the Pod. `reviewConflict(session, url)` loads the
+current native Pod document; `resolveConflict(session, url, 'local' | 'pod')`
+requires that review. Keeping local prepares a conditional save against the
+reviewed ETag; using Pod changes the local snapshot without a PUT. A subsequent
+412 revokes the review. Remote preparation errors do not poison local updates. Credentials and reconnect keys are excluded
 from public snapshots. See the [workspace guide](../../broker/README.md) and
 [design](../../design/solid-managed-workspace.md). These are experimental suite
 interfaces; capability routing grants no Solid authorization.
