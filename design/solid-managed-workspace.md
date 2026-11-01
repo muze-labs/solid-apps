@@ -61,3 +61,20 @@ Use a fixture Pod to test explicit save, close-time PUT receipt, conditional
 conflict, denied/offline writes, unknown RDF and fresh-browser restoration.
 Record observed tab-close behavior separately from explicit acknowledged saves;
 do not generalize one Chrome result to crashes, mobile or all Solid providers.
+
+## Conflict recovery correction
+
+A conflict is a recoverable state, not a permanent refusal. Save operations show
+progress and failures beside their controls and retain the last result across
+reload. Known local preconditions, including conflicts, are checked before
+reserving an authentication window. Local restoration starts even if a Pod read
+or preparation fails.
+
+Review fetches the current Pod document and presents both public snapshots.
+Only after review may the user explicitly keep local state and conditionally
+save against that document's ETag, or use the Pod state and replace/reopen the
+managed session. A further 412 revokes the review and requires another review;
+there is no unconditional overwrite. Unknown RDF is preserved from the reviewed
+native document. Using Pod state does not save app data or profile drafts.
+Local cache persistence remains usable when remote serialization/preparation
+fails. These corrections follow FBK-20261101-QG24H-11 in the same Active cycle.
