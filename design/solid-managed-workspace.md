@@ -143,3 +143,23 @@ This advances the existing cycle with built-in Files startup, not a durable
 provider registry, remote catalog discovery or arbitrary provider installation.
 DEF18 and the native RDF rule remain unchanged. Focus/startup verification uses
 protocol fixtures without invoking the noncompliant persistence encoder.
+
+## Return activation and authorization UI ownership
+
+FBK22 confirms that opener.focus alone does not activate Launcher in the tested
+browser. Give the live Launcher a fresh, random browsing-context name and convey
+it through the verified opener offer. During the provider's selection/cancel
+gesture, target that existing named context with an empty URL, verify that the
+returned WindowProxy is the captured opener, and request focus. Close any
+unexpected newly created context; do not navigate an unrelated context. Without
+a valid target, a live opener or user activation, retain advisory opener.focus.
+Keep this activation hint separate from restoration identity and persistence.
+Browser policy can still refuse activation; retain manual-return guidance.
+
+The Solid session owns every authorization popup, including authorization first
+required after a cached ID token allowed earlier public reads. Capture a newly
+opened handle before passing it to the published OAuth popup helper, and close
+that exact handle on completion/failure. A blocked popup fails visibly; background
+operations still refuse interactive authentication. Preserve the library's state
+and origin checks and existing session/logout behavior. No callback URL, token or
+authorization code is logged or persisted by this correction.
