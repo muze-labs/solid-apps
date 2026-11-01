@@ -1,0 +1,28 @@
+@prefix sd: <https://muze.nl/ns/spiral-developer#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix project: <urn:muze-labs:solid-apps:spiral:> .
+project:DES-20261101-QG24H-9 a sd:Design ;
+    dcterms:identifier "DES-20261101-QG24H-9" ;
+    sd:repositoryPath "design/solid-managed-workspace.md" ;
+    sd:status sd:Active ;
+    sd:derivedFrom [ a sd:ArtifactReference ;
+        sd:artifact project:FBK-20261101-QG24H-15 ;
+        sd:gitCommit "b98620ed76dd2f60a21fb2a20f5fb62fbe3dc1d9" ] ;
+    sd:derivedFrom [ a sd:ArtifactReference ;
+        sd:artifact project:FBK-20261101-QG24H-20 ;
+        sd:gitCommit "9cc25ee0f96732e70e9238a8bfae403e32c07507" ] ;
+    sd:transforms [ a sd:ArtifactReference ;
+        sd:artifact project:DES-20261101-QG24H-9 ;
+        sd:gitCommit "0ce3b970cf4d2176b1f6edd10093cf997c1c5e6e" ] ;
+    sd:derivedFrom [ a sd:ArtifactReference ;
+        sd:artifact project:FBK-20261101-QG24H-22 ;
+        sd:gitCommit "8b0190375ac16935111efd0fbe015ef60cf371dd" ] ;
+    sd:derivedFrom [ a sd:ArtifactReference ;
+        sd:artifact project:DES-20261101-QG24H-25 ;
+        sd:gitCommit "010bcd368568574ee6f48d8f3af87fd6b935cdda" ] ;
+    sd:satisfies [ a sd:ArtifactReference ;
+        sd:artifact project:REQ-20261101-QG24H-4 ;
+        sd:gitCommit "a759f6ff1b803f538d48062a0523f9fb039f8fca" ] ;
+    sd:supersedes [ a sd:ArtifactReference ;
+        sd:artifact project:DES-20261101-QG24H-5 ;
+        sd:gitCommit "eb4c89e206bac22d85ba1f513b80ad057d135376" ] .

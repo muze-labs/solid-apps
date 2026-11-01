@@ -3,7 +3,7 @@ import { fields, readProfile, profileLabel } from './index.mjs';
 
 export function profileView(
   container,
-  { emptyText = 'No profile selected.' } = {}
+  { emptyText = 'No profile selected.', onChange = () => {} } = {}
 ) {
   let subject = null,
     options = {},
@@ -28,12 +28,16 @@ export function profileView(
       ...Object.fromEntries(fields.map((field) => [field.name, '']))
     },
     commands: {
+      changed() {
+        onChange();
+      },
       edit() {
         if (!subject || !options.editable || saving) {
           return;
         }
         widget.data.formVisibility = { hidden: null };
         widget.data.detailsVisibility = { hidden: '' };
+        onChange();
         requestAnimationFrame(() => form.elements.name.focus());
       },
       cancel() {
@@ -45,6 +49,7 @@ export function profileView(
           formVisibility: { hidden: '' },
           detailsVisibility: { hidden: null }
         });
+        onChange();
       },
       async save() {
         if (!options.editable || !options.onSave || saving) {
@@ -72,6 +77,32 @@ export function profileView(
     }
   });
   return {
+    draft() {
+      if (saving) {
+        throw new Error('profile-view: Wait for the profile save to finish.');
+      }
+      if (!subject || widget.data.formVisibility.hidden !== null) {
+        return null;
+      }
+      return { subject: subject.id, values: Object.fromEntries(
+        fields.map(field => [field.name, form.elements[field.name].value])
+      ) };
+    },
+    restoreDraft(draft) {
+      if (!draft) {
+        return;
+      }
+      if (draft.subject !== subject?.id || !options.editable ||
+        fields.some(field => typeof draft.values?.[field.name] !== 'string')) {
+        throw new Error('profile-view: Cannot restore this profile draft.');
+      }
+      const restored = Object.fromEntries(fields.map(field =>
+        [field.name, draft.values[field.name]]));
+      Object.assign(widget.data, restored, {
+        formVisibility: { hidden: null },
+        detailsVisibility: { hidden: '' }
+      });
+    },
     show(next, settings = {}) {
       subject = next;
       options = settings;

@@ -130,7 +130,7 @@ target.hash = new URLSearchParams({
   webid: currentWebId,
   resource: 'https://pod.example/contacts.ttl#alice'
 }).toString();
-window.open(target.href, '_blank', 'noopener');
+window.open(target.href, '_blank');
 ```
 
 Every ordinary launch requests a new app tab by default, with no reusable target
@@ -139,8 +139,9 @@ name. **Preferences → Open apps in** can select new windows instead, adding th
 literal `apps:launchTarget` (`"tab"` or `"window"`) in the linked preferences
 document, separately from per-shortcut identity and parameter mode. An absent
 setting defaults to `"tab"`; Launcher uses the loaded preference at each launch.
-Launcher stays open. `noopener` keeps the new target independent of Launcher;
-later broker communication uses explicit connections. Browser settings may
+Launcher stays open and retains opener access for its browser-local managed
+workspace. Private message channels carry state and capabilities; the URL
+contract alone does not join a workspace. See [managed workspace](solid-managed-workspace.md). Browser settings may
 control tab presentation or block launches, so the open call runs directly
 within the user's launch gesture, before any awaited network work.
 

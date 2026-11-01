@@ -7,6 +7,12 @@ build time. `shell()` binds its header and preferences scopes and returns the ap
 content container, session/settings access, status reporting, and operation runner.
 The application mounts its own SimplyFlow scope inside `host.main`.
 
+Apps call `host.manage({ getState, restoreState, ... })` to participate in a
+Launcher-managed workspace. It creates the renderer-independent `ManagedApp`
+client after shell startup. Apps own their state and capability UI; the shell
+reports connection errors through the shared status area. Standalone apps still
+work without an opener. No server connection panel or provisioned keys are used.
+
 `shell({ acceptLaunch: true })` opts a receiving app into validated launch
 context, available as `host.launch`; `host.launchError` describes invalid
 input. `host.ready` settles after background session restoration and the
@@ -23,7 +29,7 @@ changes after consumption do not trigger a reload.
 `host.onConnect` attaches app-specific behavior to a connected session;
 `host.onPreferences` receives changed settings. `host.run(operation, {network})`
 reports operation failures to the shared status area. `host.resource(name)`
-resolves a Contacts/Launcher location; `host.requireSession()` explains missing
+resolves a Contacts/Launcher/workspace location; `host.requireSession()` explains missing
 connections. These are suite choices, not intended as general framework APIs.
 
 Runtime content is rendered only through SimplyFlow. Native dialog/popover lifecycle,

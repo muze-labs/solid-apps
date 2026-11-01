@@ -138,15 +138,25 @@ export async function connectSession(
           'solid-app-data: Sign-in required. Click Connect Solid to continue.'
         );
       }
-      try {
-        return await authorizePopup(
-          url,
-          authPopup && !authPopup.closed ? { popup: authPopup } : {}
+      // A cached ID token does not guarantee resource authorization. Own the
+      // popup opened here too, rather than letting the helper lose its handle.
+      if (!authPopup || authPopup.closed) {
+        authPopup = window.open('', '_blank', 'popup,width=520,height=720');
+      }
+      if (!authPopup || authPopup.closed) {
+        throw new Error(
+          'solid-app-data: Sign-in popup was blocked. Allow popups and retry.'
         );
       }
+      const authorizationWindow = authPopup;
+      try {
+        return await authorizePopup(url, { popup: authorizationWindow });
+      }
       finally {
-        authPopup?.close();
-        authPopup = null;
+        authorizationWindow.close();
+        if (authPopup === authorizationWindow) {
+          authPopup = null;
+        }
       }
     }
   };

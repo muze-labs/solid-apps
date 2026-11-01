@@ -12,6 +12,12 @@ validation errors and remote conflicts are explicit errors.
 `defaults`, `readPreferences`, `validatePreferences` and `applyPreferences` are
 also exported. Appearance application is separate from persistence.
 
+`workspaceResource` is a named IRI on `apps:workspaceResource`, identifying the
+workspace Turtle document without a fragment. The default is
+`apps/solid-apps/workspace.ttl` below advertised storage. Unsupported structured,
+multiple or literal values fail before writing. The old `apps:brokerUrl` is no
+longer used or edited; existing values survive as unknown RDF.
+
 `launchTarget` is a plain literal, `"tab"` (the default) or `"window"`, on the
 suite's preferences subject using `apps:launchTarget`. The shared dialog offers
 **Open apps in**; Launcher uses it for app links and its Profile resource form.

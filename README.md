@@ -27,10 +27,13 @@ through **Connect Solid**, then choose **Sync with Solid** in Contacts or Launch
 The connected WebID is remembered on this origin. Background restoration does not
 open a login popup; a user gesture is required when sign-in is needed.
 
-Creating multiple workspaces and syncing their definitions to a Pod is
-[planned roadmap work](design/solid-capability-broker-roadmap.md#retained-roadmap-item--pod-synced-workspaces),
-not implemented yet. Current Launcher sync covers its configured shortcut
-collection.
+Launcher manages apps opened through it, checkpoints their restoration state
+locally, and can save that default workspace to your Pod. **Save & close** waits
+for a confirmed save; the browser close button attempts a best-effort save.
+Reopening restores the saved app set, subject to popup permission. See the
+[workspace guide](broker/README.md) for setup and limitations. Creating multiple
+named workspaces remains [planned](design/solid-capability-broker-roadmap.md#retained-roadmap-item--pod-synced-workspaces).
+Shortcut collection sync is separate.
 
 When connected, **WebID / connection** also offers **Log out**. It clears the
 current account's cached access, refresh and ID tokens and the remembered WebID.
@@ -42,7 +45,7 @@ logout from these apps; the identity provider may retain its own login session.
 
 | App | Working basic slice |
 | --- | --- |
-| Launcher | Built-in app links; add/remove personal shortcuts; local persistence and explicit Solid sync. |
+| Launcher | Shortcuts and explicit Solid sync; browser-local capability routing; app lifecycle and local/Pod workspace checkpoints. |
 | Contacts | Add sparse contacts, search, view/edit profiles, delete with tombstones, local persistence and explicit Solid sync. |
 | Profile | Read a WebID profile, edit your connected profile, or edit a local contact using the same component as Contacts. |
 | Files | Browse folders, create folders, upload/download binary files, and mark resources deleted through link metadata. |
@@ -69,8 +72,8 @@ context; it does not grant access. If a different account is remembered, use
 
 The [launch-context contract](design/solid-app-launch-context.md) documents how
 independent apps can construct compatible links using their own libraries.
-This first resource-opening slice supports Profile; Contacts and Files resource
-selection remain later work.
+This resource-opening slice supports Profile; launch-resource handling for
+Contacts and Files remains later work.
 
 Each shortcut has a **Launch mode** choice. **Follow application** uses the
 mode declared in its RDF description, falling back to URL fragments when none
@@ -90,6 +93,13 @@ receiving app that already has its own session.
 
 ## Shared preferences
 
+**Choose in Files** opens the built-in Files app on demand or focuses an allowed
+existing instance, using private browser message channels. Files need not already
+be open. It retains its own Solid connection. See the [workspace guide](broker/README.md)
+for connection and permission steps. Selection returns a URL into Launcher's
+resource field; cancellation preserves its previous value. Both apps keep their
+own Solid sessions.
+
 Every app opens the same preferences dialog. It loads the URL linked by
 `pim:preferencesFile` on the connected WebID; it never guesses a preferences path.
 An absent resource may be created at that linked URL. If the profile has no link,
@@ -97,7 +107,8 @@ the dialog explains the missing prerequisite; profile-link creation is not part
 of this first version.
 
 Settings cover system/light/dark appearance, text size, density, preferred
-language, app launch presentation, and Contacts/Launcher/Files storage locations.
+language, app launch presentation, and Contacts/Launcher/Files/workspace storage
+locations.
 **Open apps in** chooses new tabs (the default) or new windows for Launcher links
 and the Profile resource form. The choice is saved in your linked preferences
 file and used when Launcher loads it. Browser settings can affect presentation.
@@ -180,6 +191,12 @@ metadata. The browser test starts its own app and mock-Pod servers, exercises al
 four apps, reload persistence, shared profile editing, preferences across apps,
 synchronization, binary upload and tombstones. It also checks text escaping and
 captures desktop/mobile views in `/tmp/solid-apps-review/`.
+
+The build measures each app's JavaScript import graph plus the authentication
+callback, counting shared chunks once per app. It writes `www/size-report.json`
+and rejects totals of 200,000 gzip bytes or more (gzip level 6; source maps are
+excluded). The development server serves readable JavaScript; this budget is
+the compressed production transfer size, not a claim of offline/PWA support.
 
 ## Shared appearance
 

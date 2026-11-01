@@ -1,4 +1,18 @@
 <section class="file-controls">
+  <section class="picker-request app-card" hidden
+    data-simply-field="picker" data-simply-transform="attributes"
+    data-simply-attributes="hidden">
+    <h2>Select a resource</h2>
+    <p>Requested by <span data-simply-field="requester"
+      data-simply-transform="escape_html"></span></p>
+    <p>Choose a resource below. Only its URL is returned; access is unchanged.</p>
+    <div class="actions">
+      <button class="ds-button" data-simply-command="selectFolder">
+        Select current folder</button>
+      <button class="ds-button" data-simply-command="cancelSelection">
+        Cancel selection</button>
+    </div>
+  </section>
   <form class="toolbar app-toolbar" data-simply-command="browse">
     <label
       >Folder URL<input
@@ -11,7 +25,8 @@
       Parent folder
     </button>
   </form>
-  <div class="toolbar app-toolbar">
+  <div class="toolbar app-toolbar" data-simply-field="editing"
+    data-simply-transform="attributes" data-simply-attributes="hidden">
     <form data-simply-command="mkdir">
       <label>New folder name<input name="name" required /></label
       ><button class="ds-button">Create folder</button>
@@ -52,10 +67,16 @@
           </td>
           <td data-simply-field="type" data-simply-transform="escape_html"></td>
           <td>
+            <button class="ds-button" data-simply-command="selectResource"
+              data-simply-value=":value.url" hidden
+              data-simply-field="pick" data-simply-transform="attributes"
+              data-simply-attributes="hidden">Select</button>
             <button
               class="ds-button"
               data-simply-command="remove"
               data-simply-value=":value.url"
+              data-simply-field="edit" data-simply-transform="attributes"
+              data-simply-attributes="hidden"
             >
               Delete
             </button>

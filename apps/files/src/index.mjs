@@ -1,5 +1,8 @@
+import { AppState } from '@muze-labs/solid-app-data/app-state.mjs';
+import { apps } from '@muze-labs/solid-app-data/state-rdf.mjs';
 import { app } from '@muze-labs/simplyflow/app';
 import { shell } from '@muze-labs/solid-app-ui';
+import { browseCapability } from '@muze-labs/solid-app-data/capabilities.mjs';
 import { SolidAdapter, requireOk, httpUrl } from '@muze-labs/solid-app-data';
 import {
   loadContainerMetadata,
@@ -12,6 +15,69 @@ const container = host.main.querySelector('.file-controls');
 let current = '',
   root = '',
   busy = false;
+let pending = null;
+let selecting = false;
+let restoredFolder = '';
+function renderPicker() {
+  ui.data.picker = { hidden: pending ? null : '' };
+  ui.data.editing = { hidden: pending ? '' : null };
+  ui.data.requester = pending
+    ? pending.requester.application + ' (' + pending.requester.origin + ')' : '';
+  ui.data.entries = ui.data.entries.map(entry => ({ ...entry,
+    pick: { hidden: pending ? null : '' },
+    edit: { hidden: pending ? '' : null }
+  }));
+}
+const managedOptions = {
+  capabilities: [browseCapability],
+  onRequest(event) {
+    let error;
+    if (pending || selecting) {
+      error = { code: 'busy', message: 'Files is handling another selection.' };
+    }
+    else if (!host.session) {
+      error = { code: 'denied', message: 'Connect Files to Solid first.' };
+    }
+    else if (event.capability !== browseCapability ||
+      Object.keys(event.input).some(key => key !== '@context')) {
+      error = { code: 'invalid', message: 'Unsupported selection request.' };
+    }
+    if (error) {
+      host.message(error.message);
+      host.run(() => host.managed.respond(event.id, { error }));
+      return;
+    }
+    pending = event;
+    renderPicker();
+    host.message('A resource selection is waiting in Files.');
+  },
+  onCancel(event) {
+    if (pending?.id === event.id) {
+      pending = null;
+      renderPicker();
+      host.message(event.error?.message || 'Selection cancelled.');
+    }
+  }
+};
+async function finishSelection(response) {
+  if (!pending || selecting) {
+    return;
+  }
+  const id = pending.id;
+  selecting = true;
+  try {
+    await host.managed.respond(id, response);
+    host.message((response.error ? 'Selection cancelled.' : 'Resource URL returned.') +
+      ' Return to Launcher if your browser did not switch tabs.');
+  }
+  finally {
+    selecting = false;
+    if (pending?.id === id) {
+      pending = null;
+      renderPicker();
+    }
+  }
+}
 function locationValue() {
   return host.preferences.filesRoot || host.session?.storage[0] || '';
 }
@@ -48,12 +114,14 @@ async function browse(url) {
     name: decodeName(entry.url),
     type: entry.type
   }));
+  renderPicker();
   ui.data.empty = visible.length ? '' : 'This folder is empty.';
   host.message(
     metadata
       ? 'Folder loaded.'
       : 'Folder loaded. This server did not advertise link metadata; deletion is unavailable.'
   );
+  host.managed?.publish().catch(error => host.message(error.message));
 }
 function decodeName(url) {
   try {
@@ -79,7 +147,19 @@ function operation(fn) {
     return;
   }
   busy = true;
-  host.run(fn, { network: true }).finally(() => (busy = false));
+  host.run(async () => {
+    try {
+      return await fn();
+    }
+    catch (error) {
+      if (pending) {
+        await finishSelection({ error: { code: 'failed',
+          message: 'Files could not complete selection. ' + error.message
+        } }).catch(() => {});
+      }
+      throw error;
+    }
+  }, { network: true }).finally(() => (busy = false));
 }
 function download(url) {
   operation(async () => {
@@ -100,8 +180,25 @@ function download(url) {
 }
 const ui = app({
   container,
-  data: { entries: [], url: '', empty: '' },
+  data: { entries: [], url: '', empty: '', picker: { hidden: '' },
+    editing: { hidden: null }, requester: '' },
   commands: {
+    selectResource(_element, url) {
+      host.run(() => {
+        if (!ui.data.entries.some(entry => entry.url === url)) {
+          throw new Error('files: Select a resource from the current folder.');
+        }
+        return finishSelection({ result: { '@id': inside(url) } });
+      });
+    },
+    selectFolder() {
+      host.run(() => finishSelection({ result: { '@id': inside(current) } }));
+    },
+    cancelSelection() {
+      host.run(() => finishSelection({ error: {
+        code: 'cancelled', message: 'Selection cancelled in Files.'
+      } }));
+    },
     browse(form) {
       operation(() => browse(form.elements.url.value));
     },
@@ -111,7 +208,12 @@ const ui = app({
         operation(() => browse(url));
       }
       else {
-        download(url);
+        if (pending) {
+          host.run(() => finishSelection({ result: { '@id': inside(url) } }));
+        }
+        else {
+          download(url);
+        }
       }
     },
     up() {
@@ -177,9 +279,23 @@ const ui = app({
   }
 });
 host.onConnect = async () => {
-  const url = locationValue();
+  const url = restoredFolder || locationValue();
   if (url) {
     await browse(url);
   }
 };
+const appState = new AppState();
+host.manage({ ...managedOptions,
+  getState: () => {
+    appState.set(apps + 'folder', current || restoredFolder, 'iri');
+    return appState.snapshot();
+  },
+  restoreState: async state => {
+    appState.restore(state);
+    restoredFolder = appState.read(apps + 'folder', 'iri');
+    if (host.session && restoredFolder) {
+      await browse(restoredFolder);
+    }
+  }
+});
 window.solidFiles = { host, ui };

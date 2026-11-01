@@ -14,11 +14,28 @@ export const defaults = Object.freeze({
   density: 'comfortable',
   language: 'en',
   launchTarget: 'tab',
+  workspaceResource: '',
   contactsResource: '',
   launcherResource: '',
   filesRoot: ''
 });
 const namespace = prefixes.apps;
+function readWorkspaceResource(subject) {
+  let value = valueAt(subject, namespace + 'workspaceResource');
+  if (value === undefined) {
+    return '';
+  }
+  if (Array.isArray(value)) {
+    if (value.length !== 1) {
+      throw new Error('solid-preferences: Workspace resource has multiple values.');
+    }
+    value = value[0];
+  }
+  if (!value?.id || String(value.id).startsWith('_:')) {
+    throw new Error('solid-preferences: Workspace resource must be a named URL.');
+  }
+  return httpUrl(value.id);
+}
 function readLaunchTarget(subject) {
   let value = valueAt(subject, namespace + 'launchTarget');
   if (value === undefined) {
@@ -44,12 +61,19 @@ function readLaunchTarget(subject) {
 export function readPreferences(document) {
   const subject = document.graph.get(document.url + '#solid-apps');
   return Object.fromEntries(
-    Object.entries(defaults).map(([key, fallback]) => [
-      key,
-      key === 'launchTarget'
-        ? readLaunchTarget(subject)
-        : idOf(valueAt(subject, namespace + key) ?? fallback)
-    ])
+    Object.entries(defaults).map(([key, fallback]) => {
+      let value;
+      if (key === 'workspaceResource') {
+        value = readWorkspaceResource(subject);
+      }
+      else if (key === 'launchTarget') {
+        value = readLaunchTarget(subject);
+      }
+      else {
+        value = idOf(valueAt(subject, namespace + key) ?? fallback);
+      }
+      return [key, value];
+    })
   );
 }
 export function validatePreferences(settings) {
@@ -68,7 +92,7 @@ export function validatePreferences(settings) {
   if (!/^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/.test(settings.language)) {
     throw new Error('solid-preferences: Use a language tag such as en or nl.');
   }
-  for (const key of ['contactsResource', 'launcherResource', 'filesRoot']) {
+  for (const key of ['contactsResource', 'launcherResource', 'workspaceResource', 'filesRoot']) {
     if (!settings[key]) {
       continue;
     }
@@ -98,6 +122,7 @@ export async function loadPreferences(session) {
 export async function savePreferences(session, document, settings) {
   validatePreferences(settings);
   readLaunchTarget(document.graph.get(document.url + '#solid-apps'));
+  readWorkspaceResource(document.graph.get(document.url + '#solid-apps'));
   const draft = await copyDocument(document);
   const id = draft.url + '#solid-apps';
   const node =
@@ -109,7 +134,7 @@ export async function savePreferences(session, document, settings) {
       draft.graph.set(
         id,
         namespace + key,
-        ['contactsResource', 'launcherResource', 'filesRoot'].includes(key)
+        ['contactsResource', 'launcherResource', 'workspaceResource', 'filesRoot'].includes(key)
           ? draft.graph.addNamedNode(settings[key])
           : oldm.literal(String(settings[key]))
       );

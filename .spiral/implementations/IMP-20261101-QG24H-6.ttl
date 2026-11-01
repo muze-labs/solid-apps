@@ -1,0 +1,33 @@
+@prefix sd: <https://muze.nl/ns/spiral-developer#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix project: <urn:muze-labs:solid-apps:spiral:> .
+project:IMP-20261101-QG24H-6 a sd:Implementation ;
+    dcterms:identifier "IMP-20261101-QG24H-6" ;
+    sd:repositoryPath ".spiral/implementations/IMP-20261101-QG24H-6.md" ;
+    sd:status sd:Active ;
+    sd:implementationLocation "packages/solid-app-data/src/capabilities.mjs",
+        "packages/solid-app-data/src/workspace-broker.mjs",
+        "packages/solid-app-data/src/workspace-state.mjs",
+        "packages/solid-app-data/src/state-rdf.mjs",
+        "packages/solid-app-data/src/app-state.mjs",
+        "packages/solid-app-data/src/workspace-rdf.mjs",
+        "packages/solid-profile/src/state.mjs",
+        "packages/solid-app-ui/src/index.mjs",
+        "apps/launcher/src/index.mjs", "apps/launcher/src/picker.mjs",
+        "apps/files/src/index.mjs",
+        "apps/contacts/src/index.mjs", "apps/profile/src/index.mjs",
+        "packages/solid-profile/src/view.mjs",
+        "packages/solid-preferences/src/index.mjs", "scripts/build.mjs" ;
+    sd:implements [ a sd:ArtifactReference ;
+        sd:artifact project:DES-20261101-QG24H-9 ;
+        sd:gitCommit "edc2f5e27d835aef77814d196f55db196b915bd2" ] ;
+    sd:implements [ a sd:ArtifactReference ;
+        sd:artifact project:DES-20261101-QG24H-25 ;
+        sd:gitCommit "f209f489666409a6743167a8b24c36e65e811144" ] ;
+    sd:transforms [ a sd:ArtifactReference ;
+        sd:artifact project:IMP-20261101-QG24H-6 ;
+        sd:gitCommit "1f8c4500fde96fbdd83f0ccd3b0bba896ce62d4b" ] ;
+    sd:changeCausedBy [ a sd:ArtifactReference ;
+        sd:artifact project:SRC-20261101-QG24H-29 ;
+        sd:gitCommit "5465de2001c14a662cd65e3f76fd80a19f794d15" ] ;
+    sd:implementationChangeKind sd:MixedChange .

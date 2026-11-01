@@ -21,7 +21,7 @@ Repository baseline: `292f753` on local branch `main`. The existing staged
 | --- | --- | --- |
 | Purpose, users/stakeholders, goals | Confirmed by maintainer, 2026-11-01 | Basic suite and ecosystem for productive Solid use; showcase for developers building their own Solid apps. |
 | Current posture | Confirmed by maintainer, 2026-11-01 | Exploratory prototype. This does not establish whether any real data is in use. |
-| Important outcomes / metrics | Qualitative outcomes confirmed by maintainer | Users productively use Solid data within the defined apps; developers learn from source and build interoperable apps using their choice of libraries. Numeric targets are unspecified. |
+| Important outcomes / metrics | Qualitative outcomes confirmed by maintainer; later JavaScript target explicit | Productive Solid use and developers learning/building interoperable apps. Subsequent roadmap adds mobile-first workflows and less than 200 KB gzipped JavaScript per app. |
 | Consequential prior decisions / reversibility | Undocumented decisions exist; individual details unknown | Maintainer subsequently identified Muze culture, Weblets work, and thoughts on AI and linked data as influences. Seek relevant rationale during consequential work; do not invent exit costs. |
 | Invariants / commitments | Established from current instructions | AGENTS.md supplied by maintainer; constraints below. Additional commitments may emerge in intake. |
 | Known / tolerated problems | Unknown; explicitly dispositioned by maintainer | No explicitly tolerated problems identified. Documented limitations below remain unprioritized, not accepted trade-offs. |
@@ -556,6 +556,23 @@ First answers received on 2026-11-01:
     `ARCHITECTURE-PHILOSOPHY.md`; AGENTS.md and `.spiral/culture.md` now reference
     that copy, with source dates and a checksum recorded in the culture index.
     This makes the existing adoption self-contained.
+38. The maintainer agreed to a new cross-origin resource-picker cycle: Launcher
+    asks an already-open Files app to select a resource, and receives its URL.
+    The roadmap/culture documentation was confirmed merged on remote main at
+    `4c8b285`. Cycle CYC-20261101-QG24H-2 starts there on its own branch and
+    continues the broker roadmap with explicit, manually provisioned scoped
+    routing. The result is implemented and automated verification is recorded
+    in the cycle; human acceptance is pending. No agent merge is authorized.
+
+39. During evaluation the maintainer questioned the server bottleneck and
+    proposed a service worker, then selected Launcher itself as browser-local
+    broker and workspace owner. Ordinary opener access is explicitly accepted.
+    SRC-20261101-QG24H-8 retains the revised commitment; REQ4 and DES9 replace
+    the server architecture for this still-Active cycle. Managed apps close and
+    restore with Launcher. State updates remain local; explicit Save & close
+    acknowledges a conditional Pod checkpoint before closing. Browser-X saving
+    is a bounded best-effort keepalive attempt, not confirmed success. Named
+    workspaces and full offline/PWA/app-data sync remain future work.
 
 Conversation/documentation language: **English**, explicitly requested by the
 maintainer. Conversation preference: ask **one question at a time** until intake is
@@ -589,3 +606,108 @@ is evidence for a proposed frame, not proof of current runtime behavior or
 human acceptance of future designs. After all topics are dispositioned and
 the maintainer confirms the frame, assess reality and present candidate risks
 for human prioritization before choosing a development cycle.
+
+## Managed workspace evaluation correction
+
+The maintainer recovered a Pod-conflict error after Save & close appeared inert.
+FBK11 traces the missing recovery path; DES9 and IMP6 now provide retained status,
+review of local/Pod versions and explicit conditional resolution. EVD12 verifies
+reload recovery and newer-remote-version refusal. The original differing Pod
+version's cause is unknown, and choosing the maintainer's version remains their
+UI decision. The active cycle has not been accepted or merged.
+
+The next maintainer evaluation reported an app checkpoint timeout (FBK13).
+IMP6 now separates ready/restoring state, allows ten seconds, identifies failed
+apps and reconnects current-client ports without replaying saved state over live
+drafts. EVD14 verifies slow capture, stale-port recovery and failure preservation.
+Existing open tabs may require reload to use the correction. Actual user-case
+attribution and human acceptance remain pending in the same Active cycle.
+
+FBK15 adds decisive provider response evidence: CSS PUT 205 omits ETag while
+its corrected authorized GET 200 returns and exposes a strong ETag. IMP6 now
+separates acknowledged saves from next-write validator acquisition and persists
+a target-scoped baseline. EVD16 verifies the exact pattern throughout the browser
+fixture, without accessing the user's Pod. Human acceptance remains pending.
+
+## Mandatory native Turtle rule, 2026-11-01
+
+The maintainer initially forbade writing JSON inside any Turtle string, then
+explicitly authorized only the narrow experimental app-owned exception below.
+Turtle remains the native persistence format for Solid Apps.
+Use native RDF statements, terms and typed scalar values, including for workspace
+state, local caches, baselines, fixtures and migrations. If an appropriate native
+representation cannot be found, explain the concrete issue and resolve it with
+the maintainer before writing. No general rdf:JSON exception is allowed. The source
+is SRC-20261101-QG24H-17; AGENTS.md and culture.md now retain this hard rule.
+
+At that instruction, workspace persistence violated the rule in both Pod
+snapshots and the local cache/baseline. DEF18 retained that known noncompliance
+as a condition of the earlier cycle acceptance. SRC24 subsequently authorizes
+its correction without migration because nothing has been released. DES25 and
+the current IMP6 now use native workspace/app state and baseline graphs. A new
+native cache leaves development records untouched; old-format Pod targets are
+refused rather than copied or silently overwritten. Fixtures now use native RDF
+and the full application/browser checks are available again. Historical
+acceptance does not pre-accept this new correction or authorize merging it.
+
+The maintainer also explicitly permits a separate app-owned opaque state string
+for app-specific state that is not linked data. The workspace/broker must preserve
+that value without interpreting it; the main state remains native linked data.
+SRC17 retains the instructions and explicit exception: this optional app-owned
+field may experimentally contain JSON, solely to test interoperability. The
+maintainer considers that ugly and expects others to object. This is not a
+preferred persistence pattern and does not exempt main state, whole-workspace
+snapshots or baselines. No runtime encoding change or migration is implemented
+by the documentation update.
+
+
+## Cycle acceptance with an open native RDF issue
+
+On 2026-11-01 the maintainer explicitly accepted CYC-20261101-QG24H-2 provided
+the native RDF correction is kept. DEF-20261101-QG24H-18 is retained as Open;
+ACC-20261101-QG24H-19 records the acceptance and known gap. That snapshot was accepted,
+with no claim that the format has been corrected or the native Turtle rule waived.
+The starter page remains deferred. A subsequent request for file-selector test
+instructions does not establish a manual picker result; automated coverage is
+retained in EVD16. No merge, publication or next cycle is authorized here.
+
+
+The maintainer's subsequent manual picker check found that routing works but
+Files is not focused. They explicitly keep focus and built-in on-demand Files
+startup in CYC2. FBK20 records the reproduction and scoped revision; current
+cycle status is Active again, while ACC19 preserves the earlier acceptance.
+Provider registry work remains later and DEF18 remains Open. Verification of
+this routing/UI correction must avoid the known JSON-in-Turtle serializer.
+
+IMP6 now provides the scoped one-click Files flow (implementation 2167765).
+EVD21 verifies cold/warm provider activation and selection/cancel routing through
+isolated fixtures that do not invoke the forbidden persistence encoder. Return
+focus to Launcher is requested but browser-dependent; Chrome headless refused it,
+so the UI includes manual-return guidance. Full persistence suites remain pending
+native RDF fixture correction under DEF18. CYC2 stays Active for renewed human
+evaluation; prior ACC19, the open RDF issue and deferred starter page are retained.
+
+
+## Native RDF correction in the continued cycle
+
+The maintainer subsequently verified the picker-return/auth-popup correction,
+then requested implementing DEF18. SRC24 explicitly removes migration because
+the prototype is unreleased. DES25/current IMP6 use native workspace/app state,
+local cache and acknowledged-baseline graphs. Old development cache records are
+left alone; old-format Pod targets are refused and require a fresh URL. Native
+unknown statements, identities, state isolation and the optional opaque string
+are preserved, including during conflict and save-timing failures. Full check
+and browser suites now run on native fixtures. DEF18 is fixed on the branch;
+CYC2 remains Active for renewed evaluation, without merge or publication.
+
+
+## Unknown-predicate default and existing workspace recovery
+
+SRC27 supersedes the fresh-URL workaround. The maintainer confirms ignoring
+unknown predicates on read and preserving them on write as the linked-data
+default. They explicitly authorize discarding the retired apps:snapshot at the
+current workspace root on an explicit conditional native save. Readers ignore
+its value without importing it, other unknown RDF stays intact, and background
+close cannot perform this one-time discard. Reload Launcher and use Save to Pod
+at the existing URL; no Preferences change is needed. The no-JSON-in-Turtle rule
+remains in force, with only the existing opaque app-owned string experiment.

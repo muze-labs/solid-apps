@@ -1,0 +1,23 @@
+@base <https://pod.example/workspace.ttl> .
+@prefix apps: <https://vocab.muze.nl/solid-apps#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<#workspace/instance/files-example/state/root> apps:folder <notes/> ;
+    apps:stateVersion "1"^^xsd:integer .
+<#workspace/instance/files-example> dcterms:title "Files"^^xsd:string ;
+    a apps:AppInstance ;
+    apps:allowBrowse "true"^^xsd:boolean ;
+    apps:instanceId "files-example"^^xsd:string ;
+    apps:launchUrl <https://apps.example/files/> ;
+    apps:state <#workspace/instance/files-example/state/root> .
+<#workspace/launcher> apps:resource <notes/note.ttl#section> ;
+    apps:resourceInput "https://pod.example/notes/note.ttl#section"^^xsd:string .
+<#workspace/order/0> rdf:first <#workspace/instance/files-example> ;
+    rdf:rest rdf:nil .
+<#workspace> a apps:Workspace ;
+    apps:formatVersion "2"^^xsd:integer ;
+    apps:instances <#workspace/order/0> ;
+    apps:launcherState <#workspace/launcher> ;
+    apps:owner <https://person.example/profile#me> .

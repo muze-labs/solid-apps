@@ -137,3 +137,12 @@ This documentation-only update is on `docs/solid-apps-roadmap`, outside an
 implementation cycle. No dependencies, runtime behavior or build checks are
 changed. Before selecting the next cycle, reconcile this direction, the broker
 phases and retained workspace work with the maintainer's priorities.
+
+## Managed-workspace revision, 2026-11-01
+
+The maintainer explicitly advanced one part of workspace persistence in the
+active broker cycle: Launcher owns opened apps and checkpoints one default
+workspace locally and to the Pod at explicit save/close. Browser-X uses a
+best-effort prepared write. Named workspaces, continuous automatic app-data
+sync, PWA rollout and collaboration remain deferred. The
+[managed-workspace design](solid-managed-workspace.md) records the boundary.

@@ -1,3 +1,6 @@
+import { writeDraft, readDraft } from '@muze-labs/solid-profile/state.mjs';
+import { AppState } from '@muze-labs/solid-app-data/app-state.mjs';
+import { apps } from '@muze-labs/solid-app-data/state-rdf.mjs';
 import { app } from '@muze-labs/simplyflow/app';
 import { shell } from '@muze-labs/solid-app-ui';
 import { openCollection } from '@muze-labs/solid-app-data/collection.mjs';
@@ -12,7 +15,8 @@ import { scalarPredicates, applyProfileEdits } from '@muze-labs/solid-profile';
 const host = shell({ acceptLaunch: true });
 const container = host.main.querySelector('.profile-content');
 const widget = profileView(container, {
-  emptyText: 'Enter a profile URL or connect to view your own profile.'
+  emptyText: 'Enter a profile URL or connect to view your own profile.',
+  onChange: () => host.managed?.publish().catch(error => host.message(error.message))
 });
 async function showRemote(url) {
   url = httpUrl(url);
@@ -39,6 +43,7 @@ async function showRemote(url) {
       host.message('Profile saved to Solid.');
     }
   });
+  host.managed?.publish().catch(error => host.message(error.message));
 }
 const ui = app({
   container: host.main.querySelector('.profile-controls'),
@@ -107,3 +112,27 @@ if (!launchAttempted) {
   await host.run(openLaunch, { network: true });
 }
 window.solidProfile = { host, ui };
+const appState = new AppState();
+host.manage({
+  getState: () => {
+    appState.set(apps + 'resourceInput', ui.data.url);
+    let resource;
+    try {
+      resource = httpUrl(ui.data.url);
+    }
+    catch {}
+    appState.set(apps + 'resource', resource, 'iri');
+    appState.set(apps + 'contact', contactId, 'iri');
+    writeDraft(appState, widget.draft());
+    return appState.snapshot();
+  },
+  restoreState: async state => {
+    appState.restore(state);
+    const url = appState.read(apps + 'resourceInput');
+    if (url && !contactId) {
+      launchPending = false;
+      await showRemote(url);
+    }
+    widget.restoreDraft(readDraft(appState));
+  }
+});

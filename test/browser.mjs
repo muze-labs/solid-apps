@@ -3,6 +3,7 @@ import * as fs from 'node:fs/promises';
 import * as http from 'node:http';
 import * as path from 'node:path';
 import assert from 'node:assert/strict';
+import { startChrome, freePort, waitForExit, formatBrowserException } from './support/chrome.mjs';
 
 // The app is exercised through HTTP against an isolated in-memory Pod, never a user's Pod.
 const resources = new Map();
@@ -104,6 +105,9 @@ resources.set(base + '/storage/test.txt', {
   type: 'text/plain',
   etag: '"1"'
 });
+resources.set(base + '/storage/forbidden/', {
+  body: 'Access denied', type: 'text/plain', etag: '"denied"', status: 403
+});
 const launchDocument = base + '/people.ttl?view=all&value=a%2Bb';
 const launchResource = launchDocument + '#alice';
 const serverAppUrl = base + '/server-app?view=full&' +
@@ -200,7 +204,7 @@ try {
     const navigation = await page.send('Page.navigate', {
       url: appBase + path
     });
-    if (!navigation.loaderId) {
+    if (navigation.loaderId) {
       await loaded;
     }
     await page.ready();
@@ -216,6 +220,12 @@ try {
         []
       );
     }
+  }
+  async function reload() {
+    const loaded = page.once('Page.loadEventFired');
+    await page.send('Page.reload');
+    await loaded;
+    await page.ready();
   }
   async function click(selector) {
     await wait(
@@ -289,7 +299,9 @@ try {
         });
         if (presentation === 'window') {
           assert.notEqual(appWindow.windowId, launcherWindow.windowId,
-            'App should open in a separate browser window.');
+            'App should open in a separate browser window. ' +
+            JSON.stringify({ openedWindow, presentation: await evaluate(
+              'return window.solidLauncher?.workspace?.presentation;') }));
         }
         else {
           assert.equal(appWindow.windowId, launcherWindow.windowId,
@@ -457,12 +469,25 @@ try {
   await evaluate(
     'document.querySelector("[data-simply-command=edit]").click();'
   );
+  await evaluate('const input=document.querySelector(".profile-card [name=notes]");' +
+    'input.value="Unsaved workspace draft";' +
+    'input.dispatchEvent(new Event("input",{bubbles:true}));' +
+    'const managed=window.solidContacts.host.managed;' +
+    'const state=await managed.getState();' +
+    'document.querySelector(".profile-card [data-simply-command=cancel]").click();' +
+    'await managed.restoreState(state);');
+  await wait('!document.querySelector(".profile-card form").hidden && ' +
+    'document.querySelector(".profile-card [name=notes]").value===' +
+    '"Unsaved workspace draft"');
+  assert(!(await evaluate('return await window.solidContacts.store.service' +
+    '.workspace.graph("contacts").write();')).includes('Unsaved workspace draft'));
   await submit('.profile-card form', {
     name: 'Edited contact',
     email: 'first@example.org\nsecond@example.org'
   });
   await wait(
-    'document.querySelector(".profile-card h2")?.textContent==="Edited contact"'
+    'document.querySelector(".profile-card h2")?.textContent==="Edited contact" && ' +
+    'document.querySelector(".profile-card form").hidden'
   );
   assert.match(
     await evaluate(
@@ -570,7 +595,7 @@ try {
     url: 'https://example.org/app'
   });
   await wait(
-    'document.querySelector(".person-list").textContent.includes("Example app")'
+    'document.querySelector(".saved-apps .person-list").textContent.includes("Example app")'
   );
   await evaluate(
     'document.querySelector("[data-simply-command=sync]").click();'
@@ -634,7 +659,7 @@ try {
     writesBeforeLaunch);
   assert.equal(String(resources.get(base + '/prefs').body), preferencesBeforeLaunch);
   assert.equal(String(resources.get(launchDocument).body), resourceBeforeLaunch);
-  assert.equal(await evaluate('return window.opener;'), null);
+  assert.equal(await evaluate('return Boolean(window.opener);'), true);
   assert.equal(await launcherPage.evaluate(() => location.pathname), '/launcher/');
   assert.equal(await launcherPage.evaluate(() =>
     window.solidLauncher.host.session.webId
@@ -656,7 +681,7 @@ try {
     'document.querySelector(".preferences-dialog [role=status]").textContent.includes("saved")'
   );
   await click('.preferences-dialog [data-simply-command=close]');
-  await page.send('Page.reload');
+  await reload();
   await wait('window.solidLauncher?.host.session && ' +
     'window.solidLauncher.host.preferences.launchTarget==="window"');
   const contactsWindow = await openApp('.app-grid a[href*=contacts]', 'window');
@@ -1068,16 +1093,23 @@ try {
   });
   launchedPage = null;
   page = loggedOutLauncher;
+
   console.log(
     'PASS: all four apps, shared profiles, persistence, preferences, sync, ' +
       'metadata deletion, binary upload, logout, and launch context in a ' +
       'separate Profile tab with current WebID, preserved fragments, ' +
       'read-only resource opening, query-mode HTTP delivery, editable ' +
-      'application defaults, saved anonymous links and failure recovery.'
+      'application defaults, saved anonymous links, managed opener links ' +
+      'and failure recovery.'
   );
 }
 catch (error) {
   console.error('Pod requests:', calls);
+  console.error('Current app:', await page.evaluate(() => ({
+    url: location.href,
+    launch: window.solidProfile?.host.launch,
+    connected: Boolean(window.solidProfile?.host.session)
+  })));
   console.error(
     await page.evaluate(() => document.querySelector('tbody')?.outerHTML)
   );
@@ -1091,204 +1123,4 @@ finally {
   appServer.kill('SIGTERM');
   await waitForExit({ process: appServer, isClosed: () => appServerClosed });
   await new Promise((resolve) => server.close(resolve));
-}
-async function startChrome(url) {
-  const debugPort = await freePort();
-  const userDataDir = path.join(
-    '/tmp',
-    `solid-apps-chrome-${process.pid}-${Date.now()}`
-  );
-  const chrome = spawn(
-    'google-chrome',
-    [
-      '--headless=new',
-      `--remote-debugging-port=${debugPort}`,
-      `--user-data-dir=${userDataDir}`,
-      '--disable-gpu',
-      '--no-first-run',
-      '--no-default-browser-check',
-      url
-    ],
-    {
-      stdio: ['ignore', 'ignore', 'ignore']
-    }
-  );
-
-  let closed = false;
-  chrome.once('exit', () => {
-    closed = true;
-  });
-
-  await waitForEndpoint({ debugPort, isClosed: () => closed });
-
-  return {
-    async page(targetId) {
-      const targets = await fetchJson(
-        `http://127.0.0.1:${debugPort}/json/list`
-      );
-      const target = targets.find((item) =>
-        targetId ? item.id === targetId : item.type === 'page'
-      );
-      if (!target?.webSocketDebuggerUrl) {
-        throw new Error('No Chrome page target found');
-      }
-      return connectPage(target.webSocketDebuggerUrl);
-    },
-
-    async close() {
-      if (!closed) {
-        chrome.kill('SIGTERM');
-        await waitForExit({ process: chrome, isClosed: () => closed });
-      }
-      await fs.rm(userDataDir, {
-        recursive: true,
-        force: true,
-        maxRetries: 5,
-        retryDelay: 100
-      });
-    }
-  };
-}
-
-async function connectPage(url) {
-  const socket = new WebSocket(url);
-  const pending = new Map();
-  const events = new Map();
-  let id = 0;
-
-  await new Promise((resolve, reject) => {
-    socket.addEventListener('open', resolve, { once: true });
-    socket.addEventListener('error', reject, { once: true });
-  });
-
-  socket.addEventListener('message', (event) => {
-    const message = JSON.parse(event.data);
-    if (message.id && pending.has(message.id)) {
-      const { resolve, reject } = pending.get(message.id);
-      pending.delete(message.id);
-      if (message.error) {
-        reject(new Error(message.error.message));
-      }
-      else {
-        resolve(message.result);
-      }
-      return;
-    }
-
-    const listeners = events.get(message.method) || [];
-    listeners.forEach((listener) => listener(message.params));
-  });
-
-  const page = {
-    send(method, params = {}) {
-      id += 1;
-      socket.send(JSON.stringify({ id, method, params }));
-      return new Promise((resolve, reject) => {
-        pending.set(id, { resolve, reject });
-      });
-    },
-
-    once(method) {
-      return new Promise((resolve) => {
-        const listener = (params) => {
-          events.set(
-            method,
-            (events.get(method) || []).filter((item) => item !== listener)
-          );
-          resolve(params);
-        };
-        events.set(method, [...(events.get(method) || []), listener]);
-      });
-    },
-
-    async ready() {
-      await this.send('Runtime.enable');
-      await this.send('Page.enable');
-      const state = await this.evaluate(() => document.readyState);
-      if (state !== 'complete') {
-        await this.once('Page.loadEventFired');
-      }
-    },
-
-    async evaluate(fn) {
-      const result = await this.send('Runtime.evaluate', {
-        expression: `(${fn})()`,
-        awaitPromise: true,
-        returnByValue: true
-      });
-      if (result.exceptionDetails) {
-        throw new Error(formatBrowserException(result.exceptionDetails));
-      }
-      return result.result.value;
-    },
-
-    close() {
-      socket.close();
-    }
-  };
-
-  return page;
-}
-
-async function waitForEndpoint({ debugPort, isClosed }) {
-  for (let attempt = 0; attempt < 100; attempt += 1) {
-    if (isClosed()) {
-      throw new Error('Chrome exited before DevTools became available');
-    }
-    try {
-      await fetchJson(`http://127.0.0.1:${debugPort}/json/version`);
-      return;
-    }
-    catch {
-      await new Promise((resolve) => setTimeout(resolve, 50));
-    }
-  }
-  throw new Error('Timed out waiting for Chrome DevTools');
-}
-
-async function waitForExit({ process, isClosed }) {
-  if (isClosed()) {
-    return;
-  }
-
-  await new Promise((resolve) => {
-    const timer = setTimeout(() => {
-      process.kill('SIGKILL');
-      resolve();
-    }, 2000);
-    process.once('exit', () => {
-      clearTimeout(timer);
-      resolve();
-    });
-  });
-}
-
-function fetchJson(url) {
-  return fetch(url).then((response) => {
-    if (!response.ok) {
-      throw new Error(`Request failed: ${response.status}`);
-    }
-    return response.json();
-  });
-}
-
-async function freePort() {
-  const server = http.createServer();
-  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
-  const { port } = server.address();
-  await new Promise((resolve) => server.close(resolve));
-  return port;
-}
-
-function formatBrowserException(details) {
-  const description = details.exception?.description || details.text;
-  const frames = details.stackTrace?.callFrames || [];
-  const stack = frames
-    .map(
-      (frame) =>
-        `    at ${frame.functionName || '<anonymous>'} (${frame.url}:${frame.lineNumber + 1}:${frame.columnNumber + 1})`
-    )
-    .join('\n');
-
-  return stack ? `${description}\n${stack}` : description;
 }
