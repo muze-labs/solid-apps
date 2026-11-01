@@ -78,3 +78,20 @@ there is no unconditional overwrite. Unknown RDF is preserved from the reviewed
 native document. Using Pod state does not save app data or profile drafts.
 Local cache persistence remains usable when remote serialization/preparation
 fails. These corrections follow FBK-20261101-QG24H-11 in the same Active cycle.
+
+## Checkpoint readiness and reconnect correction
+
+Registration identifies a channel; readiness follows successful restoration.
+Show Restoring or a restoration error until then. A checkpoint during restoration
+fails with that app's name rather than waiting on Pod reads. Ready apps have a
+bounded ten-second checkpoint deadline. Report each failed instance, preserve
+last stored state and successful sibling checkpoints, and leave apps open.
+Timeout/disconnect triggers channel recovery; saving still requires a fresh
+successful checkpoint on retry and never silently uses a stale snapshot.
+
+A child explicitly requests reconnection when its local port is closed, including
+pagehide followed by a retained page's resume. Reconnecting the same instance in
+the same JS realm reuses its restoration task and live UI instead of replaying
+old saved state over drafts. A new realm still restores from its saved snapshot.
+Stale channel tasks cannot publish readiness/state into a replacement channel.
+This corrects FBK-20261101-QG24H-13 within the existing cycle.
