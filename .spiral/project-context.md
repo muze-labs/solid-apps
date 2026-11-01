@@ -711,3 +711,29 @@ its value without importing it, other unknown RDF stays intact, and background
 close cannot perform this one-time discard. Reload Launcher and use Save to Pod
 at the existing URL; no Preferences change is needed. The no-JSON-in-Turtle rule
 remains in force, with only the existing opaque app-owned string experiment.
+
+
+## Unordered product roadmap additions after PR #3
+
+SRC31 records the maintainer's next-cycle input without selecting or starting a
+cycle. The suite roadmap now includes fewer avoidable 401 challenges (Metro force
+authorization/protected-origin learning to evaluate), account-name opening/reusing
+the Profile editor, common versus current-app preferences, multiple workspace
+creation/selection, a sparse shortcut dashboard, a suggested add-shortcut dialog,
+and a static Turtle catalog index plus per-app manifests including stable external
+Solid apps without requiring ecosystem APIs. Existing Theme/Text size controls
+are retained as common preferences; storage belongs to the app-specific section.
+
+The maintainer explicitly confirms that closing Launcher still closes managed
+apps. Only Launcher logout additionally closes the whole workspace; child-app
+logout does not. The dashboard is interpreted as Launcher home, seeded only with
+Files links for every profile-advertised storage root. The list is unordered;
+these refinements do not reorder broker phases or implement an app store now.
+Third-party curation/availability and exact auth policy remain future-cycle work.
+
+
+The maintainer's confirmed PR #3 merge is recorded in ACC32. CYC2 is now Accepted
+in current metadata; this post-merge documentation reconciliation does not claim
+that acceptance/integration validation was recorded before the merge. EVD30's
+intermittent combined-browser readiness failures remain unresolved evidence.
+The documentation branch does not itself start another cycle or perform a merge.
