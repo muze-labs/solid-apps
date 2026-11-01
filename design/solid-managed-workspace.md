@@ -2,7 +2,8 @@
 
 **Persistence encoding requires correction.** The maintainer's
 [native Turtle rule](../.spiral/sources/SRC-20261101-QG24H-17.md) unconditionally
-forbids JSON in Turtle strings. The JSON-literal persistence described below is
+forbids JSON in main-state Turtle strings, with only a narrow experimental
+app-owned opaque field permitted. The JSON-literal persistence described below is
 current implementation evidence, not an approved design. Replace it with native
 RDF for both Pod state and local caches/baselines; preserve existing data during
 that correction. The existing encoding requires native RDF correction before acceptance.

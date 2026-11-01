@@ -631,12 +631,13 @@ fixture, without accessing the user's Pod. Human acceptance remains pending.
 
 ## Mandatory native Turtle rule, 2026-11-01
 
-The maintainer explicitly forbids writing JSON inside any Turtle string under
-any circumstances. Turtle is the native persistence format for Solid Apps.
+The maintainer initially forbade writing JSON inside any Turtle string, then
+explicitly authorized only the narrow experimental app-owned exception below.
+Turtle remains the native persistence format for Solid Apps.
 Use native RDF statements, terms and typed scalar values, including for workspace
 state, local caches, baselines, fixtures and migrations. If an appropriate native
 representation cannot be found, explain the concrete issue and resolve it with
-the maintainer before writing. No rdf:JSON exception is allowed. The exact source
+the maintainer before writing. No general rdf:JSON exception is allowed. The source
 is SRC-20261101-QG24H-17; AGENTS.md and culture.md now retain this hard rule.
 
 Current workspace persistence violates the rule in both Pod snapshots and the
@@ -646,3 +647,13 @@ This request records the rule and noncompliance; no runtime migration is claimed
 Native RDF correction is required before cycle acceptance. No application tests
 were run for this documentation change because the current fixtures/codec write
 the newly forbidden encoding. Spiral metadata validation remains applicable.
+
+The maintainer also explicitly permits a separate app-owned opaque state string
+for app-specific state that is not linked data. The workspace/broker must preserve
+that value without interpreting it; the main state remains native linked data.
+SRC17 retains the instructions and explicit exception: this optional app-owned
+field may experimentally contain JSON, solely to test interoperability. The
+maintainer considers that ugly and expects others to object. This is not a
+preferred persistence pattern and does not exempt main state, whole-workspace
+snapshots or baselines. No runtime encoding change or migration is implemented
+by the documentation update.

@@ -24,13 +24,22 @@ subjects. Refuse unsupported structured edits rather than flattening them.
 Profile editing is shared by Contacts and Profile; storage policy stays outside
 the profile view. Preferences use the profile's `pim:preferencesFile` link.
 
-Turtle is the native persistence format for Solid Apps. Never write a string
-containing JSON inside a Turtle file, under any circumstances. This includes
-`rdf:JSON` literals, escaped JSON, serialized snapshots and baseline blobs, in
-Pod resources, local Turtle caches, fixtures and migrations. Model persistent
-data as native RDF statements with appropriate terms and typed scalar values.
-If a native RDF representation cannot be found, explain the concrete issue to
-the maintainer and resolve it together before writing; do not invent an exception.
+Turtle is the native persistence format for Solid Apps. Model the main state as
+native RDF statements with appropriate terms and typed scalar values. Do not
+write JSON inside Turtle string literals, including `rdf:JSON`, escaped JSON,
+serialized snapshots or baseline blobs in Pod resources, local Turtle caches,
+fixtures or migrations, except for the explicitly authorized experiment below.
+If a native RDF representation cannot be found in any other case, explain the
+concrete issue to the maintainer and resolve it together before writing; do not
+invent an exception.
+
+The sole authorized exception is a separate, optional app-owned opaque state
+string, which may experimentally contain JSON. The app interprets it itself;
+the workspace/broker only preserves and returns it. The main state must remain
+linked data; do not hide it in that field or use the exception for whole-workspace
+snapshots or persistence baselines. This is an explicit interoperability test,
+not a preferred persistence pattern: the maintainer considers JSON embedded in
+Turtle undesirable and expects objections to it.
 
 Delete/move semantics must follow PDS Interop link metadata. Current file deletion
 writes a conditional tombstone to the advertised parent-container description;

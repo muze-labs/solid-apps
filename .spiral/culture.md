@@ -72,10 +72,17 @@ Culture adoption does not activate warning profiles automatically.
 ## Mandatory native Turtle representation
 
 The maintainer's [direct instruction](sources/SRC-20261101-QG24H-17.md) makes
-Turtle the native persistence format and unconditionally forbids JSON inside
-Turtle string literals, including rdf:JSON. This is a hard project constraint,
+Turtle the native persistence format and forbids JSON inside Turtle string
+literals, including rdf:JSON, with only the explicit narrow experiment below. This is a hard project constraint,
 not a discretionary culture preference. It covers Pod data, local Turtle caches,
 fixtures and migrations. Use native RDF structures; if representation is unclear,
 explain the concrete issue and resolve it with the maintainer before writing.
 AGENTS.md records the operational rule. The current workspace JSON encoding is
 noncompliant and requires correction; this note does not migrate existing data.
+
+The maintainer additionally permits an app-owned opaque state string alongside
+the native linked-data main state, with interpretation left to the app. This
+field must not conceal the main state. The maintainer explicitly permits JSON
+inside that one field experimentally to test interoperability, while considering
+it ugly and likely to attract objections. This is not a preferred format or a
+general exception for whole-workspace snapshots, caches or baselines.
