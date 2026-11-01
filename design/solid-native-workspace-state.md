@@ -43,11 +43,19 @@ list. Reuse existing instance/list identities and preserve unknown predicates.
 App state that shares blank nodes with unrelated native data cannot be replaced
 unsafely: preserve unchanged graphs, otherwise refuse that unsupported edit.
 
-No migration/import of pre-release JSON state. Use a new account-scoped native
-cache database, leaving old development records alone. Old-format Pod targets
-fail visibly; select a fresh resource through Preferences. Do not silently drop
-or overwrite old JSON. All fixtures use native RDF; the experimental opaque
-field alone has a JSON-containing interoperability example.
+No migration/import of pre-release JSON state. Keep the new account-scoped native
+cache, leaving old development cache records alone. Under SRC27, readers ignore
+unknown predicates/datatypes and preserve their raw triples. Retired apps:snapshot
+at the current workspace root is ignored while loading. Only an explicit native
+save discards that obsolete predicate, without decoding/importing its value.
+The draft is a raw-triple clone, so preparation never serializes forbidden JSON
+or changes the source. Keep If-Match/ETag protection, including 412 recovery.
+A background close cannot perform this one-time discard. Unknown predicates and
+snapshots on other subjects remain untouched; unrelated RDF JSON still prevents
+writing under the native-format rule and is never silently deleted. Known fields
+retain their cardinality/type checks. Tests construct retired parsed terms in
+memory without emitting a JSON-in-Turtle fixture. The optional opaque field
+remains the sole JSON-containing interoperability output.
 
 Verify raw graph/ordering/identity preservation, app graph isolation and unknown
 terms, opaque round-trip, malformed-state refusal, baseline reload/conflicts,
