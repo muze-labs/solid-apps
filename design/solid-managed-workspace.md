@@ -95,3 +95,19 @@ the same JS realm reuses its restoration task and live UI instead of replaying
 old saved state over drafts. A new realm still restores from its saved snapshot.
 Stale channel tasks cannot publish readiness/state into a replacement channel.
 This corrects FBK-20261101-QG24H-13 within the existing cycle.
+
+## Write acknowledgement versus next-write validation
+
+A successful conditional PUT acknowledges that checkpoint even when its response
+has no ETag. Clear the old validator and prepared body, and persist the accepted
+snapshot baseline locally. Do not fail the completed save merely because a future
+write cannot yet be prepared. Before another explicit write, reload the native
+Pod document to obtain a fresh validator. If its snapshot still equals the
+acknowledged baseline, retain pending local edits without a false conflict;
+changed remote snapshots still require conflict review. Fresh native RDF remains
+the base for preserving unknown terms. Baseline identity is scoped to the target.
+
+A GET genuinely lacking an exposed ETag still prevents updating that existing
+resource. A 401 is never parsed as workspace data. No pre-write ETag is reused,
+no unconditional replacement is introduced, and ordinary-close attempts require
+an already-prepared validator. This corrects FBK-20261101-QG24H-15.
