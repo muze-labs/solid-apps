@@ -85,15 +85,18 @@ test('preferences use the linked URL, retain unknown RDF, and send conditional w
     }
   };
   const loaded = await loadPreferences(session);
+  assert.equal(loaded.settings.launchTarget, 'tab');
   const result = await savePreferences(session, loaded.document, {
     ...defaults,
     theme: 'dark',
+    launchTarget: 'window',
     language: 'nl',
     contactsResource: 'https://pod.example/private/contacts.ttl'
   });
   assert.equal(readUrl, url);
   assert.equal(headers['If-Match'], '"v1"');
   assert.equal(result.settings.theme, 'dark');
+  assert.equal(result.settings.launchTarget, 'window');
   assert.equal(result.settings.language, 'nl');
   const g = graph(written);
   assert.equal(
@@ -104,6 +107,26 @@ test('preferences use the linked URL, retain unknown RDF, and send conditional w
     String(valueAt(g.get(url + '#solid-apps'), 'https://example.org/unknown')),
     'also keep'
   );
+});
+test('unsupported app launch preferences fail without altering RDF or writing', async () => {
+  const client = { put: async () => assert.fail('Must not write') };
+  for (const value of [
+    '"tab", "window"',
+    '[<https://example.org/setting> "keep"]',
+    '"tab"@en',
+    '"elsewhere"'
+  ]) {
+    const g = graph('<#solid-apps> <' + prefixes.apps + 'launchTarget> ' +
+      value + '.');
+    const original = await g.write();
+    const document = { url, graph: g, missing: false, etag: '"v1"' };
+    await assert.rejects(savePreferences({ client }, document, defaults),
+      /app launch target|App launch target/);
+    assert.equal(await g.write(), original);
+  }
+  await assert.rejects(savePreferences({ client }, {
+    url, graph: graph(''), missing: false, etag: '"v1"'
+  }, { ...defaults, launchTarget: 'reuse' }), /new tabs or new windows/);
 });
 test('missing preference link and conflicting writes fail without inventing a location', async () => {
   await assert.rejects(

@@ -7,6 +7,19 @@ build time. `shell()` binds its header and preferences scopes and returns the ap
 content container, session/settings access, status reporting, and operation runner.
 The application mounts its own SimplyFlow scope inside `host.main`.
 
+`shell({ acceptLaunch: true })` opts a receiving app into validated launch
+context, available as `host.launch`; `host.launchError` describes invalid
+input. `host.ready` settles after background session restoration and the
+initial `onConnect` callback. Profile uses this to open its launch resource
+after session setup. Other apps retain their ordinary startup until their
+resource semantics are implemented. Background setup never opens a login popup
+or silently replaces a different remembered account. Changing recognized
+launch context reloads the opted-in app to repeat those checks.
+For `#app-fragment?launch-parameters`, startup consumes only the suffix and
+uses `history.replaceState` to retain `#app-fragment`, the current entry and
+its existing state. The decoded launch remains in memory; ordinary anchor
+changes after consumption do not trigger a reload.
+
 `host.onConnect` attaches app-specific behavior to a connected session;
 `host.onPreferences` receives changed settings. `host.run(operation, {network})`
 reports operation failures to the shared status area. `host.resource(name)`

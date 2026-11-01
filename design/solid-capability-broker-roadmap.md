@@ -60,7 +60,16 @@ Requesting app                                Providing app
                  - routing / policy
 ```
 
-**Existing constraints:** The launcher is an ordinary webpage that starts applications in separate windows. Solid apps already accept a WebID and resource through a URL fragment; reuse that convention rather than inventing a new launch format. A shared preferences entry point is present in the apps. The broker URI becomes one additional existing preference.
+**Existing interfaces:** The launcher is an ordinary webpage that starts
+applications in fresh tabs. A shared preferences entry point is present in
+the apps. The broker URI becomes one additional existing preference.
+
+The initial Phase 0 assessment did not establish the previously assumed
+WebID/resource launch interface in this checkout. The first implementation
+defines it in [Solid Apps launch context](solid-app-launch-context.md) and
+proves Launcher-to-Profile resource opening. Use that contract for subsequent
+work; resource selection in Contacts and Files still needs its own acceptance
+criteria. URL context does not establish authentication or a capability grant.
 
 ### Responsibilities
 
@@ -261,6 +270,40 @@ These are minimum acceptance requirements, not optional hardening:
 - Only then consider Weblets embedding, embedded provider UIs, provider selection via AI, or automatic workspace composition.
 
 **Exit:** Explicit keep/change/remove decisions rather than automatic scope expansion.
+
+### Retained roadmap item — Pod-synced workspaces
+
+**Status:** Accepted roadmap addition, 2026-11-01; implementation deferred.
+Record for future planning only. No implementation is authorized yet and no
+delivery order relative to the broker phases has been selected.
+
+The maintainer noticed “Shortcut saved on this device” and requested that the
+workspace also sync to their Solid Pod, with the option to create new
+workspaces. Launcher already supports explicit shortcut sync to one configured
+Turtle resource; it does not yet offer creation or selection of distinct
+workspaces.
+
+Desired outcome:
+
+- Create named workspaces and switch between them, each with its own collection
+  of app links and dataset/resource contexts.
+- Sync workspace definitions and their launch links to the user's Solid Pod,
+  then reopen them in another browser or device. Retain local use before
+  connecting and communicate whether changes are local or synced.
+- Preserve each link independently, including multiple links to the same app,
+  resource URLs, anonymous launching and parameter-mode overrides.
+
+Before implementation, settle workspace identity and RDF representation,
+discovery through the existing linked preferences, migration of current
+shortcuts, and whether sync is automatic or explicitly requested. Keep the
+suite-wide Tabs/Windows preference separate unless a concrete workspace need
+justifies changing its scope. Workspace sync stores configuration; it does not
+copy the datasets referenced by links or manage open browser tabs/windows.
+
+Acceptance for a future cycle: create two workspaces, add distinct links, sync
+both, reload them in a fresh browser, and switch without mixing their contents.
+Verify per-link settings, unknown RDF preservation and visible handling of
+offline changes and sync conflicts. These criteria remain prospective.
 
 ## 9. Non-goals for the initial version
 

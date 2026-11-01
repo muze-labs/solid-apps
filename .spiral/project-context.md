@@ -500,6 +500,44 @@ First answers received on 2026-11-01:
     solidcommunity.net and prioritized assessment candidate 1: establish the
     actual launch context. Concrete contract and implementation choices remain
     to be settled from evidence and targeted clarification.
+26. Launch-resource clarification: a resource is a file inside a storage Pod;
+    prefer its full URL, preserving the option of a fragment on that URL.
+    Application-specific resource handling remains to be settled.
+27. Launch-WebID clarification: the launcher should always supply its current
+    WebID. The maintainer agreed to the Launcher-to-Profile first slice in
+    launch-context-proposal.md; execution is tracked by cycle
+    CYC-20261101-QG24H-1.
+28. During implementation the maintainer clarified that launch opens a new app
+    window, preserving Launcher and existing app windows. The broker remains
+    the planned live communication mechanism; opener access is not required
+    for this launch slice.
+29. Cycle CYC-20261101-QG24H-1 implements the Launcher-to-Profile launch proof,
+    with project checks, browser checks and Spiral snapshot validation passing.
+    Integrated human evaluation was pending at that point; later acceptance
+    is recorded below and in the cycle.
+30. The maintainer requested optional fragment-query support: with a literal
+    `?` inside the app fragment, parse only its suffix and consume it so the
+    remaining address is `url#foo`. Preserve encoded question marks and full
+    resource URLs. This extends the same active launch-context cycle.
+31. The maintainer requested explicit HTTP-query launch mode for server-side
+    apps, with user-selectable overrides. Clarified precedence: user override,
+    application declaration, then fragment when unset. App declarations and
+    user overrides are separate settings; returning to Follow application
+    removes only the override. Implemented and verified within the same cycle;
+    remote description discovery remains future registry work.
+32. The maintainer requested anonymous launching: omit WebID and include
+    resource only if specified. Clarified that this choice is saved per launch
+    link, allowing different choices for multiple links to the same app. This
+    explicitly extends the current-WebID rule. It controls the URL, not the
+    receiving app's existing authentication/session state.
+33. Local testing refined launch presentation: new tabs are the default, with
+    a shared Pod-backed preference to select new windows instead.
+34. The maintainer accepted both the Launcher changes and the deferred roadmap
+    addition for Pod-synced, user-created workspaces on 2026-11-01. Cycle
+    CYC-20261101-QG24H-1 is Accepted; workspace implementation remains deferred.
+35. Repository operations: the maintainer explicitly authorized the agent to
+    commit changes itself, but prohibited merging. This supersedes the earlier
+    no-commit instruction for authorized work; publishing is not authorized.
 
 Conversation preference: ask **one question at a time** until intake is
 finished. Persist answers and continue through the remaining topics without

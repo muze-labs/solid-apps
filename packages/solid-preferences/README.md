@@ -12,6 +12,12 @@ validation errors and remote conflicts are explicit errors.
 `defaults`, `readPreferences`, `validatePreferences` and `applyPreferences` are
 also exported. Appearance application is separate from persistence.
 
+`launchTarget` is a plain literal, `"tab"` (the default) or `"window"`, on the
+suite's preferences subject using `apps:launchTarget`. The shared dialog offers
+**Open apps in**; Launcher uses it for app links and its Profile resource form.
+The choice is saved with the other Pod preferences. Unsupported structured,
+multiple or unknown values are rejected before writing rather than flattened.
+
 Compose `src/dialog.html` into the page, then mount once:
 
 ```js

@@ -88,6 +88,62 @@ candidate after reporting successful live-provider connection/authentication.
 Establish the existing convention and intended behavior before proposing
 product changes; selecting this candidate does not settle the launch contract.
 
+### Follow-up investigation after prioritization
+
+The original `poef/solid-apps` repository was available locally at
+`/home/auke/git/poef/solid-apps`, with HEAD
+`0b38216edcb26c80bad38a18e9585f18199204c5`. It contains unrelated uncommitted
+maintainer work. It was inspected read-only; no files, index or history in that
+repository were changed.
+
+Targeted inspection of the committed Contacts and Podlist entry points and
+WebID component did not establish a WebID/resource launch handler. The committed
+Contacts component uses `window.location.hash` for alphabet navigation, which
+is not launch context. The inspected current source changes likewise did not
+establish the assumed launch contract. This does not prove that no other
+historical prototype ever implemented it.
+
+The installed SimplyFlow app implementation (facade version 0.10.4; app package
+0.10.3) initializes fragment routing only if an app configures routes. The
+suite entry points and shared shell do not configure launch routes. Thus the
+generic routing facility does not supply the missing semantics indirectly.
+
+Existing startup behavior is materially different by app: Contacts opens one
+origin-local collection and explicitly synchronizes it; Files browses the
+configured root after connecting; Profile accepts an origin-local `?contact=`
+or a manually entered profile subject. No shared launch-resource meaning can
+be inferred safely from those behaviors.
+
+The governing broker roadmap Phase 0 remains the correct place to settle this.
+Asked whether a Contacts resource meant an address book or an individual
+contact, the maintainer clarified that a resource is a **file inside a storage
+Pod**, preferably identified by its **full URL**, leaving room for a fragment
+on that resource URL.
+
+Treat the complete resource URL, including any fragment, as launch context.
+This distinguishes the Pod file from whatever its fragment may identify; do
+not reduce the value to a filename, infer a private collection ID, or assume
+that every app assigns the same meaning to the fragment. Application-specific
+loading, selection, persistence and preservation of local edits still need
+concrete acceptance behavior.
+
+Asked about a differing WebID, the maintainer clarified that **the launcher
+should always provide the current WebID**. Record that producer invariant
+rather than inventing a launch-time account selector. It does not by itself
+specify how a receiver handles arbitrary links from outside that launcher or
+establish authority from a URL value.
+
+Selecting a resource must not silently authorize merging or writing data or
+change saved preferences. The maintainer agreed to the
+[concrete cycle proposal](launch-context-proposal.md), then clarified that
+launch opens a fresh app window. Cycle CYC-20261101-QG24H-1 implements a
+Launcher-to-Profile proof and shared URL encoding/decoding. The maintainer
+accepted the integrated Launcher changes on 2026-11-01, including later
+query/anonymous launch support and the tab/window preference. Files/Contacts
+resource semantics remain distinct
+follow-on work. The initial absent-interface observations above describe the
+pre-cycle baseline, not the new implementation.
+
 ## Candidate: obtain live-provider connection evidence
 
 Expectation: users productively operate on their own Solid data and can recover
@@ -95,7 +151,7 @@ from connection or authorization failures.
 
 Evidence: `test/browser.mjs` uses an isolated in-memory HTTP Pod accepting test
 requests; it does not exercise a real provider's complete login/consent flow.
-The README explicitly says live-provider sign-in still needs a manual test.
+The baseline README said live-provider sign-in still needed a manual test.
 Published authentication composition and session/logout tests provide useful
 technical evidence but do not fill this end-to-end evidence gap.
 

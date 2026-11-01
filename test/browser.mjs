@@ -49,6 +49,11 @@ const server = http.createServer(async (req, res) => {
     res.end('No destructive request expected');
     return;
   }
+  if (new URL(url).pathname === '/server-app') {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('Server-side app received launch context.');
+    return;
+  }
   let record = resources.get(url);
   if (url.endsWith('/storage/')) {
     const child = [...resources.keys()].filter(
@@ -70,7 +75,10 @@ const server = http.createServer(async (req, res) => {
     res.end('Missing');
     return;
   }
-  res.writeHead(200, { 'Content-Type': record.type, ETag: record.etag });
+  res.writeHead(record.status || 200, {
+    'Content-Type': record.type,
+    ETag: record.etag
+  });
   res.end(req.method === 'HEAD' ? undefined : record.body);
 });
 await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -96,6 +104,35 @@ resources.set(base + '/storage/test.txt', {
   type: 'text/plain',
   etag: '"1"'
 });
+const launchDocument = base + '/people.ttl?view=all&value=a%2Bb';
+const launchResource = launchDocument + '#alice';
+const serverAppUrl = base + '/server-app?view=full&' +
+  new URLSearchParams({ resource: launchResource }) + '#landing';
+const describedAppId = base + '/launcher.ttl#server-app';
+resources.set(base + '/launcher.ttl', {
+  body: '@prefix schema: <https://schema.org/>. ' +
+    '@prefix apps: <https://vocab.muze.nl/solid-apps#>. ' +
+    '<#server-app> a schema:SoftwareApplication; ' +
+    'schema:name "Declared server app"; schema:url <' + serverAppUrl + '>; ' +
+    'apps:launchParameterLocation "query"; ' +
+    '<https://example.org/unknown> "preserve app metadata". ' +
+    '<#unrelated> <https://example.org/unknown> "preserve other subject".',
+  type: 'text/turtle',
+  etag: '"launcher-initial"'
+});
+resources.set(launchDocument, {
+  body: '<#alice> <http://xmlns.com/foaf/0.1/name> "Launch Alice". ' +
+    '<#bob> <http://xmlns.com/foaf/0.1/name> "Other subject". ' +
+    '<#alice> <https://example.org/unknown> "preserve me".',
+  type: 'text/turtle',
+  etag: '"launch"'
+});
+resources.set(base + '/denied', {
+  body: 'Forbidden',
+  type: 'text/plain',
+  etag: '"denied"',
+  status: 403
+});
 const appPort = await freePort();
 const appBase = `http://127.0.0.1:${appPort}/`;
 const appServer = spawn(process.execPath, ['scripts/serve.mjs'], {
@@ -120,7 +157,7 @@ for (let attempt = 0; attempt < 100; attempt++) {
   await new Promise((resolve) => setTimeout(resolve, 30));
 }
 const chrome = await startChrome('about:blank');
-let page, otherPage;
+let page, otherPage, launchedPage;
 try {
   page = await chrome.page();
   await page.ready();
@@ -159,7 +196,13 @@ try {
     );
   }
   async function visit(path) {
-    await page.send('Page.navigate', { url: appBase + path });
+    const loaded = page.once('Page.loadEventFired');
+    const navigation = await page.send('Page.navigate', {
+      url: appBase + path
+    });
+    if (!navigation.loaderId) {
+      await loaded;
+    }
     await page.ready();
     assert.equal(
       await evaluate('return document.querySelector("h1").textContent;'),
@@ -214,9 +257,167 @@ try {
   }
   async function submit(selector, values) {
     await evaluate(
-      `const form=document.querySelector(${JSON.stringify(selector)});for(const [key,value] of Object.entries(${JSON.stringify(values)}))form.elements.namedItem(key).value=value;form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));`
+      `const form=document.querySelector(${JSON.stringify(selector)});
+      for (const [key,value] of Object.entries(${JSON.stringify(values)})) {
+        const input = form.elements.namedItem(key);
+        if (input.type === 'checkbox') {
+          input.checked = value;
+        }
+        else {
+          input.value = value;
+        }
+      }
+      form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));`
     );
   }
+  async function openApp(selector, presentation = 'tab') {
+    const launcherWindow = await page.send('Browser.getWindowForTarget');
+    const before = await page.send('Target.getTargets');
+    const previous = new Set(before.targetInfos.map(target => target.targetId));
+    const opened = page.once('Page.windowOpen');
+    await click(selector);
+    const openedWindow = await opened;
+    for (let attempt = 0; attempt < 100; attempt++) {
+      const targets = await page.send('Target.getTargets');
+      const target = targets.targetInfos.find(candidate =>
+        candidate.type === 'page' && candidate.url === openedWindow.url &&
+        !previous.has(candidate.targetId)
+      );
+      if (target) {
+        const appWindow = await page.send('Browser.getWindowForTarget', {
+          targetId: target.targetId
+        });
+        if (presentation === 'window') {
+          assert.notEqual(appWindow.windowId, launcherWindow.windowId,
+            'App should open in a separate browser window.');
+        }
+        else {
+          assert.equal(appWindow.windowId, launcherWindow.windowId,
+            'App should open in a new tab in the Launcher browser window.');
+        }
+        const appPage = await chrome.page(target.targetId);
+        await appPage.ready();
+        return { target, page: appPage };
+      }
+      await new Promise(resolve => setTimeout(resolve, 30));
+    }
+    throw new Error('browser-test: Launch did not create a fresh app target.');
+  }
+  const resourceFragment = new URLSearchParams({
+    resource: launchResource
+  }).toString();
+  await visit('profile/#' + resourceFragment);
+  await wait(
+    'document.querySelector(".profile-card h2")?.textContent==="Launch Alice"'
+  );
+  assert.equal(await evaluate('return window.solidProfile.host.session;'), null);
+  assert.equal(
+    await evaluate('return document.querySelector(".profile-toolbar [name=url]").value;'),
+    launchResource
+  );
+  assert.equal(await evaluate(
+    'return document.querySelector("[data-simply-command=edit]").getClientRects().length;'
+  ), 0);
+
+  const launchFragment = new URLSearchParams({
+    webid: webId, resource: launchResource
+  }).toString();
+  const historySetup = await page.send('Page.addScriptToEvaluateOnNewDocument', {
+    source: 'window.initialLaunchHistoryLength=history.length;' +
+      'history.replaceState({launchTest:"preserve-state"}, "");'
+  });
+  await visit('profile/?launch-case=fragment#foo%3Fbar?' + launchFragment);
+  await wait(
+    'window.solidProfile?.host.session && document.querySelector(".profile-card h2")?.textContent==="Launch Alice"'
+  );
+  assert.equal(await evaluate('return location.href;'),
+    appBase + 'profile/?launch-case=fragment#foo%3Fbar');
+  assert.deepEqual(await evaluate('return window.solidProfile.host.launch;'), {
+    webId, resource: launchResource
+  });
+  assert.deepEqual(await evaluate('return history.state;'), {
+    launchTest: 'preserve-state'
+  });
+  assert(await evaluate(
+    'return history.length===window.initialLaunchHistoryLength;'
+  ));
+  await page.send('Page.removeScriptToEvaluateOnNewDocument', {
+    identifier: historySetup.identifier
+  });
+  const beforeAnchor = calls.length;
+  assert(await evaluate(
+    'window.launchAnchorMarker=true;location.hash="ordinary%3Fanchor";' +
+      'await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));' +
+      'return window.launchAnchorMarker===true && ' +
+      'window.solidProfile.host.launch.resource===' + JSON.stringify(launchResource) + ';'
+  ));
+  assert.equal(calls.length, beforeAnchor);
+
+  await visit('profile/#' + launchFragment);
+  await wait(
+    'window.solidProfile?.host.session && document.querySelector(".profile-card h2")?.textContent==="Launch Alice"'
+  );
+  assert.equal(await evaluate(
+    'return window.solidProfile.host.session.webId;'
+  ), webId);
+  assert.equal(await evaluate(
+    'return localStorage.getItem("solid-apps.webId");'
+  ), null);
+
+  for (const fragment of [
+    'resource=javascript%3Aalert(1)',
+    'foo?resource=javascript%3Aalert(1)',
+    'resource=' + encodeURIComponent(launchResource) + '&resource=' +
+      encodeURIComponent(launchResource)
+  ]) {
+    const before = calls.length;
+    await visit('profile/#' + fragment);
+    await wait(
+      'document.querySelector(".suite-status").textContent.includes("solid-app-data/launch:")'
+    );
+    assert.equal(calls.length, before);
+    assert.equal(await evaluate('return location.hash;'), '#' + fragment);
+  }
+
+  for (const [resource, message] of [
+    [launchDocument + '#missing', 'not present'],
+    [base + '/denied#person', 'Request failed (403)']
+  ]) {
+    await visit('profile/#' + new URLSearchParams({ resource }));
+    await wait(
+      'document.querySelector(".suite-status").textContent.includes(' +
+        JSON.stringify(message) + ')'
+    );
+  }
+
+  const otherWebId = base + '/other-profile#me';
+  await evaluate('localStorage.setItem("solid-apps.webId", ' +
+    JSON.stringify(otherWebId) + ');');
+  const beforeMismatch = calls.length;
+  await visit('profile/#' + launchFragment);
+  await wait(
+    'window.solidProfile && document.querySelector(".suite-status").textContent.includes("WebID / connection")'
+  );
+  assert.match(await evaluate(
+    'return document.querySelector(".suite-status").textContent;'
+  ), /WebID \/ connection/);
+  assert.equal(calls.length, beforeMismatch);
+  assert.equal(await evaluate(
+    'return localStorage.getItem("solid-apps.webId");'
+  ), otherWebId);
+  assert.equal(await evaluate('return window.solidProfile.host.session;'), null);
+  await account('connectDialog');
+  assert.equal(await evaluate(
+    'return document.querySelector(".connect-dialog [name=webId]").value;'
+  ), webId);
+  await submit('.connect-dialog form', { webId });
+  await wait(
+    'window.solidProfile.host.session?.webId===' + JSON.stringify(webId) +
+      ' && document.querySelector(".profile-card h2")?.textContent==="Launch Alice"'
+  );
+  await evaluate('localStorage.removeItem("solid-apps.webId");');
+  assert(!calls.some(call => call.method === 'PUT' || call.method === 'DELETE'));
+
   await visit('contacts/');
   await wait('window.solidContacts?.store');
   await click('.account-button');
@@ -272,6 +473,15 @@ try {
   await visit('contacts/');
   await wait('window.solidContacts?.store');
   await capture('contacts-local');
+  const localContactId = await evaluate(
+    'return window.solidContacts.store.collection.list()[0].id;'
+  );
+  await visit('profile/?contact=' + encodeURIComponent(localContactId));
+  await wait(
+    'document.querySelector(".profile-card h2")?.textContent==="Edited contact"'
+  );
+  await visit('contacts/');
+  await wait('window.solidContacts?.store');
   await account('connectDialog');
   assert.equal(
     await evaluate('return document.querySelector(".logout-section").hidden;'),
@@ -375,7 +585,271 @@ try {
   await wait(
     'document.querySelector(".account-name").textContent==="Changed remote profile"'
   );
+  await wait(
+    'new URLSearchParams(new URL(document.querySelector(".app-grid a[href*=profile]").href).hash.slice(1)).get("webid")===' +
+      JSON.stringify(webId)
+  );
+  const savedLaunchUrl = appBase + 'profile/#foo?' + new URLSearchParams({
+    webid: otherWebId, resource: launchResource
+  });
+  await submit('.saved-apps form', {
+    name: 'Profile launch example', url: savedLaunchUrl
+  });
+  await wait(
+    '[...document.querySelectorAll(".saved-apps a")].some(a=>a.textContent==="Profile launch example")'
+  );
+  const currentLaunch = await evaluate(
+    'return [...document.querySelectorAll(".saved-apps a")].find(a=>a.textContent==="Profile launch example").href;'
+  );
+  const savedFragment = new URL(currentLaunch).hash;
+  assert(savedFragment.startsWith('#foo?'));
+  const savedParameters = new URLSearchParams(
+    savedFragment.slice(savedFragment.indexOf('?') + 1)
+  );
+  assert.equal(savedParameters.get('webid'), webId);
+  assert.equal(savedParameters.get('resource'), launchResource);
+
+  const writesBeforeLaunch = calls.filter(call => call.method === 'PUT').length;
+  const preferencesBeforeLaunch = String(resources.get(base + '/prefs').body);
+  const resourceBeforeLaunch = String(resources.get(launchDocument).body);
+  await evaluate(
+    'document.querySelector(".launch-profile [name=resource]").value=' +
+      JSON.stringify(launchResource) + ';'
+  );
+  const launcherPage = page;
+  const profileWindow = await openApp('.launch-profile button');
+  const launchTarget = profileWindow.target;
+  launchedPage = profileWindow.page;
+  page = launchedPage;
+  await page.ready();
+  await wait(
+    'window.solidProfile?.host.session && document.querySelector(".profile-card h2")?.textContent==="Launch Alice"'
+  );
+  assert.equal(await evaluate('return window.solidProfile.host.session.webId;'),
+    webId);
+  assert.equal(await evaluate(
+    'return new URLSearchParams(location.hash.slice(1)).get("resource");'
+  ), launchResource);
+  assert.equal(calls.filter(call => call.method === 'PUT').length,
+    writesBeforeLaunch);
+  assert.equal(String(resources.get(base + '/prefs').body), preferencesBeforeLaunch);
+  assert.equal(String(resources.get(launchDocument).body), resourceBeforeLaunch);
+  assert.equal(await evaluate('return window.opener;'), null);
+  assert.equal(await launcherPage.evaluate(() => location.pathname), '/launcher/');
+  assert.equal(await launcherPage.evaluate(() =>
+    window.solidLauncher.host.session.webId
+  ), webId);
+  await capture('profile-launched');
+  page.close();
+  await launcherPage.send('Target.closeTarget', {
+    targetId: launchTarget.targetId
+  });
+  launchedPage = null;
+  page = launcherPage;
+
+  await account('preferences');
+  assert.equal(await evaluate(
+    'return document.querySelector(".preferences-dialog [name=launchTarget]").value;'
+  ), 'tab');
+  await submit('.preferences-dialog form', { launchTarget: 'window' });
+  await wait(
+    'document.querySelector(".preferences-dialog [role=status]").textContent.includes("saved")'
+  );
+  await click('.preferences-dialog [data-simply-command=close]');
+  await page.send('Page.reload');
+  await wait('window.solidLauncher?.host.session && ' +
+    'window.solidLauncher.host.preferences.launchTarget==="window"');
+  const contactsWindow = await openApp('.app-grid a[href*=contacts]', 'window');
+  contactsWindow.page.close();
+  await page.send('Target.closeTarget', {
+    targetId: contactsWindow.target.targetId
+  });
+  await account('preferences');
+  assert.equal(await evaluate(
+    'return document.querySelector(".preferences-dialog [name=launchTarget]").value;'
+  ), 'window');
+  await submit('.preferences-dialog form', { launchTarget: 'tab' });
+  await wait('window.solidLauncher.host.preferences.launchTarget==="tab"');
+  await click('.preferences-dialog [data-simply-command=close]');
+
+  const declaredLink = '[...document.querySelectorAll(".saved-apps a")]' +
+    '.find(a=>a.textContent==="Declared server app")';
+  await wait(declaredLink);
+  assert.equal(await evaluate('return ' + declaredLink +
+    '.closest("li").querySelector("select").value;'), '');
+  let declaredUrl = new URL(await evaluate('return ' + declaredLink + '.href;'));
+  assert.equal(declaredUrl.searchParams.get('webid'), webId);
+  assert.equal(declaredUrl.searchParams.get('resource'), launchResource);
+  assert.equal(declaredUrl.hash, '#landing');
+
+  await evaluate('const select=' + declaredLink +
+    '.closest("li").querySelector("select");select.value="fragment";' +
+    'select.dispatchEvent(new Event("change",{bubbles:true}));');
+  await wait('new URL(' + declaredLink + '.href).hash.includes("webid=")');
+  assert.equal(await evaluate(
+    'const node=window.solidLauncher.store.collection.get(' +
+      JSON.stringify(describedAppId) + ');return String(node[node.graph.propertyName(' +
+      JSON.stringify('https://vocab.muze.nl/solid-apps#launchParameterLocation') + ')]);'
+  ), 'query');
+  await click('.saved-apps [data-simply-command=sync]');
+  await wait(
+    'document.querySelector(".suite-status").textContent.includes("Shortcuts synchronized")'
+  );
+  await visit('launcher/');
+  await wait('window.solidLauncher?.host.session && ' + declaredLink +
+    '?.closest("li").querySelector("select").value==="fragment"');
+  declaredUrl = new URL(await evaluate('return ' + declaredLink + '.href;'));
+  assert.equal(declaredUrl.searchParams.has('webid'), false);
+  assert.equal(declaredUrl.searchParams.has('resource'), false);
+
+  await evaluate('const select=' + declaredLink +
+    '.closest("li").querySelector("select");select.value="";' +
+    'select.dispatchEvent(new Event("change",{bubbles:true}));');
+  await wait('new URL(' + declaredLink + '.href).searchParams.has("webid")');
+  assert(await evaluate(
+    'const node=window.solidLauncher.store.collection.get(' +
+      JSON.stringify(describedAppId) + ');return node[node.graph.propertyName(' +
+      JSON.stringify('https://vocab.muze.nl/solid-apps#launchParameterLocationOverride') +
+      ')]===undefined;'
+  ));
+  await click('.saved-apps [data-simply-command=sync]');
+  await wait(
+    'document.querySelector(".suite-status").textContent.includes("Shortcuts synchronized")'
+  );
+  assert.match(String(resources.get(base + '/launcher.ttl').body),
+    /preserve app metadata/);
+  assert.match(String(resources.get(base + '/launcher.ttl').body),
+    /preserve other subject/);
+  await visit('launcher/');
+  await wait('window.solidLauncher?.host.session && ' + declaredLink +
+    '?.closest("li").querySelector("select").value===""');
+  await wait('new URL(' + declaredLink + '.href).searchParams.has("webid")');
+
+  await submit('.saved-apps form', {
+    name: 'User query app', url: serverAppUrl, launchMode: 'query'
+  });
+  await wait(
+    '[...document.querySelectorAll(".saved-apps a")].some(a=>a.textContent==="User query app")'
+  );
+  const userUrl = new URL(await evaluate(
+    'return [...document.querySelectorAll(".saved-apps a")].find(a=>a.textContent==="User query app").href;'
+  ));
+  assert.equal(userUrl.searchParams.get('webid'), webId);
+  assert.equal(userUrl.searchParams.get('resource'), launchResource);
+
+  const serverLauncher = page;
+  const serverWindow = await openApp('.saved-apps a[href*="/server-app"]');
+  launchedPage = serverWindow.page;
+  page = launchedPage;
+  await wait('document.body.innerText.includes("Server-side app received")');
+  const received = calls.filter(call =>
+    new URL(call.url).pathname === '/server-app'
+  );
+  assert.equal(received.length, 1);
+  const requestUrl = new URL(received[0].url);
+  assert.equal(requestUrl.searchParams.get('webid'), webId);
+  assert.equal(requestUrl.searchParams.get('resource'), launchResource);
+  assert.equal(requestUrl.searchParams.get('view'), 'full');
+  assert.equal(requestUrl.hash, '');
+  assert.equal(await evaluate('return location.hash;'), '#landing');
+  page.close();
+  await serverLauncher.send('Target.closeTarget', {
+    targetId: serverWindow.target.targetId
+  });
+  launchedPage = null;
+  page = serverLauncher;
+
+  await submit('.saved-apps form', {
+    name: 'Anonymous query app', url: serverAppUrl,
+    launchMode: 'query', anonymous: true
+  });
+  const anonymousLink = '[...document.querySelectorAll(".saved-apps a")]' +
+    '.find(a=>a.textContent==="Anonymous query app")';
+  await wait(anonymousLink + '?.closest("li").querySelector("input").checked');
+  assert.equal(new URL(await evaluate('return ' + anonymousLink + '.href;'))
+    .searchParams.has('webid'), false);
+
+  await evaluate('const input=' + anonymousLink +
+    '.closest("li").querySelector("input");input.checked=false;' +
+    'input.dispatchEvent(new Event("change",{bubbles:true}));');
+  await wait('new URL(' + anonymousLink + '.href).searchParams.has("webid")');
+  await click('.saved-apps [data-simply-command=sync]');
+  await wait(
+    'document.querySelector(".suite-status").textContent.includes("Shortcuts synchronized")'
+  );
+  await visit('launcher/');
+  await wait('window.solidLauncher?.host.session && ' + anonymousLink +
+    ' && !' + anonymousLink + '.closest("li").querySelector("input").checked');
+  await evaluate('const input=' + anonymousLink +
+    '.closest("li").querySelector("input");input.checked=true;' +
+    'input.dispatchEvent(new Event("change",{bubbles:true}));');
+  await wait('!' + 'new URL(' + anonymousLink + '.href).searchParams.has("webid")');
+  await click('.saved-apps [data-simply-command=sync]');
+  await wait(
+    'document.querySelector(".suite-status").textContent.includes("Shortcuts synchronized")'
+  );
+  await visit('launcher/');
+  await wait('window.solidLauncher?.host.session && ' + anonymousLink +
+    '?.closest("li").querySelector("input").checked');
+  const identifiedLink = '[...document.querySelectorAll(".saved-apps a")]' +
+    '.find(a=>a.textContent==="User query app")';
+  assert.equal(new URL(await evaluate('return ' + identifiedLink + '.href;'))
+    .searchParams.get('webid'), webId);
+  const anonymousLauncher = page;
+  const anonymousWindow = await openApp(
+    '.saved-apps a[href*="/server-app"]:not([href*="webid="])'
+  );
+  launchedPage = anonymousWindow.page;
+  page = launchedPage;
+  await wait('document.body.innerText.includes("Server-side app received")');
+  const anonymousRequest = new URL(calls.filter(call =>
+    new URL(call.url).pathname === '/server-app'
+  ).at(-1).url);
+  assert.equal(anonymousRequest.searchParams.has('webid'), false);
+  assert.equal(anonymousRequest.searchParams.get('resource'), launchResource);
+  page.close();
+  await anonymousLauncher.send('Target.closeTarget', {
+    targetId: anonymousWindow.target.targetId
+  });
+  launchedPage = null;
+  page = anonymousLauncher;
+
+  const anonymousBase = base + '/server-app?view=plain#landing';
+  await submit('.saved-apps form', {
+    name: 'Anonymous no resource', url: anonymousBase,
+    launchMode: 'query', anonymous: true
+  });
+  const bareSelector = '.saved-apps a[href*="view=plain"]';
+  await wait('document.querySelector(' + JSON.stringify(bareSelector) + ')');
+  const bareWindow = await openApp(bareSelector);
+  launchedPage = bareWindow.page;
+  page = launchedPage;
+  await wait('document.body.innerText.includes("Server-side app received")');
+  const bareRequest = new URL(calls.filter(call =>
+    new URL(call.url).pathname === '/server-app'
+  ).at(-1).url);
+  assert.equal(bareRequest.searchParams.has('webid'), false);
+  assert.equal(bareRequest.searchParams.has('resource'), false);
+  page.close();
+  await anonymousLauncher.send('Target.closeTarget', {
+    targetId: bareWindow.target.targetId
+  });
+  launchedPage = null;
+  page = anonymousLauncher;
   await capture('launcher-desktop');
+  await page.send('Emulation.setDeviceMetricsOverride', {
+    width: 390, height: 844, deviceScaleFactor: 1, mobile: true
+  });
+  await evaluate(
+    'document.querySelector(".saved-apps").scrollIntoView({block:"start"});'
+  );
+  assert(await evaluate(
+    'return document.documentElement.scrollWidth<=innerWidth;'
+  ));
+  await capture('launcher-mobile');
+  await page.send('Emulation.setDeviceMetricsOverride', {
+    width: 1280, height: 900, deviceScaleFactor: 1, mobile: false
+  });
   await visit('files/');
   await wait(
     'document.querySelector("tbody").textContent.includes("test.txt")'
@@ -565,8 +1039,41 @@ try {
     'document.querySelector(".suite-status").textContent.includes("Connect to Solid first")'
   );
   assert.equal(calls.length, beforeLogout);
+  await visit('launcher/');
+  await wait(
+    'window.solidLauncher?.store && [...document.querySelectorAll(".saved-apps a")].some(a=>a.textContent==="Profile launch example")'
+  );
+  assert.equal(await evaluate(
+    'return [...document.querySelectorAll(".saved-apps a")].find(a=>a.textContent==="Profile launch example").hasAttribute("href");'
+  ), false);
+  assert.equal(await evaluate(
+    'return [...document.querySelectorAll(".saved-apps a")].find(a=>a.textContent==="Example app").href;'
+  ), 'https://example.org/app');
+  assert.equal(new URL(await evaluate('return ' + anonymousLink + '.href;'))
+    .searchParams.has('webid'), false);
+  await evaluate(
+    'const form=document.querySelector(".launch-profile form");' +
+    'form.elements.resource.value="";form.elements.anonymous.checked=true;'
+  );
+  const loggedOutLauncher = page;
+  const bareProfile = await openApp('.launch-profile button');
+  launchedPage = bareProfile.page;
+  page = launchedPage;
+  await wait('window.solidProfile');
+  assert.equal(await evaluate('return location.hash;'), '');
+  assert.equal(await evaluate('return window.solidProfile.host.session;'), null);
+  page.close();
+  await loggedOutLauncher.send('Target.closeTarget', {
+    targetId: bareProfile.target.targetId
+  });
+  launchedPage = null;
+  page = loggedOutLauncher;
   console.log(
-    'PASS: all four apps, shared contact profiles, reload persistence, linked preferences across apps, remote profile editing, contacts/launcher sync, metadata deletion, binary upload, logout across tabs without removing local data.'
+    'PASS: all four apps, shared profiles, persistence, preferences, sync, ' +
+      'metadata deletion, binary upload, logout, and launch context in a ' +
+      'separate Profile tab with current WebID, preserved fragments, ' +
+      'read-only resource opening, query-mode HTTP delivery, editable ' +
+      'application defaults, saved anonymous links and failure recovery.'
   );
 }
 catch (error) {
@@ -579,6 +1086,7 @@ catch (error) {
 finally {
   page?.close();
   otherPage?.close();
+  launchedPage?.close();
   await chrome.close();
   appServer.kill('SIGTERM');
   await waitForExit({ process: appServer, isClosed: () => appServerClosed });
