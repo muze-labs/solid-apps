@@ -90,6 +90,7 @@ test('preferences use the linked URL, retain unknown RDF, and send conditional w
     ...defaults,
     theme: 'dark',
     launchTarget: 'window',
+    brokerUrl: 'https://broker.example/',
     language: 'nl',
     contactsResource: 'https://pod.example/private/contacts.ttl'
   });
@@ -97,6 +98,7 @@ test('preferences use the linked URL, retain unknown RDF, and send conditional w
   assert.equal(headers['If-Match'], '"v1"');
   assert.equal(result.settings.theme, 'dark');
   assert.equal(result.settings.launchTarget, 'window');
+  assert.equal(result.settings.brokerUrl, 'https://broker.example');
   assert.equal(result.settings.language, 'nl');
   const g = graph(written);
   assert.equal(
@@ -150,6 +152,19 @@ test('missing preference link and conflicting writes fail without inventing a lo
     ),
     /no ETag/
   );
+});
+test('unsupported stored broker preferences are preserved and never written', async () => {
+  for (const value of ['"https://a.example/", "https://b.example/"',
+    '<https://broker.example/>', '[<https://example.org/p> "keep"]',
+    '"https://broker.example/"@en']) {
+    const g = graph('<#solid-apps> <' + prefixes.apps + 'brokerUrl> ' + value + '.');
+    const before = await g.write();
+    await assert.rejects(savePreferences({ client: {
+      put: async () => assert.fail('Must not write')
+    } }, { url, graph: g, missing: false, etag: '"v1"' }, defaults),
+    /Broker URL/);
+    assert.equal(await g.write(), before);
+  }
 });
 test('resource deletion uses parent metadata and never issues a destructive request', async () => {
   const target = 'https://pod.example/files/test.txt';

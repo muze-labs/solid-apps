@@ -12,6 +12,12 @@ validation errors and remote conflicts are explicit errors.
 `defaults`, `readPreferences`, `validatePreferences` and `applyPreferences` are
 also exported. Appearance application is separate from persistence.
 
+`brokerUrl` is a plain `apps:brokerUrl` literal on the suite's preferences
+subject. It names an HTTPS broker origin (HTTP loopback is accepted for local
+development), with no credentials, path, query or fragment. Absence means no
+configured broker. Unsupported structured or multiple values fail before
+writing. Broker connection keys are deliberately outside these preferences.
+
 `launchTarget` is a plain literal, `"tab"` (the default) or `"window"`, on the
 suite's preferences subject using `apps:launchTarget`. The shared dialog offers
 **Open apps in**; Launcher uses it for app links and its Profile resource form.

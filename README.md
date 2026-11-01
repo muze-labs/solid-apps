@@ -90,6 +90,12 @@ receiving app that already has its own session.
 
 ## Shared preferences
 
+Launcher can request a resource selection from an already-open Files app through
+the experimental capability broker. See [local broker setup](broker/README.md)
+for provisioning and connection steps. Selection returns a URL into Launcher's
+resource field; cancellation preserves its previous value. Both apps keep their
+own Solid sessions.
+
 Every app opens the same preferences dialog. It loads the URL linked by
 `pim:preferencesFile` on the connected WebID; it never guesses a preferences path.
 An absent resource may be created at that linked URL. If the profile has no link,
@@ -97,7 +103,8 @@ the dialog explains the missing prerequisite; profile-link creation is not part
 of this first version.
 
 Settings cover system/light/dark appearance, text size, density, preferred
-language, app launch presentation, and Contacts/Launcher/Files storage locations.
+language, app launch presentation, the capability broker URL, and
+Contacts/Launcher/Files storage locations.
 **Open apps in** chooses new tabs (the default) or new windows for Launcher links
 and the Profile resource form. The choice is saved in your linked preferences
 file and used when Launcher loads it. Browser settings can affect presentation.
@@ -180,6 +187,12 @@ metadata. The browser test starts its own app and mock-Pod servers, exercises al
 four apps, reload persistence, shared profile editing, preferences across apps,
 synchronization, binary upload and tombstones. It also checks text escaping and
 captures desktop/mobile views in `/tmp/solid-apps-review/`.
+
+The build measures each app's JavaScript import graph plus the authentication
+callback, counting shared chunks once per app. It writes `www/size-report.json`
+and rejects totals of 200,000 gzip bytes or more (gzip level 6; source maps are
+excluded). The development server serves readable JavaScript; this budget is
+the compressed production transfer size, not a claim of offline/PWA support.
 
 ## Shared appearance
 

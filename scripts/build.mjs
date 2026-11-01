@@ -2,6 +2,7 @@ import { build } from 'esbuild';
 import { mkdir, copyFile, writeFile, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { gzipSync } from 'node:zlib';
 const root = fileURLToPath(new URL('../', import.meta.url));
 await mkdir(path.join(root, 'www/assets'), { recursive: true });
 await copyFile(
@@ -40,7 +41,8 @@ if (
 ) {
   throw new Error('build: N3 must not enter the application bundle.');
 }
-await build({
+const redirectBuild = await build({
+  metafile: true,
   entryPoints: ['packages/solid-app-data/src/redirect.mjs'],
   absWorkingDir: root,
   outfile: 'www/assets/redirect.js',
@@ -59,11 +61,14 @@ const preferences = await readFile(
   path.join(root, 'packages/solid-preferences/src/dialog.html'),
   'utf8'
 );
+const capabilities = await readFile(
+  path.join(root, 'packages/solid-app-ui/src/capabilities.html'), 'utf8'
+);
 for (const name of ['launcher', 'contacts', 'files', 'profile']) {
   const title = name[0].toUpperCase() + name.slice(1);
   const content = (
     await readFile(path.join(root, `apps/${name}/src/index.html`), 'utf8')
-  ).replace('{{profile}}', profile);
+  ).replace('{{profile}}', profile).replace('{{capabilities}}', capabilities);
   let body = shell
     .replace('{{title}}', title)
     .replace('{{content}}', content)
@@ -83,3 +88,38 @@ await writeFile(
   '<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=launcher/"><a href="launcher/">Open Solid Apps</a>'
 );
 console.log('Built all four apps in www/');
+const outputs = {
+  ...applicationBuild.metafile.outputs, ...redirectBuild.metafile.outputs
+};
+const gzipSizes = new Map();
+for (const name of Object.keys(outputs).filter(name => name.endsWith('.js'))) {
+  const contents = await readFile(path.join(root, name));
+  gzipSizes.set(name, gzipSync(contents, { level: 6 }).byteLength);
+}
+function importGraph(name, seen = new Set()) {
+  if (seen.has(name)) {
+    return seen;
+  }
+  seen.add(name);
+  for (const dependency of outputs[name].imports) {
+    if (!dependency.external) {
+      importGraph(dependency.path, seen);
+    }
+  }
+  return seen;
+}
+const sizes = {};
+for (const name of ['launcher', 'contacts', 'files', 'profile']) {
+  const files = importGraph(`www/assets/${name}/src/index.js`);
+  importGraph('www/assets/redirect.js', files);
+  const total = [...files].reduce((sum, file) => sum + gzipSizes.get(file), 0);
+  sizes[name] = { gzipBytes: total, scripts: [...files] };
+  if (total >= 200000) {
+    throw new Error(`build: ${name} exceeds the 200 KB gzip JavaScript budget.`);
+  }
+}
+await writeFile(path.join(root, 'www/size-report.json'), JSON.stringify({
+  gzipLevel: 6, node: process.versions.node, apps: sizes
+}, null, 2));
+console.log('Gzip JS including auth callback: ' + Object.entries(sizes)
+  .map(([name, size]) => `${name} ${size.gzipBytes} B`).join(', '));

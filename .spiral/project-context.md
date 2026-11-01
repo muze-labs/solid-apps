@@ -21,7 +21,7 @@ Repository baseline: `292f753` on local branch `main`. The existing staged
 | --- | --- | --- |
 | Purpose, users/stakeholders, goals | Confirmed by maintainer, 2026-11-01 | Basic suite and ecosystem for productive Solid use; showcase for developers building their own Solid apps. |
 | Current posture | Confirmed by maintainer, 2026-11-01 | Exploratory prototype. This does not establish whether any real data is in use. |
-| Important outcomes / metrics | Qualitative outcomes confirmed by maintainer | Users productively use Solid data within the defined apps; developers learn from source and build interoperable apps using their choice of libraries. Numeric targets are unspecified. |
+| Important outcomes / metrics | Qualitative outcomes confirmed by maintainer; later JavaScript target explicit | Productive Solid use and developers learning/building interoperable apps. Subsequent roadmap adds mobile-first workflows and less than 200 KB gzipped JavaScript per app. |
 | Consequential prior decisions / reversibility | Undocumented decisions exist; individual details unknown | Maintainer subsequently identified Muze culture, Weblets work, and thoughts on AI and linked data as influences. Seek relevant rationale during consequential work; do not invent exit costs. |
 | Invariants / commitments | Established from current instructions | AGENTS.md supplied by maintainer; constraints below. Additional commitments may emerge in intake. |
 | Known / tolerated problems | Unknown; explicitly dispositioned by maintainer | No explicitly tolerated problems identified. Documented limitations below remain unprioritized, not accepted trade-offs. |
@@ -556,6 +556,13 @@ First answers received on 2026-11-01:
     `ARCHITECTURE-PHILOSOPHY.md`; AGENTS.md and `.spiral/culture.md` now reference
     that copy, with source dates and a checksum recorded in the culture index.
     This makes the existing adoption self-contained.
+38. The maintainer agreed to a new cross-origin resource-picker cycle: Launcher
+    asks an already-open Files app to select a resource, and receives its URL.
+    The roadmap/culture documentation was confirmed merged on remote main at
+    `4c8b285`. Cycle CYC-20261101-QG24H-2 starts there on its own branch and
+    continues the broker roadmap with explicit, manually provisioned scoped
+    routing. The result is implemented and automated verification is recorded
+    in the cycle; human acceptance is pending. No agent merge is authorized.
 
 Conversation/documentation language: **English**, explicitly requested by the
 maintainer. Conversation preference: ask **one question at a time** until intake is

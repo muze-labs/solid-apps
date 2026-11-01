@@ -7,6 +7,14 @@ build time. `shell()` binds its header and preferences scopes and returns the ap
 content container, session/settings access, status reporting, and operation runner.
 The application mounts its own SimplyFlow scope inside `host.main`.
 
+Launcher and Files also compose `src/capabilities.html` and mount
+`appServices(host, options)` from `capabilities.mjs`. It owns the SimplyFlow
+connection panel, reads the Pod-backed `brokerUrl` preference and clears the
+entered app key after use. The returned `client` getter requires an active
+connection. Page exit or a changed broker preference disconnects; keys and
+connection tokens are never persisted. This panel uses `host.onPreferences`;
+future consumers needing another listener should compose their callbacks.
+
 `shell({ acceptLaunch: true })` opts a receiving app into validated launch
 context, available as `host.launch`; `host.launchError` describes invalid
 input. `host.ready` settles after background session restoration and the

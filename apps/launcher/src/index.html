@@ -52,14 +52,24 @@
       >Profile resource URL (optional)<input
         name="resource"
         type="url"
-        placeholder="https://example.org/contacts.ttl#alice" /></label
+        placeholder="https://example.org/contacts.ttl#alice"
+        data-simply-field="resource" /></label
     ><label
       ><input type="checkbox" name="anonymous" /> Launch anonymously
       (omit WebID)</label
     ><button class="ds-button ds-button-primary">Open in Profile</button>
+    <button type="button" class="ds-button" data-simply-command="pickResource"
+      data-simply-field="pickState" data-simply-transform="attributes"
+      data-simply-attributes="disabled">Choose in Files</button>
+    <button type="button" class="ds-button" data-simply-command="cancelPick"
+      data-simply-field="cancelState" data-simply-transform="attributes"
+      data-simply-attributes="hidden" hidden>Cancel selection</button>
   </form>
+  <p role="status" data-simply-field="pickerMessage"
+    data-simply-transform="escape_html"></p>
   <p class="muted">Uses your connected WebID unless anonymous is selected.</p>
 </section>
+{{capabilities}}
 <section class="saved-apps">
   <h2>Your shortcuts</h2>
   <form class="form-grid app-toolbar" data-simply-command="add">

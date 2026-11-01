@@ -77,6 +77,15 @@ proves Launcher-to-Profile resource opening. Use that contract for subsequent
 work; resource selection in Contacts and Files still needs its own acceptance
 criteria. URL context does not establish authentication or a capability grant.
 
+The next cycle implements the [initial resource-picker contract](solid-resource-picker.md):
+Launcher requests a selection from an already-open Files app. The initial
+broker uses explicit per-app/workspace provisioning and route policy, with
+`apps:brokerUrl` in the existing preferences. Publisher discovery, a persistent
+provider registry and provider cold launch remain future work. An independent
+browser client can use the same contract without Launcher. See
+[operator setup](../broker/README.md). Cycle acceptance remains a human decision;
+the prototype does not establish the entire roadmap's completion.
+
 ### Responsibilities
 
 | Part | Responsibility | Does not do |

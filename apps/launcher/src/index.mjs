@@ -1,5 +1,9 @@
 import { app } from '@muze-labs/simplyflow/app';
 import { shell } from '@muze-labs/solid-app-ui';
+import { appServices } from '@muze-labs/solid-app-ui/capabilities.mjs';
+import {
+  browseCapability, browseInput, selectionUrl
+} from '@muze-labs/solid-app-data/capabilities.mjs';
 import { openCollection } from '@muze-labs/solid-app-data/collection.mjs';
 import { prefixes, valueAt, idOf, httpUrl } from '@muze-labs/solid-app-data';
 import { launchUrl } from '@muze-labs/solid-app-data/launch.mjs';
@@ -9,6 +13,8 @@ import {
 } from './shortcuts.mjs';
 const host = shell();
 let store;
+let selection;
+const services = appServices(host);
 const container = host.main;
 function openApplication(href) {
   const features = host.preferences.launchTarget === 'window'
@@ -71,11 +77,45 @@ const ui = app({
   data: {
     shortcuts: [],
     empty: '',
+    resource: '',
+    pickerMessage: '',
+    pickState: { disabled: null },
+    cancelState: { hidden: '' },
     contactsLink: { href: '../contacts/' },
     filesLink: { href: '../files/' },
     profileLink: { href: '../profile/' }
   },
   commands: {
+    pickResource() {
+      if (selection) {
+        return;
+      }
+      host.run(async () => {
+        const client = services.client;
+        selection = new AbortController();
+        ui.data.pickState = { disabled: '' };
+        ui.data.cancelState = { hidden: null };
+        ui.data.pickerMessage = 'Choose a resource in the connected Files app.';
+        try {
+          const result = await client.request(browseCapability, browseInput, {
+            signal: selection.signal
+          });
+          ui.data.resource = selectionUrl(result);
+          ui.data.pickerMessage = 'Resource selected. Review the URL before opening.';
+        }
+        catch (error) {
+          ui.data.pickerMessage = error.message;
+        }
+        finally {
+          selection = null;
+          ui.data.pickState = { disabled: null };
+          ui.data.cancelState = { hidden: '' };
+        }
+      });
+    },
+    cancelPick() {
+      selection?.abort();
+    },
     setAnonymous(element, id) {
       host.run(async () => {
         const subject = store.collection.get(id);

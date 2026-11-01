@@ -3,6 +3,7 @@ import * as fs from 'node:fs/promises';
 import * as http from 'node:http';
 import * as path from 'node:path';
 import assert from 'node:assert/strict';
+import { CapabilityBroker, brokerServer } from '../broker/server.mjs';
 
 // The app is exercised through HTTP against an isolated in-memory Pod, never a user's Pod.
 const resources = new Map();
@@ -104,6 +105,9 @@ resources.set(base + '/storage/test.txt', {
   type: 'text/plain',
   etag: '"1"'
 });
+resources.set(base + '/storage/forbidden/', {
+  body: 'Access denied', type: 'text/plain', etag: '"denied"', status: 403
+});
 const launchDocument = base + '/people.ttl?view=all&value=a%2Bb';
 const launchResource = launchDocument + '#alice';
 const serverAppUrl = base + '/server-app?view=full&' +
@@ -156,8 +160,61 @@ for (let attempt = 0; attempt < 100; attempt++) {
   }
   await new Promise((resolve) => setTimeout(resolve, 30));
 }
+const filesPort = await freePort();
+const filesBase = `http://127.0.0.1:${filesPort}/`;
+const filesServer = spawn(process.execPath, ['scripts/serve.mjs'], {
+  cwd: new URL('../', import.meta.url),
+  env: { ...process.env, PORT: String(filesPort) }, stdio: 'ignore'
+});
+let filesServerClosed = false;
+filesServer.once('exit', () => { filesServerClosed = true; });
+for (let attempt = 0; attempt < 100; attempt++) {
+  try {
+    if ((await fetch(filesBase)).ok) {
+      break;
+    }
+  }
+  catch {}
+  await new Promise(resolve => setTimeout(resolve, 30));
+}
+const browseCapability = 'https://vocab.muze.nl/capabilities/browse';
+const callerKey = 'fixture-caller-key-'.repeat(3);
+const providerKey = 'fixture-provider-key-'.repeat(3);
+const independentKey = 'fixture-independent-key-'.repeat(3);
+const independentSource = await fs.readFile(new URL(
+  '../packages/solid-app-data/src/capabilities.mjs', import.meta.url
+));
+const independentServer = http.createServer((req, res) => {
+  if (req.url === '/client.mjs') {
+    res.writeHead(200, { 'Content-Type': 'text/javascript' });
+    res.end(independentSource);
+  }
+  else {
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    res.end('<!doctype html><title>Independent caller fixture</title>');
+  }
+});
+await new Promise(resolve => independentServer.listen(0, '127.0.0.1', resolve));
+const independentBase = 'http://127.0.0.1:' + independentServer.address().port;
+const capabilityBroker = new CapabilityBroker({
+  clients: [
+    { application: 'launcher', workspace: 'fixture',
+      origin: new URL(appBase).origin, key: callerKey },
+    { application: 'files', workspace: 'fixture',
+      origin: new URL(filesBase).origin, key: providerKey },
+    { application: 'independent', workspace: 'fixture',
+      origin: independentBase, key: independentKey }
+  ],
+  routes: ['launcher', 'independent'].map(requester => ({ workspace: 'fixture',
+    requester, provider: 'files', capability: browseCapability }))
+});
+const capabilityServer = brokerServer(capabilityBroker);
+await new Promise(resolve => capabilityServer.listen(0, '127.0.0.1', resolve));
+const capabilityUrl = 'http://127.0.0.1:' + capabilityServer.address().port;
+resources.get(base + '/prefs').body += '\n<#solid-apps> ' +
+  '<https://vocab.muze.nl/solid-apps#brokerUrl> "' + capabilityUrl + '".';
 const chrome = await startChrome('about:blank');
-let page, otherPage, launchedPage;
+let page, otherPage, launchedPage, pickerPage;
 try {
   page = await chrome.page();
   await page.ready();
@@ -647,6 +704,92 @@ try {
   launchedPage = null;
   page = launcherPage;
 
+  await evaluate('document.querySelector(".capability-connection").open=true;');
+  await submit('.capability-connection form', { key: callerKey });
+  await wait('document.querySelector(".capability-connection [role=status]")' +
+    '.textContent.includes("Connected")');
+  assert.equal(await evaluate(
+    'return document.querySelector(".capability-connection [name=key]").value;'
+  ), '');
+  const providerTarget = await page.send('Target.createTarget', {
+    url: filesBase + 'files/'
+  });
+  pickerPage = await chrome.page(providerTarget.targetId);
+  page = pickerPage;
+  await page.ready();
+  await wait('window.solidFiles');
+  await account('connectDialog');
+  await submit('.connect-dialog form', { webId });
+  await wait('window.solidFiles.host.session && document.querySelector(' +
+    '".file-list tbody").textContent.includes("test.txt")');
+  await evaluate('document.querySelector(".capability-connection").open=true;');
+  await submit('.capability-connection form', { key: providerKey });
+  await wait('document.querySelector(".capability-connection [role=status]")' +
+    '.textContent.includes("Connected")');
+  const pickerWrites = calls.filter(call => call.method === 'PUT').length;
+  const pickerDownloads = calls.filter(call =>
+    call.url === base + '/storage/test.txt').length;
+  page = launcherPage;
+  await click('[data-simply-command=pickResource]');
+  page = pickerPage;
+  await wait('!document.querySelector(".picker-request").hidden');
+  assert.match(await evaluate(
+    'return document.querySelector(".picker-request").textContent;'
+  ), new RegExp(new URL(appBase).origin.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  await page.send('Emulation.setDeviceMetricsOverride', {
+    width: 390, height: 844, deviceScaleFactor: 1, mobile: true
+  });
+  await capture('files-picker-mobile');
+  assert(await evaluate('return document.documentElement.scrollWidth<=' +
+    'document.documentElement.clientWidth;'));
+  await click('.file-list tbody tr [data-simply-command=selectResource]');
+  page = launcherPage;
+  await wait('document.querySelector(".launch-profile [name=resource]").value===' +
+    JSON.stringify(base + '/storage/test.txt'));
+  assert.equal(calls.filter(call => call.method === 'PUT').length, pickerWrites);
+  assert.equal(calls.filter(call => call.url === base + '/storage/test.txt')
+    .length, pickerDownloads);
+  await click('[data-simply-command=pickResource]');
+  page = pickerPage;
+  await wait('!document.querySelector(".picker-request").hidden');
+  await click('[data-simply-command=cancelSelection]');
+  page = launcherPage;
+  await wait('document.querySelector(".launch-profile [role=status]")' +
+    '.textContent.includes("cancelled")');
+  assert.equal(await evaluate(
+    'return document.querySelector(".launch-profile [name=resource]").value;'
+  ), base + '/storage/test.txt');
+  await click('[data-simply-command=pickResource]');
+  page = pickerPage;
+  await wait('!document.querySelector(".picker-request").hidden');
+  page = launcherPage;
+  await click('[data-simply-command=cancelPick]');
+  page = pickerPage;
+  await wait('document.querySelector(".picker-request").hidden');
+  page = launcherPage;
+  await click('[data-simply-command=pickResource]');
+  page = pickerPage;
+  await wait('!document.querySelector(".picker-request").hidden');
+  await submit('.file-controls form[data-simply-command=browse]', {
+    url: base + '/storage/forbidden/'
+  });
+  page = launcherPage;
+  await wait('document.querySelector(".launch-profile [role=status]")' +
+    '.textContent.includes("could not complete selection")');
+  assert.equal(await evaluate(
+    'return document.querySelector(".launch-profile [name=resource]").value;'
+  ), base + '/storage/test.txt');
+  await click('[data-simply-command=pickResource]');
+  page = pickerPage;
+  await wait('!document.querySelector(".picker-request").hidden');
+  await click('.capability-connection [data-simply-command=disconnect]');
+  page = launcherPage;
+  await wait('document.querySelector(".launch-profile [role=status]")' +
+    '.textContent.includes("disconnected")');
+  pickerPage.close();
+  await page.send('Target.closeTarget', { targetId: providerTarget.targetId });
+  pickerPage = null;
+
   await account('preferences');
   assert.equal(await evaluate(
     'return document.querySelector(".preferences-dialog [name=launchTarget]").value;'
@@ -1068,12 +1211,63 @@ try {
   });
   launchedPage = null;
   page = loggedOutLauncher;
+
+  const independentTarget = await page.send('Target.createTarget', {
+    url: independentBase
+  });
+  const independentPage = await chrome.page(independentTarget.targetId);
+  await independentPage.ready();
+  const runningTargets = await independentPage.send('Target.getTargets');
+  for (const target of runningTargets.targetInfos) {
+    if (target.type === 'page' && target.url.startsWith(appBase + 'launcher/')) {
+      await independentPage.send('Target.closeTarget', { targetId: target.targetId });
+    }
+  }
+  const secondProvider = await independentPage.send('Target.createTarget', {
+    url: filesBase + 'files/'
+  });
+  pickerPage = await chrome.page(secondProvider.targetId);
+  page = pickerPage;
+  await page.ready();
+  await wait('window.solidFiles?.host.session && ' +
+    'document.querySelector(".file-list tbody").textContent.includes("bytes.bin")');
+  await evaluate('document.querySelector(".capability-connection").open=true;');
+  await submit('.capability-connection form', { key: providerKey });
+  await wait('document.querySelector(".capability-connection [role=status]")' +
+    '.textContent.includes("Connected")');
+  page = independentPage;
+  await evaluate('const {CapabilityClient,browseCapability,browseInput}=' +
+    'await import("/client.mjs");window.fixtureClient=new CapabilityClient(' +
+    JSON.stringify(capabilityUrl) + ');await window.fixtureClient.connect(' +
+    JSON.stringify(independentKey) + ');window.fixtureClient.request(' +
+    'browseCapability,browseInput).then(result=>window.fixtureResult=result);');
+  page = pickerPage;
+  await wait('!document.querySelector(".picker-request").hidden');
+  assert.match(await evaluate('return document.querySelector(' +
+    '".picker-request").textContent;'), /independent/);
+  page = independentPage;
+  await evaluate('const {browseCapability,browseInput}=await import("/client.mjs");' +
+    'window.fixtureClient.request(browseCapability,browseInput)' +
+    '.catch(error=>window.fixtureBusyError=error.message);');
+  await wait('window.fixtureBusyError');
+  assert.match(await evaluate('return window.fixtureBusyError;'), /another selection/);
+  page = pickerPage;
+  assert.equal(await evaluate('return document.querySelector(' +
+    '".picker-request").hidden;'), false);
+  await click('.file-list tbody tr [data-simply-command=selectResource]');
+  page = independentPage;
+  await wait('window.fixtureResult');
+  assert.equal(await evaluate('return window.fixtureResult["@id"];'),
+    base + '/storage/bytes.bin');
+  await evaluate('window.fixtureClient.disconnect();');
   console.log(
     'PASS: all four apps, shared profiles, persistence, preferences, sync, ' +
       'metadata deletion, binary upload, logout, and launch context in a ' +
       'separate Profile tab with current WebID, preserved fragments, ' +
       'read-only resource opening, query-mode HTTP delivery, editable ' +
-      'application defaults, saved anonymous links and failure recovery.'
+      'application defaults, saved anonymous links, cross-origin capability ' +
+      'selection/cancellation/disconnect, independent client with Launcher ' +
+      'closed, and failure recovery.'
   );
 }
 catch (error) {
@@ -1087,9 +1281,18 @@ finally {
   page?.close();
   otherPage?.close();
   launchedPage?.close();
+  pickerPage?.close();
   await chrome.close();
+  capabilityBroker.close();
+  await new Promise(resolve => {
+    capabilityServer.close(resolve);
+    capabilityServer.closeAllConnections();
+  });
+  await new Promise(resolve => independentServer.close(resolve));
   appServer.kill('SIGTERM');
   await waitForExit({ process: appServer, isClosed: () => appServerClosed });
+  filesServer.kill('SIGTERM');
+  await waitForExit({ process: filesServer, isClosed: () => filesServerClosed });
   await new Promise((resolve) => server.close(resolve));
 }
 async function startChrome(url) {

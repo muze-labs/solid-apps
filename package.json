@@ -10,6 +10,7 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "dev": "npm run build && node scripts/serve.mjs",
+    "broker": "node scripts/broker.mjs",
     "test": "node --import ./scripts/oldm-loader.mjs --test test/*.test.mjs",
     "check": "npm test && npm run build",
     "test:browser": "npm run build && node test/browser.mjs"

@@ -3,6 +3,17 @@
 Experimental application integration package. This is the suite's composition
 of published Solid libraries, not a new persistence framework.
 
+`capabilities.mjs` provides the initial renderer-independent `CapabilityClient`
+and the browse capability contract. Connect with a provisioned app key, then
+`request(browseCapability, browseInput, { signal })`; validate the result with
+`selectionUrl(result)`. Providers advertise `capabilities` in constructor
+options, receive `onRequest(event)` and answer with `respond(event.id, { result })`
+or `{ error: { code, message } }`. `onCancel` clears provider UI and
+`disconnect()` rejects pending work. No invocation is automatically replayed.
+See the [protocol](../../design/solid-resource-picker.md) and
+[broker setup](../../broker/README.md). These are experimental suite interfaces,
+not independently published packages or Solid authorization grants.
+
 - Root export: native `oldm` context with the Turtle backend, shared vocabulary
   prefixes, URI helpers, conditional `loadDocument`/`copyDocument`/`saveDocument`,
   and `connectSession` for WebID discovery and the Metro authentication lifecycle.

@@ -8,17 +8,37 @@ import {
   saveDocument,
   httpUrl
 } from '@muze-labs/solid-app-data';
+import { brokerUrl } from '@muze-labs/solid-app-data/capabilities.mjs';
 export const defaults = Object.freeze({
   theme: 'system',
   textScale: '100',
   density: 'comfortable',
   language: 'en',
   launchTarget: 'tab',
+  brokerUrl: '',
   contactsResource: '',
   launcherResource: '',
   filesRoot: ''
 });
 const namespace = prefixes.apps;
+function readBrokerUrl(subject) {
+  let value = valueAt(subject, namespace + 'brokerUrl');
+  if (value === undefined) {
+    return '';
+  }
+  if (Array.isArray(value)) {
+    if (value.length !== 1) {
+      throw new Error('solid-preferences: Broker URL has multiple values.');
+    }
+    value = value[0];
+  }
+  if (!(typeof value === 'string' || value instanceof String) ||
+    value.language || (value.type && String(value.type) !==
+      'http://www.w3.org/2001/XMLSchema#string')) {
+    throw new Error('solid-preferences: Broker URL must be a plain literal.');
+  }
+  return brokerUrl(String(value));
+}
 function readLaunchTarget(subject) {
   let value = valueAt(subject, namespace + 'launchTarget');
   if (value === undefined) {
@@ -44,15 +64,25 @@ function readLaunchTarget(subject) {
 export function readPreferences(document) {
   const subject = document.graph.get(document.url + '#solid-apps');
   return Object.fromEntries(
-    Object.entries(defaults).map(([key, fallback]) => [
-      key,
-      key === 'launchTarget'
-        ? readLaunchTarget(subject)
-        : idOf(valueAt(subject, namespace + key) ?? fallback)
-    ])
+    Object.entries(defaults).map(([key, fallback]) => {
+      let value;
+      if (key === 'brokerUrl') {
+        value = readBrokerUrl(subject);
+      }
+      else if (key === 'launchTarget') {
+        value = readLaunchTarget(subject);
+      }
+      else {
+        value = idOf(valueAt(subject, namespace + key) ?? fallback);
+      }
+      return [key, value];
+    })
   );
 }
 export function validatePreferences(settings) {
+  if (settings.brokerUrl) {
+    brokerUrl(settings.brokerUrl);
+  }
   if (!['tab', 'window'].includes(settings.launchTarget)) {
     throw new Error('solid-preferences: Choose new tabs or new windows.');
   }
@@ -98,6 +128,7 @@ export async function loadPreferences(session) {
 export async function savePreferences(session, document, settings) {
   validatePreferences(settings);
   readLaunchTarget(document.graph.get(document.url + '#solid-apps'));
+  readBrokerUrl(document.graph.get(document.url + '#solid-apps'));
   const draft = await copyDocument(document);
   const id = draft.url + '#solid-apps';
   const node =
