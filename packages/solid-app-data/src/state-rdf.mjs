@@ -1,4 +1,6 @@
 import { turtleParser } from '@muze-labs/oldm-turtle';
+import { prefixes as standardPrefixes } from '@muze-nl/oldm-core';
+import { relativeIRI, turtlePrefixedIRI } from '@muze-nl/oldm-core/iri';
 
 export const rdf = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
 export const xsd = 'http://www.w3.org/2001/XMLSchema#';
@@ -55,19 +57,23 @@ export function sameTerm(left, right) {
 }
 
 // Keep raw triples authoritative: the object-graph writer expands shared blank
-// nodes and recurses on cycles. This emitter writes the triple subset of Turtle.
+// nodes and recurses on cycles. Compact spelling never changes these raw terms.
 export class StateGraph {
   constructor(text = '', base = stateRoot) {
     try {
-      this.quads = turtleParser(text, base).quads;
+      const parsed = turtleParser(text, base);
+      this.quads = parsed.quads;
+      this.prefixes = parsed.prefixes;
+      this.base = base;
     }
     catch (error) {
       throw rdfError('Invalid Turtle. ' + error.message);
     }
   }
   clone() {
-    const graph = new StateGraph();
+    const graph = new StateGraph('', this.base);
     graph.quads = structuredClone(this.quads);
+    graph.prefixes = { ...this.prefixes };
     return graph;
   }
   assertWritable() {
@@ -84,7 +90,74 @@ export class StateGraph {
   }
   write() {
     this.assertWritable();
-    return [...new Set(this.quads.map(tripleText))].sort().join('\n') + '\n';
+    const bindings = new Map(Object.entries(this.prefixes));
+    const defaults = { apps, state: stateScope, ...standardPrefixes };
+    for (const [prefix, namespace] of Object.entries(defaults)) {
+      if ([...bindings.values()].includes(namespace)) {
+        continue;
+      }
+      let alias = prefix;
+      let suffix = 1;
+      while (bindings.has(alias)) {
+        alias = prefix + suffix++;
+      }
+      bindings.set(alias, namespace);
+    }
+    const entries = [...bindings].sort((a, b) => b[1].length - a[1].length);
+    const used = new Set();
+    const resource = (id) => {
+      const reference = termText(named(relativeIRI(id, this.base)));
+      const prefixed = turtlePrefixedIRI(id, entries);
+      if (prefixed !== null && prefixed.length < reference.length) {
+        used.add(prefixed.slice(0, prefixed.indexOf(':')));
+        return prefixed;
+      }
+      return reference;
+    };
+    const object = (term) => {
+      if (term.termType === 'NamedNode') {
+        return resource(term.id);
+      }
+      if (term.termType === 'BlankNode' || term.language) {
+        return termText(term);
+      }
+      const text = quoted(term.value);
+      return text + '^^' + resource(term.datatype.id);
+    };
+    const subjects = new Map();
+    const unique = new Map(this.quads.map((quad) => [tripleText(quad), quad]));
+    for (const key of [...unique.keys()].sort()) {
+      const quad = unique.get(key);
+      const subject = object(quad.subject);
+      if (!subjects.has(subject)) {
+        subjects.set(subject, []);
+      }
+      const predicate =
+        quad.predicate.id === rdf + 'type' ? 'a' : resource(quad.predicate.id);
+      subjects.get(subject).push(predicate + ' ' + object(quad.object));
+    }
+    const statements = [...subjects].map(
+      ([subject, properties]) =>
+        subject + ' ' + properties.join(' ;\n    ') + ' .'
+    );
+    const declarations = [...used]
+      .sort()
+      .map(
+        (prefix) =>
+          '@prefix ' +
+          prefix +
+          ': ' +
+          termText(named(bindings.get(prefix))) +
+          ' .'
+      );
+    return (
+      [
+        '@base ' + termText(named(this.base)) + ' .',
+        ...declarations,
+        '',
+        ...statements
+      ].join('\n') + '\n'
+    );
   }
   values(subject, predicate) {
     return this.quads

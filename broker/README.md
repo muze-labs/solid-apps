@@ -96,7 +96,11 @@ an acknowledged snapshot after connecting to the same account.
 ## Native workspace and app state
 
 Workspace version 2 stores workspaces, ordered app instances, resource links,
-UI state and draft inputs as native RDF. The local current workspace and accepted
+UI state and draft inputs as native RDF. Saved Turtle declares the document's
+`@base`, uses vocabulary prefixes and groups properties by subject. Source prefix
+bindings are preserved where used; collisions get separate aliases. These
+presentation choices preserve resource identities, literal datatypes and unknown
+statements. The local current workspace and accepted
 baseline are separate native graphs, with ETag/target/dirty metadata and local
 reconnect keys. No main-state snapshot or baseline is a JSON literal.
 
