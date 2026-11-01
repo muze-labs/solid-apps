@@ -166,5 +166,7 @@ authorization code is logged or persisted by this correction.
 DES25 specifies the native persistence and app-state contract. Both Pod state and
 local current/baseline graphs use RDF statements. Private reconnect keys remain
 local. The maintainer explicitly declined migration for this unreleased prototype;
-use a new native cache and refuse old-format Pod targets rather than overwriting
-or importing them. Existing conditional-write and lifecycle contracts remain.
+use a new native cache without importing old state. SRC27 subsequently
+authorizes discarding the retired apps:snapshot property at the current Pod root
+on explicit conditional save, while preserving other unknown RDF. No fresh URL
+is required, and background close does not perform that discard. Existing conditional-write and lifecycle contracts remain.
