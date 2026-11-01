@@ -5,6 +5,9 @@ project:REQ-20261101-QG24H-4 a sd:Request ;
     dcterms:identifier "REQ-20261101-QG24H-4" ;
     sd:repositoryPath ".spiral/requests/REQ-20261101-QG24H-4.md" ;
     sd:status sd:Accepted ;
+    sd:supersedes [ a sd:ArtifactReference ;
+        sd:artifact project:REQ-20261101-QG24H-4 ;
+        sd:gitCommit "25c370c46728ff811fe7a903ded2cb73eab43bdf" ] ;
     sd:derivedFrom [ a sd:ArtifactReference ;
-        sd:artifact project:SRC-20261101-QG24H-3 ;
-        sd:gitCommit "fb2d6ffd12968bd600fc1d953670a7cb35090dca" ] .
+        sd:artifact project:SRC-20261101-QG24H-8 ;
+        sd:gitCommit "605125cc061ef7a2eeaf57daa88b404a3edaa79a" ] .

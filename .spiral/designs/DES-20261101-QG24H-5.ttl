@@ -4,7 +4,7 @@
 project:DES-20261101-QG24H-5 a sd:Design ;
     dcterms:identifier "DES-20261101-QG24H-5" ;
     sd:repositoryPath "design/solid-resource-picker.md" ;
-    sd:status sd:Active ;
+    sd:status sd:Superseded ;
     sd:satisfies [ a sd:ArtifactReference ;
         sd:artifact project:REQ-20261101-QG24H-4 ;
         sd:gitCommit "25c370c46728ff811fe7a903ded2cb73eab43bdf" ] .

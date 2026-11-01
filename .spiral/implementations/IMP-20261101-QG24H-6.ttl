@@ -4,7 +4,7 @@
 project:IMP-20261101-QG24H-6 a sd:Implementation ;
     dcterms:identifier "IMP-20261101-QG24H-6" ;
     sd:repositoryPath ".spiral/implementations/IMP-20261101-QG24H-6.md" ;
-    sd:status sd:Active ;
+    sd:status sd:Suspect ;
     sd:implementationLocation "broker/server.mjs",
         "packages/solid-app-data/src/capabilities.mjs",
         "packages/solid-app-ui/src/capabilities.mjs",
