@@ -606,3 +606,12 @@ is evidence for a proposed frame, not proof of current runtime behavior or
 human acceptance of future designs. After all topics are dispositioned and
 the maintainer confirms the frame, assess reality and present candidate risks
 for human prioritization before choosing a development cycle.
+
+## Managed workspace evaluation correction
+
+The maintainer recovered a Pod-conflict error after Save & close appeared inert.
+FBK11 traces the missing recovery path; DES9 and IMP6 now provide retained status,
+review of local/Pod versions and explicit conditional resolution. EVD12 verifies
+reload recovery and newer-remote-version refusal. The original differing Pod
+version's cause is unknown, and choosing the maintainer's version remains their
+UI decision. The active cycle has not been accepted or merged.
