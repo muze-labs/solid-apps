@@ -42,7 +42,7 @@ export const fileEditing = {
       const saved = await this.api.uploadFiles(
         this.runtime.host.requireSession(),
         files,
-        this.actions.child
+        (...args) => this.actions.child(...args)
       );
       await this.actions.browse(this.runtime.current);
       this.runtime.host.notify(saved + ' files uploaded.');

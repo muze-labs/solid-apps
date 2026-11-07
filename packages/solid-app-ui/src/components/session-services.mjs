@@ -55,7 +55,7 @@ export const sessionServices = {
             return options.restoreState(state);
           }
         },
-        onState: this.actions.message
+        onState: (...args) => this.actions.message(...args)
       });
       return host.managed;
     }

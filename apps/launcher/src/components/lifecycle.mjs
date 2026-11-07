@@ -16,7 +16,8 @@ export const lifecycle = {
         if (this.runtime.persistence) {
           try {
             await this.actions.preparePod();
-          } catch (error) {
+          }
+          catch (error) {
             this.actions.workspaceFailure(error);
           }
         }
@@ -54,11 +55,13 @@ export const lifecycle = {
               'Previous attempt: ' + previous.message
             );
           }
-        } catch {}
+        }
+        catch {}
         if (this.runtime.host.session) {
           try {
             await this.actions.preparePod();
-          } catch (error) {
+          }
+          catch (error) {
             this.actions.workspaceFailure(error);
           }
         }
@@ -73,7 +76,7 @@ export const lifecycle = {
         }
       };
       this.runtime.exitAttempted = false;
-      this.runtime.exitListener = this.actions.attemptExit;
+      this.runtime.exitListener = (event) => this.actions.attemptExit(event);
       window.addEventListener('beforeunload', this.runtime.exitListener);
       window.addEventListener('pagehide', this.runtime.exitListener);
     },

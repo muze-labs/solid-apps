@@ -77,10 +77,10 @@ export const account = {
       this.data.message = 'Reading profile…';
       try {
         const session = await this.api.connectSession(webId, popup, {
-          onAuthenticationRequired:
-            this.actions.muzeSolidUiAuthenticationRequired,
-          onAuthenticationRestored:
-            this.actions.muzeSolidUiAuthenticationRestored
+          onAuthenticationRequired: (...args) =>
+            this.actions.muzeSolidUiAuthenticationRequired(...args),
+          onAuthenticationRestored: (...args) =>
+            this.actions.muzeSolidUiAuthenticationRestored(...args)
         });
         this.runtime.session = session;
         this.data.webId = session.webId;
@@ -120,9 +120,10 @@ export const account = {
       }
       const session = await this.api.connectSession(webId, null, {
         interactive: false,
-        onAuthenticationRequired:
-          this.actions.muzeSolidUiAuthenticationRequired,
-        onAuthenticationRestored: this.actions.muzeSolidUiAuthenticationRestored
+        onAuthenticationRequired: (...args) =>
+          this.actions.muzeSolidUiAuthenticationRequired(...args),
+        onAuthenticationRestored: (...args) =>
+          this.actions.muzeSolidUiAuthenticationRestored(...args)
       });
       this.runtime.session = session;
       this.data.webId = session.webId;

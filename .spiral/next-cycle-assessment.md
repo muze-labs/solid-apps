@@ -1,13 +1,133 @@
 # Roadmap and next-cycle assessment
 
-Current disposition: **CYC-20261107-QG24H-77 is Accepted** (ACC81).
-The maintainer confirms repeated Preferences saves and toast behavior and requests
-commit, merge to main and push. IMP79/EVD80 retain the exact implementation and
-evidence. This continues the stage-one Preferences repair; broader forms design,
-swb prefix migration, workspace switching and onboarding remain future work.
-The focused-app, local/mobile, accessibility, first-use size and source readability
-guardrails remain in force. No next implementation cycle has been selected.
-The candidate comparisons below are retained historical planning.
+Current disposition: **CYC-20261107-QG24H-82 is Accepted** (ACC86).
+The maintainer requests commit, normal direct merge to main and push, followed by
+a next-cycle suggestion. IMP84/EVD85 retain the exact tested implementation and
+evidence. No next cycle is selected. Earlier comparisons below are historical.
+
+## Recommendation after current-action cycle acceptance
+
+**Proposed next goal: make app-owned visual styles discoverable in named feature
+datasets, with genuinely shared styling in named shared components, preserving
+the current interface.** This continues stage-one moldability and the review's
+next item after design clarification/action dispatch, while deliberately deferring
+further broker progression. It adds no app task or offline data dependency.
+
+The current shared solid-app-ui stylesheet is still 744 lines, mixes Contacts,
+Profile, Workbench and common rules, and is copied directly into apps.css by the
+build. Existing design components already expose named styles. Thus behavior is
+now reachable through current-action connections while a feature's appearance
+still requires finding a separate shared file. Do not repeat the already proven
+feature-structure pilot; migrate coherent ownership across the suite once the
+remaining API/cascade constraints are settled.
+
+Start by inspecting the supported SimplyFlow style application/removal contract
+and representative existing-instance visual override behavior. Its installed app
+source installs styles at construction; that alone does not establish live style
+replacement/removal. Do not promise a full runtime styling engine or add app-owned
+content rendering. If a required runtime operation needs a new lower-library API,
+resolve that scope/release dependency with the maintainer rather than silently
+build a second runtime. Runtime template/include composition and the IDE remain
+separate future work.
+
+Partition shared foundation/feature rules, retain authored CSS source in the
+named entries, preserve cascade/order and remove migrated duplicate delivery.
+Check phone/desktop layout, keyboard/focus, dialogs and embedded/reused components,
+plus unknown RDF/draft regression flows. Do not combine the ownership migration
+with a new form design or a mass prefix rename. Short swb names apply to new
+entries; broad existing-prefix changes remain separately planned.
+
+Download is a concrete constraint: EVD85 reports readable Workbench 196147 gzip
+bytes, about 3.8 KB under the enforced 200000-byte ceiling. The standalone shared
+CSS is 15033 bytes / 3442 gzip bytes in a disposable measurement; that is not a
+prediction of incremental JS compression. Check actual bundle/first-use costs
+before committing to a delivery strategy. Split by real feature usage, avoid
+copying the same CSS into both the script graph and apps.css, and retain the
+complete-graph ceiling rather than hide cost behind lazy loading.
+
+The strongest alternative is **automatic shared Preferences updates** after the
+accepted reliable save path. First settle same-/cross-origin app scope,
+account/preferences identity, reconnection and retained dirty form choices.
+**Account/local-data ownership and logout** remains the correctness priority
+before multiple workspaces, multi-account operation or background sync. Forms/UI
+work and preferred-provider registry remain valid roadmap alternatives; stage-two
+virtual-company collaboration stays later. No new goal, branch or implementation
+is authorized by this recommendation.
+
+## Reassessment after CYC77 acceptance and moldability review
+
+Status at recommendation: **Analyze/Plan**; subsequently selected as CYC82 by
+the maintainer's "agreed". Main at selection is
+473dda5ee37811ec232db575009f55c3f5799819. CYC77 is Accepted and merged/pushed;
+ACC81 records the maintainer's repeated-save and toast confirmation. Preserve the
+pending shared-Preferences roadmap addition, supplied review and unrelated
+untracked Moldable-Solid-Apps(3).md. No implementation or commit is authorized
+by this planning request.
+
+### Roadmap position and candidate comparison
+
+Shared UI/capability presentation, refresh-first session recovery, Workbench
+naming and repeated Preferences saving are accepted. Editable source datasets
+exist; complete runtime replacement remains future work. Stage one still includes
+app/form UI, account/logout boundaries, workspaces, offline/automatic sync, PWA
+and broker progression. Built-in embedded providers do not complete the durable
+preferred-provider registry or recipient-picker milestones. The virtual-company
+stage remains later.
+
+| Candidate | Outcome and rationale | Boundary |
+| --- | --- | --- |
+| Dependable action replacement (recommended) | Existing widget, host and callback callers use the current named action; removing an override restores the original without recreating the app. Addresses a reproduced gap central to the ultimate moldable-app goal. | Reconcile the relevant design contract first; no full IDE or general live-template engine. |
+| Automatic shared Preferences updates | Saved settings reach other open apps without reload, retaining drafts and recovering after reconnection. Strong immediate user-facing alternative. | Settle account/preferences identity, dirty forms and same-/cross-origin scope; storage events alone do not establish all-open-apps support. |
+| Account/local-data ownership and logout | Characterize account changes and implement the intended workspace/child logout boundaries without mixing recoverable data. | Strongest correctness alternative before workspace switching, multiple-account use or automatic sync. Shared collection keys and origin-wide logout coupling are visible; no wrong-account write/disclosure is claimed. |
+| Forms and app UI | Establish consistent fields/help/validation/actions and improve a concrete task flow. | Resolve style/feature ownership before expanding shared UI; preserve accessible recovery and native RDF. |
+| Provider registry or named workspaces | Advance broker replaceability or workspace selection/switching. | Valid governing roadmap work, but adds lifecycle/state paths while account boundaries and runtime wiring remain unresolved. |
+
+### Recommended goal and evidence
+
+**Make existing callers across the suite follow effective action replacements,
+and restore original behavior when an override is removed, without losing working
+state.** This continues stage-one moldable readiness and deliberately defers broker
+progression for one cycle. It does not turn the supplied review into a governing
+specification automatically or add a pilot gate for the poef feature structure.
+
+On current main, profileView and preferencesDialog return captured actions; the
+shell copies actions onto host methods; workspace/lifecycle wiring captures
+callbacks. A fresh disposable Node probe using the installed SimplyFlow action
+proxy reports a direct call returning `replacement` while a previously captured
+widget still returns `original`. This confirms the review's narrow capture gap,
+not full browser behavior or every callback. exposeDefinition explicitly supplies
+metadata rather than applying changes; the cycle must distinguish editing
+metadata, applying an effective definition, and restoring its underlying original.
+
+Proposed scope:
+
+- Reconcile the relevant repository design with the supplied review/design
+  direction: personal overrides applied last, inspectable originals and action
+  application/removal. Retain project guardrails and accepted build-time template
+  composition. Record IDE/app undo separation, template notifications, marketplace
+  separation and upstream-version concerns at their future scope.
+- Inspect the supported SimplyFlow APIs and select the smallest correct dispatch
+  mechanism for existing widgets, host methods, registered callbacks and event
+  dispatch across all apps/shared packages. Avoid a parallel runtime or editing
+  dependency internals. Prefer published library support; any narrow bridge needs
+  its concrete missing contract documented.
+- Evaluate replace -> invoke -> remove -> invoke in already-running browser
+  instances, with current context, return values, async failures, retained drafts,
+  native RDF, auth/conditional saves and cleanup. Preserve source reconstruction,
+  phone/keyboard workflows, offline behavior and complete download budgets.
+
+End at the coherent behavior-dispatch contract across existing callers. CSS
+ownership migration, moving event registration into lower libraries, automatic
+model reevaluation after rule replacement, live templates, persistent overrides
+and IDE UI remain later work unless a concrete dependency makes part necessary.
+Dispatch through an existing listener does not complete listener ownership.
+
+If safe application/removal requires an unavailable library API/release, return
+to the maintainer to scope that dependency rather than silently build a second
+component runtime. Preserve supported behavior already meeting the contract.
+For a visible end-user cycle instead, recommend shared Preferences propagation
+with its identity/draft/cross-origin boundary settled first. No cycle is opened
+until the maintainer confirms or revises the goal.
 
 ## Candidates after CYC49 acceptance, 2026-11-07
 

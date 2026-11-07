@@ -980,3 +980,48 @@ included; the unrelated untracked Moldable-Solid-Apps(3).md is preserved outside
 the commits. Reload-persistent Preferences drafts, full offline startup, automatic
 sync and wider forms design remain future work; accepted fixtures do not establish
 live-provider internals or a screen-reader user study.
+
+
+## Dependable action replacement selected, 2026-11-07
+
+After the roadmap/review analysis and a reproduced installed-action-proxy gap,
+the maintainer answers "agreed" to the recommended current-action cycle. CYC82
+is Active on spiral/CYC-20261107-QG24H-82-current-action-dispatch, mechanically
+verified from accepted main 473dda5ee37811ec232db575009f55c3f5799819. DES83/IMP84/
+EVD85 retain the confirmed goal, design, implementation and verification.
+
+Reconcile relevant design expectations, make existing widget/host/callback/event
+connections invoke current effective actions, and test restoration with data and
+cleanup intact. Use the mutable public SimplyFlow action table and limited
+invocation-time forwarders; source metadata remains separate from applying a
+runtime definition. No library/dependency change or second runtime is needed.
+The IDE personal-layer manager, persistent overrides, live templates, automatic
+model recomputation, CSS ownership and lower-level lifecycle binding remain
+future work. This continues stage-one moldability and defers broker progression
+for this cycle. Pending roadmap/review documentation is preserved; the unrelated
+untracked Moldable-Solid-Apps(3).md stays untouched. No acceptance, commit, merge,
+push or publication is authorized by the cycle selection.
+
+
+## Dependable action replacement accepted, 2026-11-07
+
+The maintainer answers "accepted" after the CYC82 result, tests and manual review
+steps are presented. ACC86 records acceptance of the current evaluated working
+tree described by DES83/IMP84/EVD85; CYC82 is Accepted. Earlier Active/pending
+statements are superseded. No claim is made that particular manual review steps
+were performed, and no commit, merge, push, publication or next cycle is requested.
+The recorded IDE/CSS/lifecycle ownership/model/template/persistence follow-ups and
+shared Preferences propagation remain future work.
+
+
+## Current-action cycle delivery authorized
+
+After accepting CYC82, the maintainer explicitly requests commit, merge and push,
+then a next-cycle suggestion. ACC86 links implementation
+280632b2019b255acab46f0f0f06d605a479e7d8 and evidence
+fdff81b5dd6aa19d11b8812c69dd89c9219327b9. Normal direct main integration and push
+are now authorized, superseding acceptance-only restrictions. No publication,
+history rewrite or new implementation cycle is selected. The proposed next step
+is component-owned styles following the review, subject to style-update API and
+bundle-cost investigation; shared Preferences propagation remains the immediate
+user-facing alternative. See the next-cycle assessment for scope and limits.

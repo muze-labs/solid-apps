@@ -1,0 +1,13 @@
+@prefix sd: <https://muze.nl/ns/spiral-developer#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix project: <urn:muze-labs:solid-apps:spiral:> .
+project:DES-20261107-QG24H-83 a sd:Design ;
+    dcterms:identifier "DES-20261107-QG24H-83" ;
+    sd:repositoryPath ".spiral/designs/DES-20261107-QG24H-83.md" ;
+    sd:status sd:Active ;
+    sd:shapedBy [ a sd:ArtifactReference ;
+        sd:artifact <https://muze.nl/ns/spiral-developer/culture/CUL-MUZE-001> ;
+        sd:gitCommit "473dda5ee37811ec232db575009f55c3f5799819" ] ;
+    sd:shapedBy [ a sd:ArtifactReference ;
+        sd:artifact <https://muze.nl/ns/spiral-developer/culture/CUL-MUZE-LIB-001> ;
+        sd:gitCommit "473dda5ee37811ec232db575009f55c3f5799819" ] .

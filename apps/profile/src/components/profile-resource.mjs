@@ -83,7 +83,7 @@ export const profileResource = {
       this.runtime.widget.show(node, {
         editable: true,
         sourceLabel: 'Your private address book',
-        onSave: this.actions.saveLocalContact
+        onSave: (...args) => this.actions.saveLocalContact(...args)
       });
     },
     async saveLocalContact(edits) {

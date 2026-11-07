@@ -150,13 +150,14 @@ export function shell({
     'resource',
     'requireSession'
   ]) {
-    host[name] = view.actions[name];
+    host[name] = (...args) => view.actions[name](...args);
   }
   host.view = view;
   runtime.dialog = root.querySelector('.connect-dialog');
   runtime.menu = root.querySelector('#muze-solid-ui-account-menu');
   view.actions.muzeSolidUiInitializeCapability();
-  host.muzeSolidUiInvoke = view.actions.muzeSolidUiInvokeCapability;
+  host.muzeSolidUiInvoke = (...args) =>
+    view.actions.muzeSolidUiInvokeCapability(...args);
   view.actions.initialize();
   host.preferenceView = runtime.preferences.app;
   return host;

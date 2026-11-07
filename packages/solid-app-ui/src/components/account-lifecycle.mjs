@@ -42,8 +42,10 @@ export const accountLifecycle = {
           );
         });
       }
-      this.runtime.accountListener = this.actions.accountRemoved;
-      this.runtime.launchListener = this.actions.launchChanged;
+      this.runtime.accountListener = (event) =>
+        this.actions.accountRemoved(event);
+      this.runtime.launchListener = (event) =>
+        this.actions.launchChanged(event);
       window.addEventListener('storage', this.runtime.accountListener);
       if (this.runtime.acceptLaunch) {
         window.addEventListener('hashchange', this.runtime.launchListener);

@@ -115,6 +115,68 @@ unnecessary indirection. Apply the design's
 [readability rules](Moldable-Solid-Apps.md#write-for-the-person-changing-the-app)
 to new and changed features, including shared MVP UI components.
 
+### Moldability and readability review follow-up
+
+The maintainer supplies the [moldability and readability review](reviews/Solid-Workbench-Moldability-Review.md)
+for this roadmap. Retain it as review evidence, dated 2026-11-07 against commit
+`71d2737d5e7203188f503b50d184d606556f2c8f`. It predates accepted Preferences
+recovery (CYC77); its reported 107 tests and unavailable Chrome describe that
+review environment, not the current suite's verification results. Before CYC82, spot checks
+at then-current main `473dda5ee37811ec232db575009f55c3f5799819` still find captured
+profile/host actions, direct lifecycle listener registration, separately copied
+shared CSS and nested workspace status decisions. The review's action-proxy
+probe was reported evidence; CYC82 subsequently adds the running-instance browser
+verification for action dispatch described below.
+
+CYC-20261107-QG24H-82 is **Accepted** (ACC86): relevant design clarification
+and dependable action dispatch across existing callers are implemented and
+verified (EVD85). The maintainer has requested commit, merge and push. CSS migration,
+lifecycle listener ownership and the wider IDE remain future work; current-action
+dispatch alone does not complete those separate recommendations.
+
+Track these follow-ups in the review's recommended order:
+
+1. **Reconcile the design documents.** Resolve the review's described personal
+   override layer applied last, independent IDE/app undo histories, effective
+   template-change notifications, marketplace separation and upstream-version
+   concerns against the repository design. Preserve current readability/library
+   rules, feature guardrails and the explicitly accepted build-time composition
+   boundary. Distinguish settled requirements from open design questions before
+   changing the governing document; this review does not silently replace it.
+2. **Keep existing callers connected to current actions.** Inventory captured
+   widget methods, host methods, broker callbacks and listeners. Define how an
+   already-running caller reaches a replaced action and how removing the
+   override restores the original. Inspect SimplyFlow's public API before
+   choosing stable references or narrow invocation-time forwarding bridges.
+3. **Expose app-owned CSS through named styles.** Move feature-specific rules
+   into the corresponding component datasets and genuinely shared rules into
+   a named shared component. Preserve stylesheet order, cascade and external
+   design-library boundaries. Verify applying and removing a visual override.
+4. **Resolve lifecycle event binding ownership.** Inventory app-owned event
+   registration and justified bridges, identify concrete missing public APIs,
+   and put reusable registration/cleanup support in SimplyFlow or the
+   appropriate lower-level library. Components should declare the handling
+   action; existing bindings must reach its current definition. Verify single
+   delivery and cleanup without duplicate listeners. Scope upstream library
+   work separately and consume published npm versions.
+5. **Evaluate readability through meaningful user edits.** Begin with workspace
+   status labels/conditions and feature configuration. Expose clear app-owned
+   decisions through named entries and straightforward control flow while
+   retaining infrastructure behind existing APIs. Check whether people without
+   professional programming experience can find and make those changes;
+   source inspection alone does not establish that usability.
+
+For each implemented follow-up, exercise a small live edit in an existing
+instance, remove it to restore the original, and preserve working data, drafts
+and native RDF. Also verify model reevaluation when an editable list predicate
+changes. Definition/source metadata and reconstruction in a new test host do
+not alone establish replacement in a running instance. Keep the ordinary app
+usable without the IDE and retain the complete-app download budget.
+
+These are future roadmap items, not a selected cycle or instructions to perform
+the review's proposed refactors now. The runtime IDE, override persistence,
+marketplace and live template updates remain separately scoped future work.
+
 ### Deferred: runtime template composition
 
 On 2026-11-07 the maintainer accepts build-time composition as sufficient for
@@ -416,6 +478,20 @@ instead of introducing separate copies for each application.
 Verification covers common appearance across apps, per-app storage fields and
 preservation of omitted settings and unrelated native RDF. Launcher workspace
 creation/switching still needs its own implementation and verification.
+
+### Apply shared preference changes across open apps
+
+Requested by the maintainer after CYC77 acceptance: when shared preferences
+change, all open apps should update automatically, including apps in separate
+tabs/windows and embedded capability dialogs. Users should not have to reload
+or reopen an app to receive the updated theme, text size, density or other
+applicable shared settings.
+
+Keep the profile-linked native RDF preferences authoritative. Design change
+notification and refresh using the existing stack, with reconnection recovery
+and protection for unsaved settings edits. Verify propagation between open apps
+and embedded providers, including an app that was temporarily offline. This is
+future roadmap work; no synchronization mechanism is selected here.
 
 ### Preferences source display and recovery after saving
 
