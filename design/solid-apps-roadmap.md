@@ -90,18 +90,18 @@ section. In Launcher, workspace creation and switching are app-specific options.
 Use the existing profile-linked preferences file and preserve unknown RDF;
 separating the UI does not itself require moving settings to new files.
 
-Theme (System/Light/Dark) and Text size are already implemented in shared
-Preferences. Retain dark/light mode and font-size controls explicitly in the
-common section. Retain the existing common Density, Preferred language and
-Open apps in (tabs/windows) settings there too. The new work is the
-clear split and app-specific filtering: today's dialog exposes storage fields
-for all apps in every app. Keep common values shared instead of introducing
-separate copies for each application.
+Implemented in Preferences cycle `CYC-20261107-QG24H-33`: the common/app-specific
+split and per-app storage filtering, with partial writes preserving omitted RDF
+settings.
+Named workspace creation and switching remain future work.
 
-Future verification: change common theme/text size, open another app and observe
-the same preference. Each app's own section exposes its relevant storage options;
-Launcher alone exposes workspace creation/switching. Existing preferences and
-unrelated native RDF survive saving either section.
+The common section includes Theme (System/Light/Dark), Text size, Density,
+Preferred language and Open apps in (tabs/windows). Common values remain shared
+instead of introducing separate copies for each application.
+
+Verification covers common appearance across apps, per-app storage fields and
+preservation of omitted settings and unrelated native RDF. Launcher workspace
+creation/switching still needs its own implementation and verification.
 
 ## Workspaces, Launcher dashboard and logout
 

@@ -120,15 +120,15 @@ export async function loadPreferences(session) {
   return { document, settings: readPreferences(document) };
 }
 export async function savePreferences(session, document, settings) {
-  validatePreferences(settings);
-  readLaunchTarget(document.graph.get(document.url + '#solid-apps'));
-  readWorkspaceResource(document.graph.get(document.url + '#solid-apps'));
+  validatePreferences({ ...defaults, ...settings });
+  const keys = Object.keys(defaults).filter(key => Object.hasOwn(settings, key));
+  const subject = document.graph.get(document.url + '#solid-apps');
+  readLaunchTarget(subject);
+  readWorkspaceResource(subject);
   const draft = await copyDocument(document);
   const id = draft.url + '#solid-apps';
-  const node =
-    draft.graph.get(id) ||
-    draft.graph.set(id, namespace + 'theme', settings.theme);
-  for (const key of Object.keys(defaults)) {
+  const node = draft.graph.get(id);
+  for (const key of keys) {
     const property = draft.graph.propertyName(namespace + key);
     if (settings[key]) {
       draft.graph.set(
@@ -139,7 +139,7 @@ export async function savePreferences(session, document, settings) {
           : oldm.literal(String(settings[key]))
       );
     }
-    else {
+    else if (node) {
       delete node[property];
     }
   }

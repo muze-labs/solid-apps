@@ -21,8 +21,10 @@ export function preferencesDialog(dialog, { getSession, onChange }) {
             'Connect to Solid and load your preferences before saving.';
           return;
         }
+        const keys = Object.keys(defaults).filter(key =>
+          form.elements.namedItem(key));
         const settings = Object.fromEntries(
-          Object.keys(defaults).map((key) => [
+          keys.map((key) => [
             key,
             form.elements.namedItem(key).value.trim()
           ])

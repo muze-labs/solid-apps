@@ -9,6 +9,12 @@ conditional write. Retain the returned document/ETag for the next save. The sess
 supplies a Metro client; unknown RDF survives edits. Missing links, missing ETags,
 validation errors and remote conflicts are explicit errors.
 
+`settings` may contain only the keys being edited. Omitted settings retain their
+original RDF, including multiple values and literal metadata. Blank storage
+values clear that setting. The dialog submits common settings and only the
+current app's storage settings; app-specific HTML is composed at build time
+from `apps/*/src/preferences.html`. Profile has no storage section.
+
 `defaults`, `readPreferences`, `validatePreferences` and `applyPreferences` are
 also exported. Appearance application is separate from persistence.
 
