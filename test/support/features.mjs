@@ -5,7 +5,8 @@ import assert from 'node:assert/strict';
 export async function checkFeatureSources(page, appName) {
   const result = await page.evaluate(() => {
     const name = location.pathname.split('/').filter(Boolean).at(-1);
-    const owner = globalThis[name + 'App'];
+    const owner =
+      globalThis['muzeSolid' + name[0].toUpperCase() + name.slice(1) + 'App'];
     const entries = [];
     const definitions = [
       owner.definition,
@@ -56,7 +57,7 @@ export async function checkFeatureSources(page, appName) {
   }
   assert(
     await page.evaluate(async () => {
-      const owner = globalThis.contactsApp;
+      const owner = globalThis.muzeSolidContactsApp;
       const original = owner.components.contactList;
       const sources = owner.definition.sources.contactList;
       const actions = Object.fromEntries(

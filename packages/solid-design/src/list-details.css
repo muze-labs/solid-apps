@@ -1,0 +1,35 @@
+.muze-solid-design-list-details {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  height: 100%;
+  gap: var(--ds-space);
+}
+.muze-solid-design-list-details .ds-panels-pane {
+  min-width: 0;
+  height: 100%;
+  overflow: auto;
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+}
+.muze-solid-design-list-details .app-toolbar {
+  position: sticky;
+  bottom: 0;
+  background: var(--ds-color-background);
+  padding-block: var(--ds-space-d2);
+  margin-bottom: 0;
+  z-index: 2;
+}
+.muze-solid-design-list-details .muze-solid-design-list-back {
+  display: block;
+}
+@media (min-width: 720px) {
+  .muze-solid-design-list-details {
+    display: grid;
+    grid-template-columns: var(--ds-panels-list-width) minmax(0, 1fr);
+    scroll-snap-type: none;
+  }
+  .muze-solid-design-list-details .muze-solid-design-list-back {
+    display: none;
+  }
+}

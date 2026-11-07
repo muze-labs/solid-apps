@@ -8,6 +8,7 @@
     "@muze-labs/solid-app-data": "0.1.0",
     "@muze-labs/simplyflow": "^0.10.4",
     "@muze-labs/solid-profile": "0.1.0",
-    "@muze-nl/jaqt": "^0.10.7"
+    "@muze-nl/jaqt": "^0.10.7",
+    "@muze-labs/solid-design": "0.1.0"
   }
 }

@@ -28,11 +28,15 @@ export const resourcePicker = {
     renderPicker() {
       const pending = this.runtime.pending;
       this.data.picker = { hidden: pending ? null : '' };
-      this.data.editing = { hidden: pending ? '' : null };
+      this.data.editing = {
+        hidden: pending || this.runtime.host?.task ? '' : null
+      };
       this.data.requester = pending
         ? pending.requester.application + ' (' + pending.requester.origin + ')'
         : '';
-      this.runtime.files.state.options.picker = Boolean(pending);
+      this.runtime.files.state.options.picker = Boolean(
+        pending || this.runtime.host?.task
+      );
     },
     finishSelection: async function (response) {
       if (!this.runtime.pending || this.runtime.selecting) {
@@ -42,11 +46,17 @@ export const resourcePicker = {
       this.runtime.selecting = true;
       try {
         await this.runtime.host.managed.respond(id, response);
-        this.runtime.host.message(
-          (response.error ? 'Selection cancelled.' : 'Resource URL returned.') +
-            ' Return to Launcher if your browser did not switch tabs.'
-        );
-      } finally {
+        if (response.error?.code === 'cancelled') {
+          this.runtime.host.message('');
+        }
+        else {
+          this.runtime.host.message(
+            response.error?.message ||
+              'Resource URL returned. Return to Launcher if your browser did not switch tabs.'
+          );
+        }
+      }
+      finally {
         this.runtime.selecting = false;
         if (this.runtime.pending?.id === id) {
           this.runtime.pending = null;
@@ -61,12 +71,8 @@ export const resourcePicker = {
           code: 'busy',
           message: 'Files is handling another selection.'
         };
-      } else if (!this.runtime.host.session) {
-        error = {
-          code: 'denied',
-          message: 'Connect Files to Solid first.'
-        };
-      } else if (
+      }
+      else if (
         event.capability !== this.api.browseCapability ||
         Object.keys(event.input).some((key) => key !== '@context')
       ) {
@@ -84,14 +90,21 @@ export const resourcePicker = {
       }
       this.runtime.pending = event;
       this.actions.renderPicker();
-      this.runtime.host.message('A resource selection is waiting in Files.');
+      this.runtime.host.message(
+        this.runtime.host.task
+          ? ''
+          : 'A resource selection is waiting in Files.'
+      );
+      this.runtime.host.managed.presentationReady();
     },
     cancelBrowseRequest(event) {
       if (this.runtime.pending?.id === event.id) {
         this.runtime.pending = null;
         this.actions.renderPicker();
         this.runtime.host.message(
-          event.error?.message || 'Selection cancelled.'
+          event.error && event.error.code !== 'cancelled'
+            ? event.error.message
+            : ''
         );
       }
     },

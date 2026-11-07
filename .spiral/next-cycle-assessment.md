@@ -1,5 +1,104 @@
 # Roadmap and next-cycle assessment
 
+Current disposition: the maintainer selects and refines the UI goal, then
+confirms capability-based profile editing and dialog/iframe presentation with
+tab continuation. Active CYC49 on its matching branch now governs execution;
+SRC50/DES51 retain the agreed scope. The proposal and older assessments below
+are historical planning, not a still-pending goal-confirmation gate.
+
+## Reassessment after CYC37 acceptance, 2026-11-07
+
+Status: **Discussing the next cycle; no cycle selected or opened.** Current
+main is 7fabcc1, with a clean working tree before this planning update. Two
+requested documentation commits are local and not yet pushed. CYC37 is Accepted
+and merged; ACC48 records acceptance. The earlier assessment below describes the
+pre-refactor baseline and is historical, not the current implementation state.
+
+### Roadmap reconciliation
+
+The suite now exposes named component datasets, per-feature files, explicit
+contexts and retained authored sources. Lists use models/jaqt where useful.
+Preferences separation and size-budget builds were already accepted. Runtime
+template composition, a live moldable IDE and override reapplication remain
+future work; the maintainer explicitly accepts build-time composition for now.
+Readable code for people without professional programming experience is now a
+current engineering requirement.
+
+Stage one still includes MVP UI, account consistency/lifecycle, named workspaces,
+offline/automatic sync, PWA and the remaining broker/capability work. Stage two's
+virtual company, including live shared-data/view updates between participants,
+is explicitly later. Do not advance that stage merely because it was the latest
+roadmap addition.
+
+Broker Phase 2 remains incomplete: the existing built-in Files cold-start path
+is not a Pod-backed preferred-provider registry. Recipient selection and provider
+replaceability remain Phase 3 work. Choosing MVP UI would **continue the suite
+roadmap and deliberately defer further broker progression for one cycle**.
+The proposed cycle does not reorder the broker's phases.
+
+### Evidence and candidate comparison
+
+- **MVP UI (recommended):** Launcher navigation still presents permanent built-in
+  app cards. shortcuts.html keeps the entire add form, URL launch mode and
+  anonymous settings on the home screen and settings beside every shortcut.
+  workspace.html exposes restore/save/close controls and detailed conflict
+  review. These are concrete candidates for clearer task-based presentation,
+  not evidence that all controls are disposable. Contacts already has a compact
+  search/action toolbar and new-contact dialog; preserve and reuse that useful
+  structure. Shared account.html already uses native popover/dialog markup with
+  the-ds classes; reuse the installed design system rather than replace it.
+- **Account ownership/lifecycle:** the preceding risk assessment retains shared
+  local collection storage and same-origin remembered-account/logout coupling.
+  They need targeted two-account and child-logout characterization before any
+  automatic synchronization rollout. No disclosure or wrong-account write has
+  been reproduced here. This is the strongest correctness-focused alternative,
+  particularly before relying on multiple real accounts.
+- **Provider registry:** continue broker Phase 2 with persistent provider choice
+  and cold start. This advances ecosystem replaceability but does not address
+  the currently crowded ordinary-user interface.
+
+### Proposed goal and review boundary
+
+Make the four existing apps a coherent MVP interface, closer to poef/solid-apps,
+with ordinary tasks prominent, shared dialogs/dropdowns and fewer permanent
+technical controls. Apply the adopted Muze culture and readability requirement;
+keep each app-owned component explicit and understandable in the moldable IDE.
+The Laws of UX resource was read during roadmap formation and reviewed for this
+assessment; use relevant principles against actual interactions, not as a
+substitute for user evaluation. The poef reference is already established;
+there is no separate pilot or proof gate for its visible pattern.
+
+Scope: review each visible control against current workflows; remove genuine
+fixture/demo controls and move less-frequent settings into appropriate dialogs
+or menus. Use a dialog for adding/editing shortcuts and suitable workspace
+controls for session operations. Reuse common dialog/menu composition across
+Launcher, Contacts, Files and Profile through existing SimplyFlow/the-ds APIs.
+Preserve app-owned toolbars, Launcher-only app navigation, inline Contacts
+profiles and the existing blue/square/panel visual language. Review concrete
+layouts before implementing consequential control removals.
+
+Risk boundary: explicit sync/save and recoverable error/conflict actions remain
+necessary until automatic sync exists. Simplifying their presentation must not
+silently remove them, relax provider permissions or discard drafts. Account
+ownership, logout policy and Pod persistence semantics are separate behavior
+changes and are not implicitly authorized by UI cleanup. Named workspaces,
+provider registry, automatic sync/PWA, a live IDE/runtime composition and stage
+two stay outside this proposed cycle. Files-only dashboard seeding across all
+storage roots and the account-to-Profile shortcut need explicit inclusion if
+they are wanted in addition to the existing-workflow UI scope.
+
+Evaluation: inspect the integrated four-app interface at mobile/desktop sizes,
+exercise dialogs/menus with keyboard and verify focus return, and check existing
+create/edit/save/sync/picker/cancel/recovery flows. Keep native RDF and drafts,
+source inspectability and the 200000 B gzip budget. Run npm run check and all
+three Chrome suites. Present the result for human acceptance.
+
+This is a proposal for discussion. The repository's Spiral workflow requires an
+agreed cycle goal and a matching dedicated branch before implementation.
+No product code or cycle status changes are made by this assessment.
+
+## Historical assessment before CYC37
+
 Current disposition: the maintainer subsequently authorizes applying the
 established pattern across the whole suite, without a separate proof/pilot gate.
 CYC-20261107-QG24H-37 is Active and SRC-20261107-QG24H-38 retains that commitment.

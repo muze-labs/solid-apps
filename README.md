@@ -254,7 +254,7 @@ Shared account/connection, Preferences and profile editing use the
 same structure. The profile editor is registered directly in the owning Contacts
 or Profile app; its persistence policy stays with that app.
 
-Inspect `launcherApp`, `contactsApp`, `filesApp` or `profileApp` in the browser.
+Inspect `muzeSolidLauncherApp`, `muzeSolidContactsApp`, `muzeSolidFilesApp` or `muzeSolidProfileApp` in the browser.
 The existing `solidLauncher`, `solidContacts`, `solidFiles` and `solidProfile`
 handles remain available. Each main app exposes:
 
@@ -262,7 +262,7 @@ handles remain available. Each main app exposes:
   actions and other entries belonging to each feature.
 - `definition.sources`: authored behavior source and source-file origins,
   captured before minification. For example,
-  `contactsApp.definition.sources.contactList.actions.matchesPerson`.
+  `muzeSolidContactsApp.definition.sources.contactList.actions.matchesPerson`.
 - `definition.modules`: readable app-owned data/launch helper modules and their
   import dependencies where those helpers form a separate API boundary.
 - `definition.overrides`: app-level entry sections supplied to SimplyFlow.
@@ -308,3 +308,34 @@ live Solid OIDC behavior.
 The in-app IDE, persisted user edits, live template reapplication/reset controls
 and preview isolation remain future roadmap work. Installed-library limitations
 and their evidence are retained in `.spiral/moldability-refactor-investigation.md`.
+
+
+## Shared MVP UI and capability dialogs
+
+The experimental [solid-design package](packages/solid-design/README.md) provides
+shared dialogs, dropdown styling and list/details panes on top of the-ds. Public
+design entries use `muzeSolidDesign` / `muze-solid-design` prefixes. The running
+app handles use `muzeSolidLauncherApp`, `muzeSolidContactsApp`, `muzeSolidFilesApp`
+and `muzeSolidProfileApp`; existing `solidLauncher`/`solidContacts`/`solidFiles`/
+`solidProfile` diagnostic handles remain prefixed compatibility interfaces.
+
+The account name opens the Profile provider as a capability task in a shared
+iframe dialog. The provider owns sign-in, native RDF editing and conditional
+saving; the caller refreshes its account name after completion. Launcher also
+uses this presentation for resource selection in Files. When framing fails,
+the dialog offers a tab that continues the same pending task. Without a Launcher
+connection, a normal standalone provider link remains available. See the
+[profile capability contract](design/solid-profile-editing-capability.md).
+
+Dialogs have consistent close controls and headers, with a scrolling body and
+visible action footer. The provider is asked before an outer close; unsaved edits
+require explicit discard, and an active save blocks close. Temporary task frames
+and tabs are excluded from saved workspaces. The existing explicit sync/save and
+conflict recovery controls remain available. Launcher keeps shortcut creation in
+a dialog and less-frequent launch options behind disclosures.
+
+Browser fixtures verify routing, data preservation and failure recovery. They do
+not establish live Solid OIDC behavior across different top-level sites; verify
+that provider's sign-in/framing policy when deploying across origins. These task
+presentations do not implement the future moldable IDE or persisted runtime
+composition edits.

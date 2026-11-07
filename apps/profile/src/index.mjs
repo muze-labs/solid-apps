@@ -1,3 +1,7 @@
+import {
+  muzeSolidDesignDialog,
+  muzeSolidDesignListDetails
+} from '@muze-labs/solid-design';
 import accountTemplate from './account-view.html?template' with { type: 'text' };
 import preferencesTemplate from './preferences-view.html?template' with { type: 'text' };
 import { writeDraft, readDraft } from '@muze-labs/solid-profile/state.mjs';
@@ -19,7 +23,12 @@ import {
 } from '@muze-labs/solid-profile/view.mjs';
 import { scalarPredicates, applyProfileEdits } from '@muze-labs/solid-profile';
 import { app } from '@muze-labs/simplyflow/app';
-import { profileResource, lifecycle } from './features.mjs';
+import { editProfileCapability } from '@muze-labs/solid-app-data/capabilities.mjs';
+import {
+  profileResource,
+  lifecycle,
+  muzeSolidProfileCapability
+} from './features.mjs';
 import { exposeDefinition } from '@muze-labs/solid-app-data/definition.mjs';
 import sources from './features.mjs?entries';
 const host = shell({
@@ -28,10 +37,18 @@ const host = shell({
 });
 const definition = {
   container: host.main,
-  components: { ...profileComponents, profileResource, lifecycle },
+  components: {
+    muzeSolidDesignDialog,
+    muzeSolidDesignListDetails,
+    ...profileComponents,
+    profileResource,
+    lifecycle,
+    muzeSolidProfileCapability
+  },
   data: { profile: profileDefaults(), url: '' },
   api: {
     app,
+    editProfileCapability,
     writeDraft,
     readDraft,
     AppState,
@@ -57,4 +74,4 @@ ui.definition.instances = {
   preferences: host.preferenceView
 };
 window.solidProfile = { host, ui };
-globalThis.profileApp = ui;
+globalThis.muzeSolidProfileApp = ui;

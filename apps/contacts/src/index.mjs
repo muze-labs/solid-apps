@@ -1,3 +1,7 @@
+import {
+  muzeSolidDesignDialog,
+  muzeSolidDesignListDetails
+} from '@muze-labs/solid-design';
 import accountTemplate from './account-view.html?template' with { type: 'text' };
 import preferencesTemplate from './preferences-view.html?template' with { type: 'text' };
 import { app } from '@muze-labs/simplyflow/app';
@@ -35,6 +39,8 @@ const host = shell({
 const definition = {
   container: host.main,
   components: {
+    muzeSolidDesignDialog,
+    muzeSolidDesignListDetails,
     ...profileComponents,
     contactList,
     contactEditing,
@@ -82,4 +88,4 @@ window.solidContacts = {
     return ui.runtime.store;
   }
 };
-globalThis.contactsApp = ui;
+globalThis.muzeSolidContactsApp = ui;

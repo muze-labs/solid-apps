@@ -12,6 +12,7 @@ export const lifecycle = {
       this.runtime.restoredFolder = '';
       this.runtime.managedOptions = {
         capabilities: [this.api.browseCapability],
+        waitForPresentation: true,
         onRequest: this.actions.receiveBrowseRequest,
         onCancel: this.actions.cancelBrowseRequest
       };

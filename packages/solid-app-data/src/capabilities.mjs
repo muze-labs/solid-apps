@@ -1,3 +1,5 @@
+export const editProfileCapability =
+  'https://vocab.muze.nl/capabilities/edit-profile';
 export const browseCapability = 'https://vocab.muze.nl/capabilities/browse';
 export const browseInput = Object.freeze({
   '@context': { '@vocab': 'https://vocab.muze.nl/capability#' }
@@ -10,8 +12,11 @@ export function capabilityError(message, code = 'failed') {
 export function selectionUrl(result) {
   try {
     const url = new URL(result?.['@id']);
-    if (!['https:', 'http:'].includes(url.protocol) ||
-      url.username || url.password) {
+    if (
+      !['https:', 'http:'].includes(url.protocol) ||
+      url.username ||
+      url.password
+    ) {
       throw new Error();
     }
     return url.href;
@@ -25,12 +30,19 @@ export function serializable(value) {
     if (depth > 30) {
       throw capabilityError('State nesting is too deep.');
     }
-    if (item === null || typeof item === 'string' || typeof item === 'boolean' ||
-      (typeof item === 'number' && Number.isFinite(item))) {
+    if (
+      item === null ||
+      typeof item === 'string' ||
+      typeof item === 'boolean' ||
+      (typeof item === 'number' && Number.isFinite(item))
+    ) {
       return;
     }
-    if (typeof item !== 'object' || (!Array.isArray(item) &&
-      ![Object.prototype, null].includes(Object.getPrototypeOf(item)))) {
+    if (
+      typeof item !== 'object' ||
+      (!Array.isArray(item) &&
+        ![Object.prototype, null].includes(Object.getPrototypeOf(item)))
+    ) {
       throw capabilityError('State must contain only JSON values.');
     }
     for (const child of Object.values(item)) {
@@ -51,10 +63,15 @@ export function restorationState(value) {
   if (value === null) {
     return null;
   }
-  if (!value || typeof value.turtle !== 'string' ||
-    value.opaque !== undefined && typeof value.opaque !== 'string' ||
-    Object.keys(value).some(key => !['turtle', 'opaque'].includes(key))) {
-    throw capabilityError('App state requires Turtle and an optional opaque string.');
+  if (
+    !value ||
+    typeof value.turtle !== 'string' ||
+    (value.opaque !== undefined && typeof value.opaque !== 'string') ||
+    Object.keys(value).some((key) => !['turtle', 'opaque'].includes(key))
+  ) {
+    throw capabilityError(
+      'App state requires Turtle and an optional opaque string.'
+    );
   }
   return serializable(value);
 }
@@ -68,7 +85,7 @@ export class PortConnection {
     this.pending = new Map();
     this.active = new Map();
     this.closed = false;
-    port.onmessage = event => this.receive(event.data);
+    port.onmessage = (event) => this.receive(event.data);
     port.onmessageerror = () => this.close('Message could not be decoded.');
     port.start?.();
   }
@@ -80,7 +97,9 @@ export class PortConnection {
       const pending = this.pending.get(message.id);
       if (pending) {
         if (message.error) {
-          pending.reject(capabilityError(message.error.message, message.error.code));
+          pending.reject(
+            capabilityError(message.error.message, message.error.code)
+          );
         }
         else {
           pending.resolve(message.result);
@@ -96,8 +115,11 @@ export class PortConnection {
       return;
     }
     if (this.active.size >= 32) {
-      this.port.postMessage({ type: 'reply', id: message.id,
-        error: { code: 'busy', message: 'capabilities: Too many active calls.' } });
+      this.port.postMessage({
+        type: 'reply',
+        id: message.id,
+        error: { code: 'busy', message: 'capabilities: Too many active calls.' }
+      });
       return;
     }
     const controller = new AbortController();
@@ -112,8 +134,11 @@ export class PortConnection {
     }
     catch (error) {
       if (!this.closed) {
-        this.port.postMessage({ type: 'reply', id: message.id,
-          error: { code: error.code || 'failed', message: error.message } });
+        this.port.postMessage({
+          type: 'reply',
+          id: message.id,
+          error: { code: error.code || 'failed', message: error.message }
+        });
       }
     }
     finally {
@@ -122,7 +147,9 @@ export class PortConnection {
   }
   call(method, input, { signal, timeout = this.timeout } = {}) {
     if (this.closed || signal?.aborted || this.pending.size >= 32) {
-      return Promise.reject(capabilityError('Connection unavailable or cancelled.'));
+      return Promise.reject(
+        capabilityError('Connection unavailable or cancelled.')
+      );
     }
     const id = crypto.randomUUID();
     return new Promise((resolve, reject) => {
@@ -137,13 +164,16 @@ export class PortConnection {
         this.port.postMessage({ type: 'cancel', id });
         finish(reject, capabilityError('Selection cancelled.', 'cancelled'));
       };
-      const timer = setTimeout(() => {
-        this.port.postMessage({ type: 'cancel', id });
-        finish(reject, capabilityError('Request timed out.', 'timeout'));
-      }, timeout);
+      const timer =
+        timeout === null
+          ? null
+          : setTimeout(() => {
+              this.port.postMessage({ type: 'cancel', id });
+              finish(reject, capabilityError('Request timed out.', 'timeout'));
+            }, timeout);
       this.pending.set(id, {
-        resolve: value => finish(resolve, value),
-        reject: error => finish(reject, error)
+        resolve: (value) => finish(resolve, value),
+        reject: (error) => finish(reject, error)
       });
       signal?.addEventListener('abort', cancel, { once: true });
       try {
@@ -170,62 +200,136 @@ export class PortConnection {
 }
 
 export class ManagedApp {
-  constructor({ name, capabilities = [], getState = () => null,
-    restoreState = () => {}, onRequest, onCancel, onState } = {}) {
-    Object.assign(this, { name, capabilities, getState, restoreState,
-      onRequest, onCancel, onState });
+  constructor({
+    name,
+    capabilities = [],
+    getState = () => null,
+    restoreState = () => {},
+    onRequest,
+    onCancel,
+    onState,
+    waitForPresentation = false,
+    canClose = () => ({ allowed: true })
+  } = {}) {
+    Object.assign(this, {
+      name,
+      capabilities,
+      getState,
+      restoreState,
+      onRequest,
+      onCancel,
+      onState,
+      waitForPresentation,
+      canClose
+    });
     this.incoming = new Map();
     this.ready = false;
-    this.parent = window.opener;
+    this.task = new URL(location.href).searchParams.has('solid-apps-task');
+    this.embedded = this.task && window.parent !== window;
+    this.parent = this.embedded ? window.parent : window.opener;
     this.generation = crypto.randomUUID();
-    this.listen = event => this.offer(event);
+    this.listen = (event) => this.offer(event);
     window.addEventListener('message', this.listen);
     try {
-      this.resume = JSON.parse(sessionStorage.getItem('solid-apps.managed') || 'null');
+      this.resume = this.task
+        ? null
+        : JSON.parse(sessionStorage.getItem('solid-apps.managed') || 'null');
     }
     catch {}
     this.tick = setInterval(() => this.announce(), 400);
     window.addEventListener('pageshow', () => this.announce());
     window.addEventListener('pagehide', () => this.peer?.close());
+    if (this.task && this.parent) {
+      // No credentials or resource data: the host validates source and origin
+      // before transferring its scoped port in response to this readiness ping.
+      queueMicrotask(() =>
+        this.parent.postMessage(
+          {
+            type: 'solid-apps:embedded-ready',
+            presentation: this.waitForPresentation ? 'explicit' : 'load'
+          },
+          '*'
+        )
+      );
+    }
   }
+  presentationReady() {
+    if (!this.task || !this.parent || !this.resume) {
+      return;
+    }
+    const { id, origin } = this.resume;
+    // Allow queued bindings to settle without requiring a hidden frame to paint.
+    setTimeout(() => {
+      if (this.ready && this.resume?.id === id) {
+        this.parent.postMessage(
+          { type: 'solid-apps:presentation-ready', id },
+          origin
+        );
+      }
+    }, 0);
+  }
+
   announce() {
+    if (this.task) {
+      return;
+    }
     if (this.resume && this.parent?.closed) {
       this.peer?.close('Workspace closed.');
       window.close();
     }
     else if (this.resume && this.parent) {
-      this.parent.postMessage({ type: 'solid-apps:resume', ...this.resume,
-        generation: this.generation, reconnect: !this.peer || this.peer.closed },
-      this.resume.origin);
+      this.parent.postMessage(
+        {
+          type: 'solid-apps:resume',
+          ...this.resume,
+          generation: this.generation,
+          reconnect: !this.peer || this.peer.closed
+        },
+        this.resume.origin
+      );
     }
   }
   async offer(event) {
     const message = event.data;
-    if (!this.parent || event.source !== this.parent ||
-      message?.type !== 'solid-apps:offer' || !event.ports[0] ||
-      typeof message.id !== 'string' || typeof message.key !== 'string') {
+    if (
+      !this.parent ||
+      event.source !== this.parent ||
+      message?.type !== 'solid-apps:offer' ||
+      !event.ports[0] ||
+      typeof message.id !== 'string' ||
+      typeof message.key !== 'string'
+    ) {
       return;
     }
     this.peer?.close();
     this.ready = false;
-    this.parentTarget = typeof message.focusTarget === 'string' &&
+    this.parentTarget =
+      typeof message.focusTarget === 'string' &&
       /^solid-apps-launcher-[0-9a-f-]{36}$/.test(message.focusTarget)
-      ? message.focusTarget : null;
+        ? message.focusTarget
+        : null;
     this.resume = { id: message.id, key: message.key, origin: event.origin };
-    sessionStorage.setItem('solid-apps.managed', JSON.stringify(this.resume));
+    if (!this.task) {
+      sessionStorage.setItem('solid-apps.managed', JSON.stringify(this.resume));
+    }
     const peer = new PortConnection(event.ports[0], (method, input, options) =>
-      this.handle(method, input, options));
+      this.handle(method, input, options)
+    );
     this.peer = peer;
     try {
-      await peer.call('register', { name: this.name, restoring: true,
+      await peer.call('register', {
+        name: this.name,
+        restoring: true,
         generation: this.generation,
-        capabilities: this.capabilities });
+        capabilities: this.capabilities
+      });
       const identity = JSON.stringify(this.resume);
       if (identity !== this.restorationIdentity) {
         this.restorationIdentity = identity;
         this.restoreError = '';
         this.restoring = Promise.resolve().then(() =>
-          this.restoreState(message.state));
+          this.restoreState(message.state)
+        );
       }
       await this.restoring;
       if (this.peer !== peer || peer.closed) {
@@ -234,7 +338,6 @@ export class ManagedApp {
       this.ready = true;
       await this.publish(peer);
       await peer.call('ready', null);
-      this.onState?.('Connected to this workspace.');
     }
     catch (error) {
       if (this.peer !== peer || peer.closed) {
@@ -242,19 +345,30 @@ export class ManagedApp {
       }
       this.ready = false;
       this.restoreError = error.message;
-      await peer.call('restore-error', { message: error.message }).catch(() => {});
+      await peer
+        .call('restore-error', { message: error.message })
+        .catch(() => {});
       this.onState?.(error.message);
     }
   }
   async handle(method, input, { signal }) {
+    if (method === 'can-close') {
+      return this.canClose();
+    }
     if (method === 'checkpoint') {
       if (!this.ready) {
-        throw capabilityError(this.restoreError ||
-          'App is still restoring. Finish connecting or reload it.', 'restoring');
+        throw capabilityError(
+          this.restoreError ||
+            'App is still restoring. Finish connecting or reload it.',
+          'restoring'
+        );
       }
       return restorationState(await this.getState());
     }
-    if (method !== 'capability' || !this.capabilities.includes(input.capability)) {
+    if (
+      method !== 'capability' ||
+      !this.capabilities.includes(input.capability)
+    ) {
       throw capabilityError('Unsupported operation.', 'denied');
     }
     const id = crypto.randomUUID();
@@ -265,7 +379,7 @@ export class ManagedApp {
         reject(capabilityError('Selection cancelled.', 'cancelled'));
       };
       signal.addEventListener('abort', cancel, { once: true });
-      const complete = result => {
+      const complete = (result) => {
         signal.removeEventListener('abort', cancel);
         resolve(result);
       };
@@ -274,6 +388,9 @@ export class ManagedApp {
     });
   }
   async publish(peer = this.peer) {
+    if (this.task) {
+      return;
+    }
     if (this.ready && peer && !peer.closed) {
       const state = restorationState(await this.getState());
       if (this.ready && this.peer === peer && !peer.closed) {
@@ -291,8 +408,12 @@ export class ManagedApp {
     try {
       // Targeting the existing context during this gesture activates tabs in
       // browsers which ignore cross-origin opener.focus(). Never navigate it.
-      if (this.parent && !this.parent.closed && this.parentTarget &&
-        window.navigator.userActivation?.isActive) {
+      if (
+        this.parent &&
+        !this.parent.closed &&
+        this.parentTarget &&
+        window.navigator.userActivation?.isActive
+      ) {
         const destination = window.open('', this.parentTarget);
         if (destination && destination !== this.parent) {
           destination.close();
@@ -301,6 +422,35 @@ export class ManagedApp {
       this.parent?.focus();
     }
     catch {}
+  }
+  embeddedProvider(capability) {
+    if (!this.peer || !this.ready) {
+      throw capabilityError(
+        'Open this app through Launcher to use embedded capabilities.'
+      );
+    }
+    return this.peer.call('embed-provider', { capability });
+  }
+  beginEmbedded(url, capability) {
+    if (!this.peer || !this.ready) {
+      throw capabilityError(
+        'Open this app through Launcher to use embedded capabilities.'
+      );
+    }
+    return this.peer.call('embed', { url, capability });
+  }
+  requestEmbedded(id, input, options) {
+    return this.peer.call(
+      'embed-call',
+      { id, input },
+      { ...options, timeout: null }
+    );
+  }
+  canCloseEmbedded(id) {
+    return this.peer.call('embed-can-close', { id });
+  }
+  endEmbedded(id) {
+    return this.peer.call('embed-close', { id });
   }
   request(capability, input, options) {
     if (!this.peer) {

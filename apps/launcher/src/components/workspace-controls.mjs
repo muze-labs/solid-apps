@@ -52,7 +52,8 @@ export const workspaceControls = {
               message
             })
           );
-        } catch {}
+        }
+        catch {}
       }
     },
     workspaceFailure: function (error) {
@@ -88,9 +89,11 @@ export const workspaceControls = {
         await (network
           ? this.runtime.host.requireSession().perform(operation)
           : operation());
-      } catch (error) {
+      }
+      catch (error) {
         this.actions.workspaceFailure(error);
-      } finally {
+      }
+      finally {
         this.runtime.workspaceBusy = false;
         this.data.workspaceButtons = { disabled: null };
       }
@@ -98,6 +101,7 @@ export const workspaceControls = {
     renderWorkspace: function () {
       this.data.workspaceEntries = this.api
         .from([...this.runtime.workspace.instances.values()])
+        .where((record) => !record.embedded)
         .select((record) => ({
           id: record.entry.id,
           label: record.entry.label || record.entry.url,
@@ -117,12 +121,23 @@ export const workspaceControls = {
     createWorkspace: function () {
       this.runtime.workspace?.dispose();
       this.runtime.workspace = new this.api.WorkspaceBroker({
+        embeddedProviders: [
+          {
+            url: new URL('../profile/', location.href).href,
+            capability: this.api.editProfileCapability
+          },
+          {
+            url: new URL('../files/', location.href).href,
+            capability: this.api.browseCapability
+          }
+        ],
         snapshot: this.runtime.persistence.snapshot,
         keys: this.runtime.persistence.keys,
         authorize: this.actions.authorizeRoute,
         onMessage: this.actions.workspaceNotice,
         onChange: this.actions.stageWorkspace
       });
+      this.runtime.host.capabilityBroker = this.runtime.workspace;
       this.runtime.workspace.presentation =
         this.runtime.host.preferences.launchTarget;
       this.data.resource =
@@ -264,7 +279,8 @@ export const workspaceControls = {
             this.runtime.host.resource('workspace'),
             'pod'
           );
-        } catch (error) {
+        }
+        catch (error) {
           this.runtime.workspace.closing = false;
           throw error;
         }

@@ -1,0 +1,30 @@
+<div
+  class="muze-solid-design-toasts"
+  role="status"
+  aria-live="polite"
+  aria-atomic="true"
+>
+  <aside
+    class="ds-toast muze-solid-design-toast"
+    data-simply-behavior="muzeSolidDesignToast"
+    hidden
+    data-simply-field="muzeSolidDesignNotice.visibility"
+    data-simply-transform="attributes"
+    data-simply-attributes="hidden"
+  >
+    <p
+      data-simply-field="muzeSolidDesignNotice.text"
+      data-simply-transform="escape_html"
+    ></p>
+    <button
+      type="button"
+      class="ds-button ds-button-naked"
+      data-simply-command="muzeSolidDesignDismissToast"
+      aria-label="Dismiss notification"
+    >
+      <svg class="ds-icon ds-icon-feather" aria-hidden="true">
+        <use href="../assets/icons.svg#x"></use>
+      </svg>
+    </button>
+  </aside>
+</div>

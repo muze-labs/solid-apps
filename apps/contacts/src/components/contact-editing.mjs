@@ -22,7 +22,7 @@ export const contactEditing = {
       await this.runtime.store.collection.save(node);
       this.actions.refreshPeople();
       this.actions.selectContact(id);
-      this.runtime.host.message(
+      this.runtime.host.notify(
         'Saved on this device. Use Sync with Solid to synchronize.'
       );
     },
@@ -30,7 +30,7 @@ export const contactEditing = {
       await this.runtime.store.collection.delete(id);
       this.actions.refreshPeople();
       this.actions.selectContact(null);
-      this.runtime.host.message('Contact marked deleted.');
+      this.runtime.host.notify('Contact marked deleted.');
     },
     async synchronizeContacts() {
       await this.runtime.store.connect(
@@ -41,22 +41,28 @@ export const contactEditing = {
       if (this.runtime.selected) {
         this.actions.selectContact(this.runtime.selected);
       }
-      this.runtime.host.message('Contacts synchronized with Solid.');
+      this.runtime.host.notify('Contacts synchronized with Solid.');
     }
   },
   commands: {
     newContact() {
-      this.container.querySelector('.new-contact-dialog').showModal();
+      return this.actions.muzeSolidDesignOpenDialog(
+        this.container.querySelector('.new-contact-dialog')
+      );
     },
     cancelNew() {
-      this.container.querySelector('.new-contact-dialog').close();
+      return this.actions.muzeSolidDesignCloseDialog(
+        this.container.querySelector('.new-contact-dialog')
+      );
     },
     add(form) {
       const name = form.elements.name.value.trim();
       return this.runtime.host.run(async () => {
         await this.actions.addContact(name);
         form.reset();
-        this.container.querySelector('.new-contact-dialog').close();
+        await this.actions.muzeSolidDesignCloseDialog(
+          this.container.querySelector('.new-contact-dialog')
+        );
       });
     },
     remove() {

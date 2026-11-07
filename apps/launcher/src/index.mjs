@@ -1,3 +1,7 @@
+import {
+  muzeSolidDesignDialog,
+  muzeSolidDesignListDetails
+} from '@muze-labs/solid-design';
 import pickerSource from './picker.mjs' with { type: 'text' };
 import shortcutSource from './shortcuts.mjs' with { type: 'text' };
 import accountTemplate from './account-view.html?template' with { type: 'text' };
@@ -9,6 +13,7 @@ import { shell } from '@muze-labs/solid-app-ui';
 import { WorkspaceBroker } from '@muze-labs/solid-app-data/workspace-broker.mjs';
 import { WorkspaceState } from '@muze-labs/solid-app-data/workspace-state.mjs';
 import {
+  editProfileCapability,
   browseCapability,
   selectionUrl
 } from '@muze-labs/solid-app-data/capabilities.mjs';
@@ -37,7 +42,14 @@ const host = shell({
 });
 const definition = {
   container: host.main,
-  components: { workspaceControls, resourceSelection, shortcuts, lifecycle },
+  components: {
+    muzeSolidDesignDialog,
+    muzeSolidDesignListDetails,
+    workspaceControls,
+    resourceSelection,
+    shortcuts,
+    lifecycle
+  },
   data: {
     shortcuts: [],
     empty: '',
@@ -65,6 +77,7 @@ const definition = {
     shell,
     WorkspaceBroker,
     WorkspaceState,
+    editProfileCapability,
     browseCapability,
     selectionUrl,
     chooseFiles,
@@ -120,4 +133,4 @@ window.solidLauncher = {
     return ui.runtime.store;
   }
 };
-globalThis.launcherApp = ui;
+globalThis.muzeSolidLauncherApp = ui;

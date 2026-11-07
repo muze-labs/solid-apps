@@ -82,7 +82,14 @@ current build-time composition rule when that future design is selected. This
 follow-up is deferred; it does not extend the current refactor or select a cycle.
 FBK-20261107-QG24H-46 retains the maintainer's decision.
 
-### Current gaps
+### Baseline before the accepted moldable refactor
+
+The observations below describe the pre-CYC37 baseline. CYC37 was accepted and
+merged as b9650ba: named feature datasets, explicit contexts/APIs, model-based
+lists, per-component files and retained HTML/CSS/behavior sources are implemented.
+Maintain those foundations during UI work. Live template reapplication, complete
+override restoration and the in-app IDE remain future work; the accepted source
+foundation does not establish every IDE-readiness criterion below.
 
 The four current apps use SimplyFlow, but their entry points create separate
 view instances with commands that close over module-local state and helpers.
@@ -94,7 +101,7 @@ are not exposed as named entries in the running app definition. Existing module
 and browser tests are not associated with editable entries. The roadmap has not
 previously covered these prerequisites or the IDE workflow.
 
-### Foundations to add to every app
+### Foundations to maintain in every app
 
 - Define app-owned features as named SimplyFlow component datasets containing
   their templates, styles, commands, actions and relevant bindings, routes or
@@ -217,19 +224,22 @@ budget. Plan IDE loading and measure its cost explicitly when implementing it.
 
 ## Profile and account experience
 
-- Make the account name at the top right of every app open the Profile app for
-  the current WebID. Reuse/focus an existing editor when available, navigating
-  to the current WebID while preserving unsaved work. When opening an editor,
-  follow the existing tabs/windows preference. This account shortcut is the
-  requested extension to the shared header; general app navigation remains in
-  Launcher.
+- Make the account name at the top right of every app open profile viewing and
+  editing for the current WebID. On 2026-11-07 the maintainer revises the earlier
+  separate-editor preference: request the Profile provider through a capability,
+  normally hosted in an iframe dialog in the current app, with a tab fallback
+  continuing the request when embedding is unavailable. Reuse the provider's
+  editor and preserve unsaved work. CYC49 implements this for evaluation; the
+  [capability contract](solid-profile-editing-capability.md) records the boundary.
+  General app navigation remains in Launcher.
 - After the user changes their name, update the displayed name immediately in
   all already-open suite apps, without requiring reload or reconnect. Native
   profile RDF remains authoritative. Propagating the same user's profile change
   between apps is part of account consistency, independent of the deferred
   collaborative-editing feature.
 
-The communication mechanism and behavior across origins remain design choices.
+Immediate propagation of name changes to other already-open apps remains
+future work; the capability caller refreshes its own account display.
 A future verification should open several apps, change the name in Profile,
 and observe each header update without rewriting unrelated profile data.
 
@@ -251,6 +261,58 @@ Genuine expired-session or denied-access failures must remain visible.
 Future verification: compare network traces before/after for public and protected
 resources, multiple storage locations and a different account. Avoid repeatedly
 challenging a known protected origin without breaking anonymous/public access.
+
+### Expired authorization and sign-in recovery
+
+Added at the maintainer's request on 2026-11-07 after live Profile capability
+feedback. Same-origin tabs and dialogs already share Metro's token/key stores.
+The reported case had an expired access token, no refresh token and a cached
+identity token in both contexts. Reconnecting resolved it. Public profile
+content remained available while protected preferences left a sign-in warning.
+[Investigation evidence](../.spiral/evidence/EVD-20261107-QG24H-57.md) records
+this distinction and the Firefox reproduction.
+
+Prioritize refresh-token authorization and understandable recovery UI. Request
+refresh authorization through Metro with the required provider consent; verify
+issuance rather than assuming a scope guarantees a refresh token. Existing
+sessions without a refresh token need a fresh authorized sign-in. Reuse valid
+credentials and silently refresh when possible across same-origin suite apps,
+including embedded capability providers. Keep account/issuer/DPoP validation and
+provider-owned data access; capability messages must not carry OAuth credentials.
+
+If interaction is needed, show a nonblocking notice specific to the operation,
+with a clear **Sign in again** action. Examples: "Sign in again to load your
+preferences" or "Sign in again to save to your Pod. Your edits are still here."
+Keep available content and editing usable, preserve drafts, and avoid a raw
+library error or an automatic login modal. A requested save may offer **Sign in
+and save**, then resume that conditional save after successful authentication.
+Retain conflict handling and pending work if authentication fails or is cancelled.
+Distinguish connectivity, server and denied-access failures from expired
+credentials; a preferences failure must not imply that the public profile failed
+to open. After recovery, update affected same-origin app/dialog status without
+requiring a reload or overwriting drafts.
+
+As a later optional fallback, evaluate one bounded hidden-iframe authorization
+attempt with OIDC `prompt=none`, after credential reuse/refresh and before asking
+for interaction. Fall back on login/consent/interaction-required responses,
+framing refusal or timeout; do not loop or display login UI in a hidden frame.
+The identity-provider frame is cross-site even when suite apps share an origin.
+Browser cookie partitioning and provider framing rules can prevent reuse of the
+issuer's browser session. Verify supported browsers/providers and keep explicit
+sign-in available. Implement missing lifecycle/parameter support in the Metro
+stack rather than adding a parallel app-owned authentication mechanism.
+
+References: [OIDC offline access and consent](https://openid.net/specs/openid-connect-core-1_0.html#OfflineAccess),
+[OIDC silent authorization](https://openid.net/specs/openid-connect-core-1_0-errata2.html#AuthRequest)
+and [Firefox cookie partitioning](https://support.mozilla.org/en-US/kb/total-cookie-protection-and-website-breakage-faq).
+
+Future verification: valid shared access token; expired token with successful
+silent refresh; expired token without refresh authorization; cancelled/failed
+sign-in with a retained draft; sign-in followed by the original conditional save;
+network failure, access denial and write conflict. Cover tabs and embedded
+providers in Firefox and Chrome. For the optional iframe path, cover silent
+success, interaction required, blocked cookies/framing and timeout. This is
+future roadmap work, not implementation or acceptance of an auth change in CYC49.
 
 ## Common and app-specific preferences
 

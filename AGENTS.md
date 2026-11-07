@@ -132,6 +132,15 @@ style. Explain non-obvious reasons in comments, and simplify code before adding
 comments that merely translate it. Readability is a product requirement for
 moldability, not just a contributor preference.
 
+Prefix globally exposed app handles and reusable design-component names so
+loading a component into another app cannot cause accidental collisions. Shared
+design exports, commands, actions, template/style entries, CSS classes/properties
+and HTML IDs use a library/component prefix, such as `muzeSolidDesign` or
+`muze-solid-design`. Keep the existing `ds-` namespace for the-ds primitives.
+App-instance state and local variables remain scoped and should use clear names.
+Scope component DOM queries to their owning container rather than assuming a
+single global instance.
+
 Use braces around control-flow bodies, readable intermediate values, and roughly
 80-column source. Put else/catch/finally on their own lines. Prefix thrown errors
 with their module. Test observable contracts, including failure and preservation

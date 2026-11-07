@@ -34,24 +34,23 @@ export const resourceSelection = {
                 webId: this.runtime.host.session.webId
               })
             : target;
-          const result = await this.api.chooseFiles(
-            this.runtime.workspace,
+          const result = await this.runtime.host.muzeSolidUiInvoke(
+            this.api.browseCapability,
             filesUrl,
-            {
-              signal: this.runtime.selection.signal,
-              onWait: (message) => {
-                this.data.pickerMessage = message;
-              }
-            }
+            {},
+            'Select a resource'
           );
           this.data.resource = this.api.selectionUrl(result);
           this.runtime.workspace.launcherState.resource = this.data.resource;
           await this.runtime.workspace.changed();
           this.data.pickerMessage =
             'Resource selected. Review the URL before opening.';
-        } catch (error) {
-          this.data.pickerMessage = error.message;
-        } finally {
+        }
+        catch (error) {
+          this.data.pickerMessage =
+            error.code === 'cancelled' ? '' : error.message;
+        }
+        finally {
           this.runtime.selection = null;
           this.data.pickState = { disabled: null };
           this.data.cancelState = { hidden: '' };
@@ -60,6 +59,7 @@ export const resourceSelection = {
     },
     handleCancelPick() {
       this.runtime.selection?.abort();
+      this.runtime.host.view.commands.call('muzeSolidUiCloseCapability');
     },
     openProfile(resource, anonymous) {
       const webId = anonymous ? '' : this.runtime.host.requireSession().webId;

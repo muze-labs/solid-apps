@@ -1,9 +1,16 @@
-<div class="split-view ds-panels-panes">
+<div class="split-view ds-panels-panes muze-solid-design-list-details">
   {{view:contacts-list:./list.html}}
   <section
     class="contact-details ds-panels-pane ds-panels-details"
     aria-label="Contact profile"
   >
+    <button
+      type="button"
+      class="ds-button muze-solid-design-list-back"
+      data-simply-command="muzeSolidDesignShowList"
+    >
+      Back to contacts
+    </button>
     <div class="contact-profile">{{profile}}</div>
     {{view:contacts-details:./details.html}}
   </section>

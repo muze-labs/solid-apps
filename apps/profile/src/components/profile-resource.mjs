@@ -44,7 +44,8 @@ export const profileResource = {
             this.api.saveDocument(client, draft)
           );
           await this.actions.showRemote(url);
-          this.runtime.host.message('Profile saved to Solid.');
+          this.runtime.host.notify('Profile saved to Solid.');
+          await this.actions.muzeSolidProfileComplete(url);
         }
       });
       this.runtime.host.managed
@@ -90,7 +91,7 @@ export const profileResource = {
       this.api.applyProfileEdits(node, edits);
       await this.runtime.store.collection.save(node);
       this.actions.showLocalContact();
-      this.runtime.host.message('Contact profile saved on this device.');
+      this.runtime.host.notify('Contact profile saved on this device.');
     }
   }
 };

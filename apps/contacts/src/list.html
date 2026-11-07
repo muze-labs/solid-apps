@@ -62,11 +62,28 @@
         </svg>
       </button>
     </div>
-    <dialog class="ds-dialog new-contact-dialog">
+    <dialog
+      data-simply-behavior="muzeSolidDesignDialog"
+      class="ds-dialog new-contact-dialog muze-solid-design-dialog"
+    >
       <form data-simply-command="add">
-        <h2>New contact</h2>
-        <label>Name<input name="name" placeholder="Name (optional)" /></label>
-        <div class="actions">
+        <header class="muze-solid-design-dialog-header">
+          <h2>New contact</h2>
+          <button
+            type="button"
+            class="ds-button muze-solid-design-dialog-close"
+            data-simply-command="cancelNew"
+            aria-label="Close new contact dialog"
+          >
+            <svg class="ds-icon ds-icon-feather" aria-hidden="true">
+              <use href="../assets/icons.svg#x"></use>
+            </svg>
+          </button>
+        </header>
+        <div class="muze-solid-design-dialog-content">
+          <label>Name<input name="name" placeholder="Name (optional)" /></label>
+        </div>
+        <footer class="muze-solid-design-dialog-footer">
           <button class="ds-button ds-button-primary">Add contact</button
           ><button
             class="ds-button"
@@ -75,7 +92,7 @@
           >
             Cancel
           </button>
-        </div>
+        </footer>
       </form>
     </dialog>
   </section>

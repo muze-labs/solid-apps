@@ -72,6 +72,12 @@ export const contactList = {
     },
     select(_element, id) {
       this.actions.selectContact(id);
+      if (matchMedia('(max-width: 719px)').matches) {
+        this.container.querySelector('.contact-details').scrollIntoView({
+          block: 'nearest',
+          inline: 'start'
+        });
+      }
     }
   }
 };

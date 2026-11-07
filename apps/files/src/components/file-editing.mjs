@@ -15,7 +15,8 @@ export const fileEditing = {
       return this.actions.operation(async () => {
         try {
           await this.actions.uploadFiles(files);
-        } finally {
+        }
+        finally {
           input.value = '';
         }
       });
@@ -44,7 +45,7 @@ export const fileEditing = {
         this.actions.child
       );
       await this.actions.browse(this.runtime.current);
-      this.runtime.host.message(saved + ' files uploaded.');
+      this.runtime.host.notify(saved + ' files uploaded.');
     },
     async deleteResource(url) {
       const session = this.runtime.host.requireSession();
@@ -53,7 +54,7 @@ export const fileEditing = {
         this.actions.inside(url)
       );
       await this.actions.browse(this.runtime.current);
-      this.runtime.host.message('Marked deleted. Contents retained.');
+      this.runtime.host.notify('Marked deleted. Contents retained.');
     }
   }
 };

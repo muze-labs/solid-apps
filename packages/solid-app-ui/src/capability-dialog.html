@@ -1,0 +1,90 @@
+<dialog
+  class="ds-dialog muze-solid-ui-capability-dialog muze-solid-design-dialog"
+  aria-label="App task"
+>
+  <header class="muze-solid-design-dialog-header">
+    <h2
+      data-simply-field="muzeSolidUiDialog.title"
+      data-simply-transform="escape_html"
+    ></h2>
+    <button
+      type="button"
+      class="ds-button muze-solid-design-dialog-close"
+      aria-label="Close dialog"
+      data-simply-command="muzeSolidUiCloseCapability"
+    >
+      <svg class="ds-icon ds-icon-feather" aria-hidden="true">
+        <use href="../assets/icons.svg#x"></use>
+      </svg>
+    </button>
+  </header>
+  <div class="muze-solid-design-dialog-content">
+    <p
+      role="status"
+      data-simply-field="muzeSolidUiDialog.message"
+      data-simply-transform="escape_html"
+    ></p>
+    <div class="muze-solid-ui-capability-stage">
+      <div
+        class="muze-solid-ui-capability-loading"
+        role="status"
+        hidden
+        data-simply-field="muzeSolidUiDialog.loading"
+        data-simply-transform="attributes"
+        data-simply-attributes="hidden data-muze-solid-ui-fading aria-hidden"
+      >
+        <span
+          class="muze-solid-ui-capability-spinner"
+          aria-hidden="true"
+        ></span>
+        <p
+          data-simply-field="muzeSolidUiDialog.loadingText"
+          data-simply-transform="escape_html"
+        ></p>
+      </div>
+      <iframe
+        title="Capability provider"
+        class="muze-solid-ui-capability-frame"
+        data-simply-field="muzeSolidUiDialog.frame"
+        data-simply-transform="attributes"
+        data-simply-attributes="src hidden inert aria-hidden aria-busy data-muze-solid-ui-loading"
+        src="about:blank"
+        hidden
+      ></iframe>
+    </div>
+    <a
+      class="ds-button"
+      data-simply-command="muzeSolidUiOpenCapabilityTab"
+      target="_blank"
+      rel="opener"
+      data-simply-field="muzeSolidUiDialog.fallback"
+      data-simply-transform="attributes"
+      data-simply-attributes="href hidden"
+      hidden
+      >Open the app in a separate tab</a
+    >
+  </div>
+  <footer
+    class="muze-solid-design-dialog-footer"
+    hidden
+    data-simply-field="muzeSolidUiDialog.discard"
+    data-simply-transform="attributes"
+    data-simply-attributes="hidden"
+  >
+    <p>Closing this task will discard the unsaved edits in it.</p>
+    <button
+      type="button"
+      class="ds-button"
+      data-simply-command="muzeSolidUiKeepCapability"
+    >
+      Keep editing
+    </button>
+    <button
+      type="button"
+      class="ds-button"
+      data-simply-command="muzeSolidUiDiscardCapability"
+    >
+      Discard and close
+    </button>
+  </footer>
+</dialog>

@@ -1,0 +1,29 @@
+.muze-solid-design-dropdown .ds-dropdown-nav,
+.muze-solid-design-dropdown .ds-dropdown-list,
+.muze-solid-design-dropdown .ds-dropdown-item {
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+.muze-solid-design-dropdown .ds-dropdown-link {
+  display: block;
+  width: 100%;
+  min-height: 2.75rem;
+  text-align: start;
+  padding: var(--ds-space-d2) var(--ds-space);
+  margin: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.muze-solid-design-dropdown .ds-dropdown-link:hover,
+.muze-solid-design-dropdown
+  .ds-dropdown-nav:not(:has(.ds-dropdown-link:hover))
+  .ds-dropdown-link:focus-visible,
+.muze-solid-design-dropdown
+  .ds-dropdown-nav:not(:has(.ds-dropdown-link:hover))
+  .ds-dropdown-link[aria-current]:not([aria-current='false']) {
+  background: var(--ds-primary);
+  color: var(--ds-primary-contrast);
+  outline-offset: -3px;
+}

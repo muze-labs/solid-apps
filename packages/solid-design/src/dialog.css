@@ -1,0 +1,83 @@
+/* the-ds supplies colors, typography and native dialog primitives. */
+.muze-solid-design-dialog[open] {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - 2rem);
+  overflow: hidden;
+  border-radius: 0;
+  padding: 0;
+}
+.muze-solid-design-dialog form {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.muze-solid-design-dialog-header,
+.muze-solid-design-dialog-footer {
+  flex: none;
+  padding: var(--ds-space-d2) var(--ds-space);
+  background: var(--ds-color-background);
+}
+.muze-solid-design-dialog-header {
+  position: relative;
+  min-height: 2.75rem;
+  padding-inline-end: 4rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ds-space);
+  border-bottom: 1px solid var(--ds-grey-low);
+}
+.muze-solid-design-dialog-header h2 {
+  margin: 0;
+}
+.muze-solid-design-dialog-close {
+  margin: 0;
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-end: 0;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.75rem;
+  line-height: 1;
+}
+.muze-solid-design-dialog-content {
+  min-height: 0;
+  overflow: auto;
+  padding: var(--ds-space);
+}
+.muze-solid-design-dialog-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-d2);
+  border-top: 1px solid var(--ds-grey-low);
+  margin: 0;
+}
+.muze-solid-design-dialog-footer p {
+  flex-basis: 100%;
+}
+@media (max-width: 719px) {
+  .muze-solid-design-dialog[open] {
+    width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    max-width: 100%;
+    margin: 0;
+  }
+}
+
+.muze-solid-design-dialog-header h2:empty {
+  display: none;
+}
+.muze-solid-design-dialog-close {
+  clip-path: polygon(0 0, 17px 100%, 100% 100%, 100% 0);
+  padding: 0 10px 0 25px;
+  background: var(--ds-grey-70);
+  color: white;
+  box-shadow: none;
+}

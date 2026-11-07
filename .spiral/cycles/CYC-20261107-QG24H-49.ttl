@@ -1,0 +1,7 @@
+@prefix sd: <https://muze.nl/ns/spiral-developer#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix project: <urn:muze-labs:solid-apps:spiral:> .
+project:CYC-20261107-QG24H-49 a sd:Cycle ;
+    dcterms:identifier "CYC-20261107-QG24H-49" ;
+    sd:repositoryPath ".spiral/cycles/CYC-20261107-QG24H-49.md" ;
+    sd:status sd:Active .
