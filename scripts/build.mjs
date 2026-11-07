@@ -4,6 +4,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 const root = fileURLToPath(new URL('../', import.meta.url));
+const readable = process.argv.includes('--readable');
+let scriptSuffix = '.min';
+if (readable) {
+  scriptSuffix = '';
+}
 const bundles = await bundleApplications(root);
 // Everything in assets is generated. Drop retired hashed chunks as well as
 // current outputs so deployment contains only this build's import graph.
@@ -58,12 +63,12 @@ for (const name of ['launcher', 'contacts', 'files', 'profile']) {
   await mkdir(path.join(root, `www/${name}`), { recursive: true });
   await writeFile(
     path.join(root, `www/${name}/index.html`),
-    `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${name[0].toUpperCase() + name.slice(1)} · Solid Apps</title><link rel="stylesheet" href="../assets/theds.css"><link rel="stylesheet" href="../assets/apps.css"></head><body class="ds-darkmode-auto"><div id="app">${body}</div><script type="module" src="../assets/${name}/src/index.js"></script></body></html>`
+    `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${name[0].toUpperCase() + name.slice(1)} · Solid Apps</title><link rel="stylesheet" href="../assets/theds.css"><link rel="stylesheet" href="../assets/apps.css"></head><body class="ds-darkmode-auto"><div id="app">${body}</div><script type="module" src="../assets/${name}/src/index${scriptSuffix}.js"></script></body></html>`
   );
 }
 await writeFile(
   path.join(root, 'www/redirect.html'),
-  '<!doctype html><meta charset="utf-8"><title>Solid connection</title><p>Completing sign-in…</p><script type="module" src="assets/redirect.js"></script>'
+  '<!doctype html><meta charset="utf-8"><title>Solid connection</title><p>Completing sign-in…</p><script type="module" src="assets/redirect' + scriptSuffix + '.js"></script>'
 );
 await writeFile(
   path.join(root, 'www/index.html'),
@@ -87,18 +92,26 @@ function importGraph(name, seen = new Set()) {
   }
   return seen;
 }
-const sizes = {};
-for (const name of ['launcher', 'contacts', 'files', 'profile']) {
-  const files = importGraph(`www/assets/${name}/src/index.js`);
-  importGraph('www/assets/redirect.js', files);
-  const total = [...files].reduce((sum, file) => sum + gzipSizes.get(file), 0);
-  sizes[name] = { gzipBytes: total, scripts: [...files] };
-  if (total >= 200000) {
-    throw new Error(`build: ${name} exceeds the 200 KB gzip JavaScript budget.`);
+function appSizes(suffix) {
+  const sizes = {};
+  for (const name of ['launcher', 'contacts', 'files', 'profile']) {
+    const files = importGraph(`www/assets/${name}/src/index${suffix}.js`);
+    importGraph('www/assets/redirect' + suffix + '.js', files);
+    const total = [...files].reduce((sum, file) => sum + gzipSizes.get(file), 0);
+    sizes[name] = { gzipBytes: total, scripts: [...files] };
+    if (total >= 200000) {
+      throw new Error('build: ' + name + suffix +
+        ' exceeds the 200 KB gzip JavaScript budget.');
+    }
   }
+  return sizes;
 }
+const sizes = appSizes('.min');
+const readableSizes = appSizes('');
 await writeFile(path.join(root, 'www/size-report.json'), JSON.stringify({
-  gzipLevel: 6, node: process.versions.node, apps: sizes
+  gzipLevel: 6, node: process.versions.node, apps: sizes,
+  readableApps: readableSizes,
+  servedVariant: readable ? 'readable' : 'minified'
 }, null, 2));
 await writeFile(path.join(root, 'www/bundle-report.json'), JSON.stringify(
   Object.fromEntries(Object.entries(outputs).map(([name, output]) => [name, {
@@ -106,5 +119,9 @@ await writeFile(path.join(root, 'www/bundle-report.json'), JSON.stringify(
     imports: output.imports,
     modules: Object.keys(output.modules).map(id => path.relative(root, id))
   }])), null, 2));
-console.log('Gzip JS including auth callback: ' + Object.entries(sizes)
-  .map(([name, size]) => `${name} ${size.gzipBytes} B`).join(', '));
+for (const [variant, report] of [['minified', sizes],
+  ['readable', readableSizes]]) {
+  console.log('Gzip JS including auth callback (' + variant + '): ' +
+    Object.entries(report).map(([name, size]) =>
+      `${name} ${size.gzipBytes} B`).join(', '));
+}

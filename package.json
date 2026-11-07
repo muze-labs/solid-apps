@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "build": "node scripts/build.mjs",
-    "dev": "npm run build && node scripts/serve.mjs",
+    "dev": "npm run build -- --readable && node scripts/serve.mjs",
     "test": "node --import ./scripts/oldm-loader.mjs --test test/*.test.mjs",
     "check": "npm test && npm run build",
     "test:browser": "npm run build && node test/browser.mjs && node test/managed-browser.mjs && node test/picker-browser.mjs",
@@ -17,6 +17,7 @@
   },
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^16.0.3",
+    "@rollup/plugin-terser": "1.0.0",
     "prettier": "^3.6.2",
     "rollup": "^4.67.5"
   },

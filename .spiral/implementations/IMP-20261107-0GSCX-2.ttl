@@ -11,6 +11,22 @@ project:IMP-20261107-0GSCX-2 a sd:Implementation ;
         "test/browser.mjs", "test/managed-browser.mjs",
         "test/picker-browser.mjs", "test/session-popup.test.mjs",
         "test/support/chrome.mjs" ;
+    sd:implementationChangeKind sd:SemanticChange ;
+    sd:transforms [
+        a sd:ArtifactReference ;
+        sd:artifact project:IMP-20261107-0GSCX-2 ;
+        sd:gitCommit "5fc62acc33e6cdb01739ed22237e51d5d9703e65"
+    ] ;
+    sd:changeCausedBy [
+        a sd:ArtifactReference ;
+        sd:artifact project:SRC-20261107-0GSCX-4 ;
+        sd:gitCommit "f494079ac3196511212cf4b39ef100b8f76673a9"
+    ] ;
+    sd:implements [
+        a sd:ArtifactReference ;
+        sd:artifact project:DES-20261107-0GSCX-5 ;
+        sd:gitCommit "f494079ac3196511212cf4b39ef100b8f76673a9"
+    ] ;
     sd:constrainedBy [
         a sd:ArtifactReference ;
         sd:artifact project:SRC-20261107-0GSCX-1 ;

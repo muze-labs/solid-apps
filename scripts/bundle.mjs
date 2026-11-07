@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { rollup } from 'rollup';
 import { nodeResolve } from '@rollup/plugin-node-resolve';
+import terser from '@rollup/plugin-terser';
 
 const appNames = ['launcher', 'contacts', 'files', 'profile'];
 
@@ -77,32 +78,45 @@ export async function bundleApplications(root) {
     }
   });
   try {
-    const result = await bundle.generate({
-      dir: path.join(root, 'www/assets'),
-      format: 'es',
-      entryFileNames: '[name].js',
-      chunkFileNames: '[name].js',
-      sourcemap: true,
-      onlyExplicitManualChunks: true,
-      manualChunks: sharedChunk
-    });
-    const chunks = new Map(result.output.filter(item => item.type === 'chunk')
-      .map(item => [item.fileName, item]));
-    const data = chunks.get('shared/data.js');
-    const ui = chunks.get('shared/ui.js');
-    if (!data || !ui || data.imports.length || data.dynamicImports.length ||
-      ui.imports.some(name => name !== data.fileName) ||
-      ui.dynamicImports.length) {
-      throw new Error('bundle: Shared bundles must depend only UI → data.');
-    }
-    for (const chunk of chunks.values()) {
-      for (const dependency of [...chunk.imports, ...chunk.dynamicImports]) {
-        if (!chunks.has(dependency)) {
-          throw new Error('bundle: Unresolved output import ' + dependency);
+    const output = [];
+    for (const suffix of ['', '.min']) {
+      const plugins = [];
+      if (suffix) {
+        plugins.push(terser({
+          maxWorkers: 1,
+          keep_fnames: true,
+          keep_classnames: true
+        }));
+      }
+      const result = await bundle.generate({
+        dir: path.join(root, 'www/assets'),
+        format: 'es',
+        entryFileNames: '[name]' + suffix + '.js',
+        chunkFileNames: '[name]' + suffix + '.js',
+        sourcemap: true,
+        onlyExplicitManualChunks: true,
+        manualChunks: sharedChunk,
+        plugins
+      });
+      const chunks = new Map(result.output.filter(item => item.type === 'chunk')
+        .map(item => [item.fileName, item]));
+      const data = chunks.get('shared/data' + suffix + '.js');
+      const ui = chunks.get('shared/ui' + suffix + '.js');
+      if (!data || !ui || data.imports.length || data.dynamicImports.length ||
+        ui.imports.some(name => name !== data.fileName) ||
+        ui.dynamicImports.length) {
+        throw new Error('bundle: Shared bundles must depend only UI → data.');
+      }
+      for (const chunk of chunks.values()) {
+        for (const dependency of [...chunk.imports, ...chunk.dynamicImports]) {
+          if (!chunks.has(dependency)) {
+            throw new Error('bundle: Unresolved output import ' + dependency);
+          }
         }
       }
+      output.push(...result.output);
     }
-    return result.output;
+    return output;
   }
   finally {
     await bundle.close();
