@@ -1,12 +1,14 @@
 import oldm from './oldm.mjs';
 import { oidcStore } from '@muze-nl/metro-oidc';
+import { client as metroClient } from '@muze-nl/metro-core';
+import { isExpired } from '@muze-nl/metro-oauth2/oauth2';
+import {
+  authorizationTransport,
+  refreshAuthorizationUrl
+} from './authorization.mjs';
 import { tokenStore } from '@muze-nl/metro-oauth2/tokenstore';
 import { solidApi } from '@muze-labs/metro-solid';
-import {
-  createSolidMetroClient,
-  authorizePopup,
-  oidcIdToken
-} from '@muze-labs/jsfs-solid';
+import { createSolidMetroClient, authorizePopup } from '@muze-labs/jsfs-solid';
 export { oldm };
 export { SolidAdapter, createSolidMetroClient } from '@muze-labs/jsfs-solid';
 export const prefixes = {
@@ -106,14 +108,32 @@ export async function saveDocument(client, document) {
 export async function connectSession(
   webId,
   popup,
-  { interactive = true } = {}
+  {
+    interactive = true,
+    onAuthenticationRequired,
+    onAuthenticationRestored = () => {}
+  } = {}
 ) {
   webId = httpUrl(webId);
   const discovery = solidApi(webId);
   const profile = await discovery.discoverWebId(webId);
   let authPopup = popup;
   let active = true;
-  let interactiveAllowed = interactive;
+  let operations = 0;
+  let interactiveOperations = 0;
+  const recoveryEnabled = typeof onAuthenticationRequired === 'function';
+  let pendingAuthorization = null;
+  let cancellationGeneration = 0;
+  const base = profile.storage[0] || documentUrl(webId);
+  const account = profile.issuer + '|' + webId;
+  const oauth = tokenStore(account);
+  function signInRequired() {
+    const error = new Error(
+      'solid-app-data: Sign in again to continue. Your edits are retained.'
+    );
+    error.code = 'sign_in_required';
+    return error;
+  }
   function requireActive() {
     if (!active) {
       throw new Error(
@@ -122,6 +142,8 @@ export async function connectSession(
     }
   }
   const options = {
+    client: authorizationTransport(profile.issuer, oauth.tokens, base),
+    configureMetro: true,
     issuer: profile.issuer,
     webid: webId,
     oidc: Boolean(profile.issuer),
@@ -133,13 +155,18 @@ export async function connectSession(
     },
     authorize_callback: async (url) => {
       requireActive();
-      if (!interactiveAllowed) {
-        throw new Error(
-          'solid-app-data: Sign-in required. Click Connect Solid to continue.'
-        );
+      if (interactiveOperations === 0 && (operations > 0 || !interactive)) {
+        onAuthenticationRequired?.({ pending: false });
+        throw signInRequired();
       }
-      // A cached ID token does not guarantee resource authorization. Own the
-      // popup opened here too, rather than letting the helper lose its handle.
+      if ((!authPopup || authPopup.closed) && recoveryEnabled) {
+        authPopup = await new Promise((resolve, reject) => {
+          pendingAuthorization = { resolve, reject };
+          onAuthenticationRequired({ pending: true });
+        });
+        pendingAuthorization = null;
+        requireActive();
+      }
       if (!authPopup || authPopup.closed) {
         authPopup = window.open('', '_blank', 'popup,width=520,height=720');
       }
@@ -150,7 +177,10 @@ export async function connectSession(
       }
       const authorizationWindow = authPopup;
       try {
-        return await authorizePopup(url, { popup: authorizationWindow });
+        return await authorizePopup(
+          refreshAuthorizationUrl(url, profile.issuer),
+          { popup: authorizationWindow }
+        );
       }
       finally {
         authorizationWindow.close();
@@ -160,13 +190,63 @@ export async function connectSession(
       }
     }
   };
-  const client = createSolidMetroClient(
-    profile.storage[0] || documentUrl(webId),
-    options
-  ).with((request, next) => {
+  function cancellationError() {
+    const error = new Error(
+      'solid-app-data: Sign-in cancelled. Your edits are retained.'
+    );
+    error.code = 'cancelled';
+    return error;
+  }
+  function sessionClient(forceAuthorization = false) {
+    return metroClient(base).with(async (request) => {
+      const generation = cancellationGeneration;
+      function requireCurrentAttempt() {
+        requireActive();
+        if (generation !== cancellationGeneration) {
+          throw cancellationError();
+        }
+      }
+      // Metro's authorization callback has no request cancellation context.
+      // Scope this transport gate to the original request. A late token response
+      // cannot dispatch its write after cancellation, or cancel a later retry.
+      const transport = options.client.with(async (outgoing, next) => {
+        requireCurrentAttempt();
+        const response = await next(outgoing);
+        const metadata = oidcStore(profile.issuer).get('openid_configuration');
+        if (outgoing.url === metadata?.token_endpoint) {
+          requireCurrentAttempt();
+        }
+        return response;
+      });
+      const authorized = createSolidMetroClient(base, {
+        ...options,
+        client: transport,
+        force_authorization: forceAuthorization
+      });
+      return recoverRequest(request, (retry) => authorized.fetch(retry));
+    });
+  }
+  const client = sessionClient();
+  async function recoverRequest(request, next) {
     requireActive();
-    return next(request);
-  });
+    const retry = request.clone();
+    try {
+      const response = await next(request);
+      if (response.ok && session.hasUsableAccessToken) {
+        onAuthenticationRestored();
+      }
+      return response;
+    }
+    catch (error) {
+      if (!['refresh_rejected', 'authorization_changed'].includes(error.code)) {
+        throw error;
+      }
+      // The refresh failed before the authorized resource request was sent.
+      // Retry this request once, preserving its body and conditional headers.
+      requireActive();
+      return next(retry);
+    }
+  }
   const session = {
     webId,
     profile: profile.profile,
@@ -177,9 +257,43 @@ export async function connectSession(
     preferencesUrl: idOf(
       many(valueAt(profile.profile, prefixes.pim + 'preferencesFile'))[0]
     ),
+    get hasUsableAccessToken() {
+      const token = oauth.tokens.get('access_token');
+      return Boolean(token && !isExpired(token));
+    },
+    useSharedAuthorization() {
+      if (!session.hasUsableAccessToken || !pendingAuthorization) {
+        return false;
+      }
+      const error = new Error(
+        'solid-app-data: Authorization renewed elsewhere.'
+      );
+      error.code = 'authorization_changed';
+      pendingAuthorization.reject(error);
+      pendingAuthorization = null;
+      return true;
+    },
+    cancelSignIn() {
+      cancellationGeneration += 1;
+      pendingAuthorization?.reject(cancellationError());
+      pendingAuthorization = null;
+      authPopup?.close();
+      authPopup = null;
+    },
+    async signIn(popup) {
+      requireActive();
+      authPopup = popup;
+      pendingAuthorization?.resolve(popup);
+      // A forced authorized GET validates renewal even for a public profile.
+      // It does not reload app state or replay any application operation.
+      return session.perform(async () => {
+        const probe = sessionClient(true);
+        requireOk(await probe.get(documentUrl(webId)));
+      });
+    },
     logout() {
+      session.cancelSignIn();
       active = false;
-      interactiveAllowed = false;
       authPopup?.close();
       authPopup = null;
       if (!profile.issuer) {
@@ -206,27 +320,22 @@ export async function connectSession(
     },
     async perform(operation, { interactive = true } = {}) {
       requireActive();
-      const previousInteractive = interactiveAllowed;
-      interactiveAllowed = interactive;
+      operations += 1;
+      if (interactive) {
+        interactiveOperations += 1;
+      }
       try {
-        if (
-          interactive &&
-          profile.issuer &&
-          !oidcIdToken({ issuer: profile.issuer, webid: webId }) &&
-          (!authPopup || authPopup.closed)
-        ) {
-          authPopup = window.open(
-            '',
-            'solid-apps-auth',
-            'popup,width=520,height=720'
-          );
-        }
         return await operation();
       }
       finally {
-        authPopup?.close();
-        authPopup = null;
-        interactiveAllowed = previousInteractive;
+        operations -= 1;
+        if (interactive) {
+          interactiveOperations -= 1;
+        }
+        if (operations === 0) {
+          authPopup?.close();
+          authPopup = null;
+        }
       }
     }
   };

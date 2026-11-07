@@ -264,6 +264,14 @@ challenging a known protected origin without breaking anonymous/public access.
 
 ### Expired authorization and sign-in recovery
 
+Accepted [CYC67](../.spiral/cycles/CYC-20261107-QG24H-67.md) implements
+refresh-first renewal and explicit recovery. ACC72 records the maintainer's
+acceptance and commit/merge/push instruction. Hidden-iframe sign-in is deferred.
+[DES69](../.spiral/designs/DES-20261107-QG24H-69.md) records the Metro boundary;
+[EVD71](../.spiral/evidence/EVD-20261107-QG24H-71.md) records verification and
+live-provider limits. The later reported Preferences repeated-save ETag problem
+below remains future work; cycle acceptance does not establish that it is fixed.
+
 Added at the maintainer's request on 2026-11-07 after live Profile capability
 feedback. Same-origin tabs and dialogs already share Metro's token/key stores.
 The reported case had an expired access token, no refresh token and a cached
@@ -334,6 +342,32 @@ instead of introducing separate copies for each application.
 Verification covers common appearance across apps, per-app storage fields and
 preservation of omitted settings and unrelated native RDF. Launcher workspace
 creation/switching still needs its own implementation and verification.
+
+### Preferences source display and recovery after saving
+
+Reported by the maintainer on 2026-11-07 during CYC67 evaluation; retained as
+future roadmap work, without expanding that cycle's implementation scope.
+
+- Remove the unexplained `prefs.ttl` URL from the ordinary Preferences dialog.
+  If source information serves a useful diagnostic task, give it a clear label
+  in secondary details rather than presenting a bare URL above the settings.
+- Investigate the reported sequence: save Theme as Light, then change it to
+  Browser default and save again. The second save reports:
+  "solid-app-data: This server supplied no ETag. Safe editing requires a
+  conditional write." This leaves the user without an actionable recovery path.
+  The cause and whether the preceding write was acknowledged remain unverified.
+- Provide understandable save status and a safe recovery action, retaining the
+  selected settings and any other unsaved form values. Distinguish a failed
+  write from a successful write whose next-write validator is unavailable.
+  Reuse the existing Metro/document and conditional-save contracts; investigate
+  safe validator reacquisition without adopting conflicting remote changes or
+  silently falling back to an unconditional write. An error rewording alone
+  does not resolve the recovery problem.
+
+Evaluate repeated saves in the same open dialog, missing ETags on write/read
+responses, connection failures and concurrent Pod changes. Verify retained
+edits, accurate acknowledgement and a usable retry/recovery path, while
+preserving unknown RDF. This report does not establish a root cause or a fix.
 
 ## Workspaces, Launcher dashboard and logout
 
@@ -414,6 +448,40 @@ necessary feedback and recovery remain available. Check shared dialogs and menus
 for consistent behavior, keyboard operation and focus return. Preserve the
 JavaScript budget and existing data/RDF contracts. This is a roadmap item, not
 a selected cycle, a new delivery order or an implementation change.
+
+### Remaining UI work per app and in Preferences
+
+Clarified by the maintainer on 2026-11-07 after accepting CYC49. The shared UI
+foundation is accepted, but each application still needs its own UI improvements.
+Review Launcher, Contacts, Files and Profile individually, including their task
+flows, content layout, toolbars, forms and feedback. Apply the same expectation
+to future apps as they join the suite.
+
+The Preferences dialogs also need a dedicated UI review, covering both common
+settings and each app's settings: grouping, labels, explanations, save/recovery
+flows and usability on phones. Reusing the shared dialog component does not
+complete the design of the settings inside it.
+
+Carry forward the reference visual language, Laws of UX guidance, accessibility,
+mobile/desktop checks and shared components above. Define concrete improvements
+from each app's workflows when selecting future cycles; this addition selects no
+implementation cycle or delivery order.
+
+### Shared visual language for forms
+
+Requested by the maintainer on 2026-11-07. Establish a coherent form design
+across every app and dialog, including Preferences and profile editing. Define
+consistent labels, help text, grouping, spacing, control appearance, required
+and optional fields, validation/error feedback, and primary/secondary actions.
+Include editing, saving, disabled and recovery states so shared appearance also
+communicates the interaction consistently.
+
+Build reusable form patterns/components on the existing the-ds/SimplyFlow
+composition and blue-accent, square-control visual language. Keep app-specific
+fields and behavior editable through named feature datasets. Evaluate keyboard
+and screen-reader use, focus visibility, error association and phone layouts;
+apply the Laws of UX guidance above. This is future design work, without a
+selected implementation cycle, control library replacement or delivery date.
 
 ## Mobile first and JavaScript budget
 

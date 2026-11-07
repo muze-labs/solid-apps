@@ -121,6 +121,8 @@ test('authorization UI is owned even with a cached identity token', async t => {
         }
       };
       const session = await connectSession(webId);
+      // Session clients configure Metro lazily with a request-scoped cancel gate.
+      await session.client.get(webId);
       if (outcome === 'public') {
         assert.equal(await session.perform(() => 'public data'), 'public data');
         assert.equal(opened.length, 0, 'Public reads need no sign-in window.');
@@ -137,7 +139,7 @@ test('authorization UI is owned even with a cached identity token', async t => {
       else {
         const expected = {
           denied: /access_denied/, 'wrong-state': /state mismatch/,
-          blocked: /blocked/i, closed: /closed/i, background: /Sign-in required/
+          blocked: /blocked/i, closed: /closed/i, background: /Sign in again/
         };
         await assert.rejects(operation, expected[outcome]);
       }

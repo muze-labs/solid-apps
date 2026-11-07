@@ -845,3 +845,40 @@ Native RDF, conditional writes and guarded draft/save close behavior remain.
 Session-renewal authorization and its recovery UI are retained future roadmap
 work, as are named workspaces, registry/recipient work, automatic sync/PWA,
 runtime composition/live IDE and stage-two collaboration.
+
+
+## Session renewal/recovery cycle, 2026-11-07
+
+After CYC49 acceptance, the maintainer explicitly selects session renewal and
+recovery, then confirms "Yes, use refresh-first recovery" following the current
+behavior/gap checkpoint. CYC-20261107-QG24H-67 is Active on its matching isolated
+branch. SRC68/DES69/IMP70/EVD71 record the selection, confirmed boundary,
+implementation and evidence. No commit, merge, push or publication is requested.
+
+Keep Metro responsible for tokens, silent refresh, discovery, OIDC/DPoP and HTTP.
+The suite requests supported offline authorization with consent, supplies shared
+sign-in recovery, and retains drafts/conditional saves. Narrow bridges cover
+structured refresh rejection, lazy authorization parameters and request-scoped
+cancellation. Same-origin renewal updates waiting apps without replacing drafts.
+Hidden-iframe authentication and broader account/logout ownership remain later.
+Synthetic provider checks do not establish live refresh-token issuance, and
+human acceptance remains pending. Previous cycle acceptance does not accept this
+implementation. Original app/Preferences UI roadmap additions are preserved.
+
+
+## Session recovery cycle accepted, 2026-11-07
+
+The maintainer explicitly says: "You can mark this cycle as accepted, commit and
+merge to main and push." ACC72 records acceptance of CYC67 implementation and
+evidence at be9c1261a7e49177512e84bc9e6d5e019ee1fbb3. CYC67 is Accepted,
+superseding the Active/pending statements above. This authorizes direct local
+main integration instead of a PR, and pushing main; it does not request package
+publication. Product code remains at the final passing check/browser snapshot.
+
+The accepted work includes refresh-first recovery, preserved drafts/conditional
+saves and cancellation, shared authorization updates and animated shared toasts.
+Live recovery was confirmed by the maintainer; refresh-token issuance itself is
+not proven. The reported Preferences ETag/repeated-save failure and unexplained
+prefs.ttl URL, and a shared form visual language, are retained future roadmap
+work. They are not fixed or waived by accepting this cycle. Hidden-iframe sign-in,
+broader account ownership/logout and the remaining app UI work stay deferred.

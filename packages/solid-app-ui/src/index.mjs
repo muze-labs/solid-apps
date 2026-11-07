@@ -19,6 +19,7 @@ import {
   account,
   muzeSolidUiCapabilityDialog,
   sessionServices,
+  sessionRecovery,
   accountLifecycle,
   suiteAppearance
 } from './features.mjs';
@@ -86,6 +87,7 @@ export function shell({
         templates: { 'suite-account': templates.account }
       },
       sessionServices,
+      sessionRecovery,
       accountLifecycle,
       muzeSolidUiCapabilityDialog,
       suiteAppearance
@@ -104,6 +106,9 @@ export function shell({
         fallback: { href: '', hidden: '' },
         discard: { hidden: '' }
       },
+      muzeSolidUiRecoveryVisibility: { hidden: '' },
+      muzeSolidUiRecoveryButton: { disabled: null },
+      muzeSolidUiRecoveryError: '',
       accountName: '',
       muzeSolidUiProfileButton: { 'aria-label': 'View and edit your profile' },
       webId: launch.webId,

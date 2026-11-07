@@ -86,6 +86,81 @@
     data-simply-field="message"
     data-simply-transform="escape_html"
   ></p>
+  <section
+    class="muze-solid-ui-recovery-notice"
+    role="status"
+    hidden
+    data-simply-field="muzeSolidUiRecoveryVisibility"
+    data-simply-transform="attributes"
+    data-simply-attributes="hidden"
+  >
+    <p>Sign in again to continue with Solid. Your edits are retained.</p>
+    <button
+      type="button"
+      class="ds-button ds-button-primary"
+      data-simply-command="muzeSolidUiSignInAgain"
+      data-simply-field="muzeSolidUiRecoveryButton"
+      data-simply-transform="attributes"
+      data-simply-attributes="disabled"
+    >
+      Sign in again
+    </button>
+    <p
+      role="status"
+      data-simply-field="muzeSolidUiRecoveryError"
+      data-simply-transform="escape_html"
+    ></p>
+  </section>
+  <dialog
+    class="ds-dialog muze-solid-design-dialog muze-solid-ui-recovery-dialog"
+    data-simply-behavior="muzeSolidUiRecoveryDialog"
+    aria-labelledby="muze-solid-ui-recovery-title"
+    aria-describedby="muze-solid-ui-recovery-description"
+  >
+    <header class="muze-solid-design-dialog-header">
+      <h2 id="muze-solid-ui-recovery-title">Sign in again</h2>
+      <button
+        type="button"
+        class="ds-button muze-solid-design-dialog-close"
+        data-simply-command="muzeSolidUiCancelSignIn"
+        aria-label="Close sign-in dialog"
+      >
+        <svg class="ds-icon ds-icon-feather" aria-hidden="true">
+          <use href="../assets/icons.svg#x"></use>
+        </svg>
+      </button>
+    </header>
+    <div class="muze-solid-design-dialog-content">
+      <p id="muze-solid-ui-recovery-description">
+        Your Solid session needs a new sign-in. Your edits are retained. Sign in
+        to continue the pending request, or cancel and try later.
+      </p>
+      <p
+        role="status"
+        data-simply-field="muzeSolidUiRecoveryError"
+        data-simply-transform="escape_html"
+      ></p>
+    </div>
+    <footer class="muze-solid-design-dialog-footer">
+      <button
+        type="button"
+        class="ds-button ds-button-primary"
+        data-simply-command="muzeSolidUiSignInAgain"
+        data-simply-field="muzeSolidUiRecoveryButton"
+        data-simply-transform="attributes"
+        data-simply-attributes="disabled"
+      >
+        Sign in again
+      </button>
+      <button
+        type="button"
+        class="ds-button"
+        data-simply-command="muzeSolidUiCancelSignIn"
+      >
+        Cancel
+      </button>
+    </footer>
+  </dialog>
   <dialog
     data-simply-behavior="muzeSolidDesignDialog"
     class="ds-dialog connect-dialog muze-solid-design-dialog"

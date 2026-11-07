@@ -62,6 +62,7 @@ export function preferencesDialog(
   return {
     app: view,
     load: view.actions.load,
+    recover: view.actions.recover,
     show: view.actions.show,
     reset: view.actions.reset,
     destroy: view.destroy.bind(view)

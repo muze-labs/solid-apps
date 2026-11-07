@@ -16,30 +16,49 @@ export const preferencesForm = {
   actions: {
     async saveSettings(settings) {
       const session = this.api.getSession();
-      if (!session || !this.runtime.loaded) {
-        this.data.message =
-          'Connect to Solid and load your preferences before saving.';
+      if (!session) {
+        this.data.message = 'Connect to Solid before saving preferences.';
         return;
       }
       this.data.buttons = { disabled: '' };
       try {
-        this.runtime.loaded = await session.perform(() =>
-          this.api.savePreferences(
+        await session.perform(async () => {
+          // A stale startup session may have prevented the initial read.
+          // Establish its RDF baseline without replacing the open form's edits.
+          await this.actions.recover(session);
+          this.runtime.loaded = await this.api.savePreferences(
             session,
             this.runtime.loaded.document,
             settings
-          )
-        );
+          );
+        });
         this.api.applyPreferences(this.runtime.loaded.settings);
         this.api.onChange(this.runtime.loaded.settings);
         this.data.message = '';
         this.actions.muzeSolidDesignNotify('Preferences saved to your Pod.');
       }
       catch (error) {
-        this.data.message = error.message || String(error);
+        if (error.code !== 'cancelled') {
+          this.data.message = error.message || String(error);
+        }
       }
       finally {
         this.data.buttons = { disabled: null };
+      }
+    },
+    async recover(session) {
+      if (this.runtime.loaded) {
+        return;
+      }
+      const loaded = await this.api.loadPreferences(session);
+      this.runtime.loaded = loaded;
+      this.data.source = loaded.document.url;
+      this.data.message = '';
+      // An open form may already contain edits, even after its first read failed.
+      if (!this.container.open) {
+        Object.assign(this.data, loaded.settings);
+        this.api.applyPreferences(loaded.settings);
+        this.api.onChange(loaded.settings);
       }
     },
     async load(session) {
