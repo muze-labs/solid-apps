@@ -335,6 +335,10 @@ try {
   await wait(launcher, 'window.solidLauncher?.persistence?.conflict');
   await wait(launcher, '!document.querySelector("[data-simply-command=reviewConflict]")' +
     '.closest("section").hidden');
+  // Conflict restoration finishes independently of the children's handshakes.
+  // Checkpoint actions below require both live instances to have reconnected.
+  await wait(launcher, '[...window.solidLauncher.workspace.instances.values()]' +
+    '.filter(record=>record.ready).length===2');
   await authorizeWorkspace(launcher);
   await evaluate(launcher, 'window.authOperations=0;' +
     'const session=window.solidLauncher.host.session;' +

@@ -1,9 +1,13 @@
-import { build } from 'esbuild';
-import { mkdir, copyFile, writeFile, readFile } from 'node:fs/promises';
+import { bundleApplications } from './bundle.mjs';
+import { mkdir, copyFile, writeFile, readFile, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 const root = fileURLToPath(new URL('../', import.meta.url));
+const bundles = await bundleApplications(root);
+// Everything in assets is generated. Drop retired hashed chunks as well as
+// current outputs so deployment contains only this build's import graph.
+await rm(path.join(root, 'www/assets'), { recursive: true, force: true });
 await mkdir(path.join(root, 'www/assets'), { recursive: true });
 await copyFile(
   path.join(root, 'node_modules/@muze-nl/theds/dist/theds.css'),
@@ -17,38 +21,12 @@ await copyFile(
   path.join(root, 'packages/solid-app-ui/src/icons.svg'),
   path.join(root, 'www/assets/icons.svg')
 );
-const applicationBuild = await build({
-  metafile: true,
-  entryPoints: ['launcher', 'contacts', 'files', 'profile'].map(
-    (name) => `apps/${name}/src/index.mjs`
-  ),
-  absWorkingDir: root,
-  outdir: 'www/assets',
-  entryNames: '[dir]/[name]',
-  outbase: 'apps',
-  bundle: true,
-  format: 'esm',
-  splitting: true,
-  sourcemap: true,
-  alias: {
-    '@muze-nl/oldm': path.join(root, 'packages/solid-app-data/src/oldm.mjs')
-  }
-});
-if (
-  Object.keys(applicationBuild.metafile.inputs).some((input) =>
-    /node_modules\/(?:n3|@muze-nl\/oldm-n3)\//.test(input)
-  )
-) {
-  throw new Error('build: N3 must not enter the application bundle.');
+for (const output of bundles) {
+  const destination = path.join(root, 'www/assets', output.fileName);
+  await mkdir(path.dirname(destination), { recursive: true });
+  await writeFile(destination,
+    output.type === 'chunk' ? output.code : output.source);
 }
-const redirectBuild = await build({
-  metafile: true,
-  entryPoints: ['packages/solid-app-data/src/redirect.mjs'],
-  absWorkingDir: root,
-  outfile: 'www/assets/redirect.js',
-  bundle: true,
-  format: 'esm'
-});
 const shell = await readFile(
   path.join(root, 'packages/solid-app-ui/src/shell.html'),
   'utf8'
@@ -92,23 +70,20 @@ await writeFile(
   '<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=launcher/"><a href="launcher/">Open Solid Apps</a>'
 );
 console.log('Built all four apps in www/');
-const outputs = {
-  ...applicationBuild.metafile.outputs, ...redirectBuild.metafile.outputs
-};
+const outputs = Object.fromEntries(bundles.filter(item => item.type === 'chunk')
+  .map(item => ['www/assets/' + item.fileName, item]));
 const gzipSizes = new Map();
-for (const name of Object.keys(outputs).filter(name => name.endsWith('.js'))) {
-  const contents = await readFile(path.join(root, name));
-  gzipSizes.set(name, gzipSync(contents, { level: 6 }).byteLength);
+for (const [name, output] of Object.entries(outputs)) {
+  gzipSizes.set(name, gzipSync(output.code, { level: 6 }).byteLength);
 }
 function importGraph(name, seen = new Set()) {
   if (seen.has(name)) {
     return seen;
   }
   seen.add(name);
-  for (const dependency of outputs[name].imports) {
-    if (!dependency.external) {
-      importGraph(dependency.path, seen);
-    }
+  for (const dependency of [...outputs[name].imports,
+    ...outputs[name].dynamicImports]) {
+    importGraph('www/assets/' + dependency, seen);
   }
   return seen;
 }
@@ -125,5 +100,11 @@ for (const name of ['launcher', 'contacts', 'files', 'profile']) {
 await writeFile(path.join(root, 'www/size-report.json'), JSON.stringify({
   gzipLevel: 6, node: process.versions.node, apps: sizes
 }, null, 2));
+await writeFile(path.join(root, 'www/bundle-report.json'), JSON.stringify(
+  Object.fromEntries(Object.entries(outputs).map(([name, output]) => [name, {
+    gzipBytes: gzipSizes.get(name),
+    imports: output.imports,
+    modules: Object.keys(output.modules).map(id => path.relative(root, id))
+  }])), null, 2));
 console.log('Gzip JS including auth callback: ' + Object.entries(sizes)
   .map(([name, size]) => `${name} ${size.gzipBytes} B`).join(', '));

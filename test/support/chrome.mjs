@@ -116,10 +116,23 @@ async function connectPage(url) {
     async ready() {
       await this.send('Runtime.enable');
       await this.send('Page.enable');
-      const state = await this.evaluate(() => document.readyState);
-      if (state !== 'complete') {
-        await this.once('Page.loadEventFired');
-      }
+      // Inspect and subscribe in one browser task: load can otherwise fire
+      // between receiving readyState and registering the CDP listener.
+      await this.evaluate(() => new Promise((resolve, reject) => {
+        if (document.readyState === 'complete') {
+          resolve();
+          return;
+        }
+        const loaded = () => {
+          clearTimeout(timer);
+          resolve();
+        };
+        const timer = setTimeout(() => {
+          window.removeEventListener('load', loaded);
+          reject(new Error('chrome-test: Page load timed out: ' + location.href));
+        }, 8000);
+        window.addEventListener('load', loaded, { once: true });
+      }));
     },
 
     async evaluate(fn) {

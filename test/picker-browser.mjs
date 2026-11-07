@@ -1,16 +1,19 @@
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
-import { build } from 'esbuild';
+import { rollup } from 'rollup';
+import { nodeResolve } from '@rollup/plugin-node-resolve';
 import { startChrome, formatBrowserException } from './support/chrome.mjs';
 
 // Static protocol fixtures exercise actual activation/startup modules without
 // calling WorkspaceState or writing the deferred JSON-in-Turtle representation.
 const dataDirectory = new URL('../packages/solid-app-data/src/', import.meta.url);
-const picker = await build({
-  entryPoints: [new URL('../apps/launcher/src/picker.mjs', import.meta.url).pathname],
-  bundle: true, format: 'esm', write: false
+const pickerBundle = await rollup({
+  input: new URL('../apps/launcher/src/picker.mjs', import.meta.url).pathname,
+  plugins: [nodeResolve({ browser: true })]
 });
+const picker = await pickerBundle.generate({ format: 'es' });
+await pickerBundle.close();
 let port;
 const server = http.createServer(async (req, res) => {
   const path = new URL(req.url, 'http://fixture.invalid').pathname;
@@ -21,7 +24,7 @@ const server = http.createServer(async (req, res) => {
   }
   if (path === '/picker.mjs') {
     res.writeHead(200, { 'Content-Type': 'text/javascript' });
-    res.end(picker.outputFiles[0].text);
+    res.end(picker.output[0].code);
     return;
   }
   res.writeHead(200, { 'Content-Type': 'text/html' });

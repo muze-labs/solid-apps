@@ -1,22 +1,27 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { build } from 'esbuild';
+import { rollup } from 'rollup';
 import { oidcStore } from '@muze-nl/metro-oidc';
 
 // Replace only client construction so authorization can be triggered without
 // exchanging credentials. Discovery, session policy and Metro's popup helper
 // remain real. No workspace codec or Pod writes are involved.
-const bundle = await build({
-  entryPoints: ['packages/solid-app-data/src/index.mjs'],
-  bundle: true, write: false, format: 'esm', platform: 'node',
+const fixtureId = '\0session-client-fixture';
+const bundle = await rollup({
+  input: 'packages/solid-app-data/src/index.mjs',
   plugins: [{
     name: 'session-client-fixture',
-    setup(builder) {
-      builder.onResolve({ filter: /^@muze-labs\/jsfs-solid$/ }, () => ({
-        path: 'client', namespace: 'fixture'
-      }));
-      builder.onLoad({ filter: /.*/, namespace: 'fixture' }, () => ({
-        contents: `
+    resolveId(source) {
+      if (source === '@muze-labs/jsfs-solid') {
+        return fixtureId;
+      }
+      if (source.startsWith('@') || source.startsWith('file:')) {
+        return { id: import.meta.resolve(source), external: true };
+      }
+    },
+    load(id) {
+      if (id === fixtureId) {
+        return `
           import metro from ${JSON.stringify(import.meta.resolve('@muze-nl/metro'))};
           export { authorizePopup, oidcIdToken, SolidAdapter }
             from ${JSON.stringify(import.meta.resolve('@muze-labs/jsfs-solid'))};
@@ -24,20 +29,16 @@ const bundle = await build({
             globalThis.sessionPopupOptions = options;
             return metro.client(_url);
           }
-        `
-      }));
-      builder.onResolve({ filter: /^@/ }, args => ({
-        path: import.meta.resolve(args.path), external: true
-      }));
-      builder.onResolve({ filter: /^file:/ }, args => ({
-        path: args.path, external: true
-      }));
+        `;
+      }
     }
   }]
 });
+const generated = await bundle.generate({ format: 'es' });
+await bundle.close();
 const { connectSession } = await import(
   'data:text/javascript;base64,' +
-  Buffer.from(bundle.outputFiles[0].text).toString('base64')
+  Buffer.from(generated.output[0].code).toString('base64')
 );
 
 test('authorization UI is owned even with a cached identity token', async t => {

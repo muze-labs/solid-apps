@@ -212,6 +212,10 @@ try {
     }
     await page.ready();
     const name = path.split('/')[0];
+    const exportedApp = 'window.solid' +
+      name[0].toUpperCase() + name.slice(1);
+    await wait(exportedApp);
+    await evaluate('await ' + exportedApp + '.host.ready;');
     const storageFields = {
       contacts: ['contactsResource'],
       launcher: ['launcherResource', 'workspaceResource'],
@@ -334,7 +338,9 @@ try {
   }).toString();
   await visit('profile/#' + resourceFragment);
   await wait(
-    'document.querySelector(".profile-card h2")?.textContent==="Launch Alice"'
+    'document.querySelector(".profile-card h2")?.textContent==="Launch Alice" && ' +
+    'document.querySelector(".profile-toolbar [name=url]").value===' +
+      JSON.stringify(launchResource)
   );
   assert.equal(await evaluate('return window.solidProfile.host.session;'), null);
   assert.equal(
