@@ -1,4 +1,9 @@
-<form data-simply-command="save">
+<form
+  data-simply-command="save"
+  data-simply-field="swb_preferences_form"
+  data-simply-transform="attributes"
+  data-simply-attributes="aria-busy"
+>
   <header class="muze-solid-design-dialog-header">
     <h2>Preferences</h2>
     <button
@@ -13,8 +18,11 @@
     </button>
   </header>
   <div class="muze-solid-design-dialog-content">
-    <p data-simply-field="source" data-simply-transform="escape_html"></p>
-    <fieldset>
+    <fieldset
+      data-simply-field="buttons"
+      data-simply-transform="attributes"
+      data-simply-attributes="disabled"
+    >
       <legend>Common to all apps</legend>
       <div class="form-grid">
         <label
@@ -60,13 +68,36 @@
       </p>
     </fieldset>
     {{appPreferences}}
+  </div>
+  <footer class="muze-solid-design-dialog-footer">
     <p
       role="status"
+      class="swb-preferences-status"
       data-simply-field="message"
       data-simply-transform="escape_html"
     ></p>
-  </div>
-  <footer class="muze-solid-design-dialog-footer">
+    <button
+      type="button"
+      class="ds-button"
+      data-simply-command="swb_preferences_review"
+      hidden
+      data-simply-field="swb_preferences_review"
+      data-simply-transform="attributes"
+      data-simply-attributes="hidden disabled"
+    >
+      Review Pod settings
+    </button>
+    <button
+      type="button"
+      class="ds-button"
+      data-simply-command="swb_preferences_restore"
+      hidden
+      data-simply-field="swb_preferences_restore"
+      data-simply-transform="attributes"
+      data-simply-attributes="hidden disabled"
+    >
+      Restore my changes
+    </button>
     <button
       data-simply-field="buttons"
       data-simply-transform="attributes"

@@ -31,7 +31,9 @@ export function preferencesDialog(
     data: {
       ...defaults,
       message: '',
-      source: '',
+      swb_preferences_form: { 'aria-busy': 'false' },
+      swb_preferences_review: { hidden: '', disabled: null },
+      swb_preferences_restore: { hidden: '', disabled: null },
       buttons: { disabled: null },
       muzeSolidDesignNotice: { text: '', visibility: { hidden: '' } }
     },
