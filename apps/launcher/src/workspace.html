@@ -1,0 +1,150 @@
+<div style="display: contents">
+  <section class="managed-workspace">
+    <h2>Workspace session</h2>
+    <p class="muted">
+      Apps opened here belong to this workspace. Allow popups to restore several
+      apps. Participating apps share restoration state with Launcher.
+    </p>
+    <div class="actions">
+      <button class="ds-button" data-simply-command="restoreWorkspace">
+        Restore apps
+      </button>
+      <button
+        class="ds-button"
+        data-simply-command="saveWorkspace"
+        data-simply-field="workspaceButtons"
+        data-simply-transform="attributes"
+        data-simply-attributes="disabled"
+      >
+        Save to Pod
+      </button>
+      <button
+        class="ds-button ds-button-primary"
+        data-simply-command="closeWorkspace"
+        data-simply-field="workspaceButtons"
+        data-simply-transform="attributes"
+        data-simply-attributes="disabled"
+      >
+        Save &amp; close workspace
+      </button>
+      <button
+        class="ds-button"
+        data-simply-command="closeLocally"
+        data-simply-field="workspaceButtons"
+        data-simply-transform="attributes"
+        data-simply-attributes="disabled"
+      >
+        Close locally
+      </button>
+    </div>
+    <p
+      role="status"
+      data-simply-field="workspaceMessage"
+      data-simply-transform="escape_html"
+    ></p>
+    <section
+      hidden
+      data-simply-field="conflictAction"
+      data-simply-transform="attributes"
+      data-simply-attributes="hidden"
+    >
+      <p>
+        Your local workspace and the Pod version differ. Both have been
+        retained.
+      </p>
+      <button
+        class="ds-button"
+        data-simply-command="reviewConflict"
+        data-simply-field="workspaceButtons"
+        data-simply-transform="attributes"
+        data-simply-attributes="disabled"
+      >
+        Review Pod conflict
+      </button>
+      <div
+        hidden
+        data-simply-field="conflictReview"
+        data-simply-transform="attributes"
+        data-simply-attributes="hidden"
+      >
+        <details>
+          <summary>Local workspace</summary>
+          <pre
+            data-simply-field="localVersion"
+            data-simply-transform="escape_html"
+          ></pre>
+        </details>
+        <details>
+          <summary>Pod workspace</summary>
+          <pre
+            data-simply-field="podVersion"
+            data-simply-transform="escape_html"
+          ></pre>
+        </details>
+        <p>
+          Keeping local replaces the reviewed Pod workspace. Using the Pod
+          version closes managed apps and replaces this local session, including
+          its drafts. Saved app data is unchanged.
+        </p>
+        <div class="actions">
+          <button
+            class="ds-button"
+            data-simply-command="keepLocalWorkspace"
+            data-simply-field="workspaceButtons"
+            data-simply-transform="attributes"
+            data-simply-attributes="disabled"
+          >
+            Keep local and save to Pod
+          </button>
+          <button
+            class="ds-button"
+            data-simply-command="usePodWorkspace"
+            data-simply-field="workspaceButtons"
+            data-simply-transform="attributes"
+            data-simply-attributes="disabled"
+          >
+            Use Pod version and reopen apps
+          </button>
+        </div>
+      </div>
+    </section>
+    <ul class="person-list" data-simply-list="workspaceEntries">
+      <template
+        ><li>
+          <span
+            data-simply-field="label"
+            data-simply-transform="escape_html"
+          ></span>
+          <span
+            class="muted"
+            data-simply-field="status"
+            data-simply-transform="escape_html"
+          ></span>
+          <label
+            ><input
+              type="checkbox"
+              data-simply-field="allowBrowse"
+              data-simply-command="allowBrowse"
+              data-simply-value=":value.id"
+            />
+            Allow resource selection</label
+          >
+          <button
+            class="ds-button"
+            data-simply-command="restoreInstance"
+            data-simply-value=":value.id"
+          >
+            Open / focus
+          </button>
+          <button
+            class="ds-button"
+            data-simply-command="closeInstance"
+            data-simply-value=":value.id"
+          >
+            Close / remove
+          </button>
+        </li></template
+      >
+    </ul>
+  </section>
+</div>

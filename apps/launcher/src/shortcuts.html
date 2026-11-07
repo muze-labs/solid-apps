@@ -1,0 +1,83 @@
+<div style="display: contents">
+  <section class="saved-apps">
+    <h2>Your shortcuts</h2>
+    <form class="form-grid app-toolbar" data-simply-command="add">
+      <label>Name<input name="name" required /></label
+      ><label>Application URL<input name="url" type="url" required /></label
+      ><label
+        >Launch mode<select name="launchMode">
+          <option value="">Follow application</option>
+          <option value="fragment">URL fragment (#)</option>
+          <option value="query">URL query (?)</option>
+        </select></label
+      ><label
+        ><input type="checkbox" name="anonymous" /> Launch anonymously (omit
+        WebID)</label
+      ><button class="ds-button ds-button-primary">Add shortcut</button>
+    </form>
+    <p class="muted">
+      Anonymous is saved per link. Omitting WebID does not sign you out of the
+      receiving app.
+    </p>
+    <div class="app-toolbar">
+      <button class="ds-button" data-simply-command="sync">
+        Sync with Solid
+      </button>
+    </div>
+    <ul class="person-list" data-simply-list="shortcuts">
+      <template
+        ><li>
+          <a
+            data-simply-command="launchApp"
+            data-simply-field="link"
+            data-simply-transform="attributes"
+            data-simply-attributes="href target rel"
+            ><span
+              data-simply-field="label"
+              data-simply-transform="escape_html"
+            ></span></a
+          ><label
+            >Launch mode<select
+              data-simply-field="mode"
+              data-simply-command="setLaunchMode"
+              data-simply-value=":value.id"
+            >
+              <option value="">Follow application</option>
+              <option value="fragment">URL fragment (#)</option>
+              <option value="query">URL query (?)</option>
+            </select></label
+          ><label
+            ><input
+              type="checkbox"
+              data-simply-field="anonymous"
+              data-simply-command="setAnonymous"
+              data-simply-value=":value.id"
+            />
+            Launch anonymously (omit WebID)</label
+          ><button
+            class="ds-button"
+            data-simply-command="remove"
+            data-simply-value=":value.id"
+          >
+            Remove shortcut
+          </button>
+          <p
+            class="muted"
+            data-simply-field="modeNote"
+            data-simply-transform="escape_html"
+          ></p>
+          <p
+            class="muted"
+            role="status"
+            data-simply-field="problem"
+            data-simply-transform="escape_html"
+          ></p></li
+      ></template>
+    </ul>
+    <p
+      class="empty"
+      data-simply-field="empty"
+      data-simply-transform="escape_html"
+    ></p>
+  </section>
+</div>

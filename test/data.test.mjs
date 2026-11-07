@@ -15,7 +15,7 @@ import {
   loadPreferences,
   savePreferences
 } from '../packages/solid-preferences/src/index.mjs';
-import { StateGraph, termText }
+import { StateGraph, termText, sameGraph }
   from '../packages/solid-app-data/src/state-rdf.mjs';
 import {
   markResourceDeleted,
@@ -277,4 +277,59 @@ test('invalid links leave the entire graph unchanged; notes preserve paragraphs'
     readProfile(saved).notes,
     'First paragraph.\n\nSecond paragraph.'
   );
+});
+
+test('structured profile contacts project RDF values and retain unresolved references', async () => {
+  const g = graph(`@prefix v: <http://www.w3.org/2006/vcard/ns#>.
+    <#person> v:fn "Original";
+      v:hasEmail <#work>, [v:hasValue <mailto:home@example.org>], <#missing>;
+      v:hasTelephone <#phone>.
+    <#work> a v:Work; v:value <mailto:work@example.org>, <mailto:other@example.org>;
+      <https://example.org/label> "Keep work metadata".
+    <#phone> v:value <tel:+31201234567>.
+    <#another> <https://example.org/unknown> "Keep other subject".`);
+  const person = g.get(url + '#person');
+  const original = await g.write();
+  const profile = readProfile(person);
+  assert.equal(profile.email, 'work@example.org\nother@example.org\nhome@example.org');
+  assert.equal(profile.phone, '+31201234567');
+  assert.equal(await g.write(), original);
+  assert.throws(() => applyProfileEdits(person, {
+    name: 'Must not partially apply', email: 'replacement@example.org'
+  }), /structured RDF/);
+  assert.equal(await g.write(), original);
+  applyProfileEdits(person, { ...profile, name: 'Changed' });
+  const saved = graph(await g.write());
+  const current = saved.get(person.id);
+  assert.equal(readProfile(current).email, profile.email);
+  assert.equal(String(valueAt(saved.get(url + '#work'), 'https://example.org/label')),
+    'Keep work metadata');
+  assert.equal(String(valueAt(saved.get(url + '#another'), 'https://example.org/unknown')),
+    'Keep other subject');
+  const baseline = graph(original);
+  for (const preserved of [baseline, saved]) {
+    preserved.delete(person.id, prefixes.vcard + 'fn');
+    preserved.delete(person.id, prefixes.dcterms + 'modified');
+  }
+  assert(sameGraph(await baseline.write(), await saved.write()));
+});
+
+test('unresolved and cyclic contact nodes are preserved and never flattened', async () => {
+  for (const detail of ['', '<#missing> <' + prefixes.vcard + 'value> <#missing>.']) {
+    const g = graph('<#person> <' + prefixes.vcard + 'hasEmail> <#missing>. ' + detail);
+    const person = g.get(url + '#person');
+    const before = await g.write();
+    assert.equal(readProfile(person).email, '');
+    assert.throws(() => applyProfileEdits(person, { email: 'new@example.org' }),
+      /structured RDF/);
+    assert.equal(await g.write(), before);
+  }
+});
+
+test('direct contact URI schemes remain scalar regardless of scheme casing', () => {
+  const g = graph('<#person> <' + prefixes.vcard + 'hasEmail> <MAILTO:Case@example.org>.');
+  const person = g.get(url + '#person');
+  assert.equal(readProfile(person).email, 'Case@example.org');
+  applyProfileEdits(person, { email: 'changed@example.org' });
+  assert.equal(readProfile(person).email, 'changed@example.org');
 });

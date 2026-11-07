@@ -1,3 +1,4 @@
+import { from } from '@muze-nl/jaqt';
 import { oldm, prefixes, valueAt, many, idOf } from '@muze-labs/solid-app-data';
 const v = prefixes.vcard,
   f = prefixes.foaf,
@@ -42,39 +43,54 @@ function present(subject, field) {
     ) || field.predicates[0]
   );
 }
-function structured(value) {
+function structured(value, field) {
   return (
     (value instanceof oldm.BlankNode && !(value instanceof oldm.NamedNode)) ||
     valueAt(value, v + 'value') !== undefined ||
-    valueAt(value, v + 'hasValue') !== undefined
+    valueAt(value, v + 'hasValue') !== undefined ||
+    (value instanceof oldm.NamedNode &&
+      field?.scheme &&
+      field.scheme !== 'http' &&
+      !value.id.toLowerCase().startsWith(field.scheme))
   );
 }
-function text(value) {
-  if (structured(value)) {
-    return String(
-      valueAt(value, v + 'value') ?? valueAt(value, v + 'hasValue') ?? ''
-    );
+function text(value, field, visited = new Set()) {
+  if (visited.has(value)) {
+    return '';
   }
-  return idOf(value);
+  const nested = valueAt(value, v + 'value') ?? valueAt(value, v + 'hasValue');
+  if (nested !== undefined) {
+    const path = new Set(visited).add(value);
+    return from(many(nested))
+      .select((item) => text(item, field, path))
+      .where(Boolean)
+      .toArray()
+      .join('\n');
+  }
+  // An unresolved contact node is not an email address or telephone number.
+  // It stays in the authoritative graph and cannot be flattened by editing.
+  if (structured(value, field)) {
+    return '';
+  }
+  const result = idOf(value);
+  return field?.scheme &&
+    field.scheme !== 'http' &&
+    result.toLowerCase().startsWith(field.scheme)
+    ? result.slice(field.scheme.length)
+    : result;
 }
 export function readProfile(subject) {
   return Object.fromEntries(
-    fields.map((field) => [
-      field.name,
-      many(valueAt(subject, present(subject, field)))
-        .map((value) => {
-          let result = text(value);
-          if (
-            field.scheme &&
-            field.scheme !== 'http' &&
-            result.startsWith(field.scheme)
-          ) {
-            result = result.slice(field.scheme.length);
-          }
-          return result;
-        })
-        .join('\n')
-    ])
+    from(fields)
+      .select((field) => [
+        field.name,
+        from(many(valueAt(subject, present(subject, field))))
+          .select((value) => text(value, field))
+          .where(Boolean)
+          .toArray()
+          .join('\n')
+      ])
+      .toArray()
   );
 }
 export function profileLabel(subject) {
@@ -93,7 +109,7 @@ export function applyProfileEdits(subject, edits) {
     const predicate = present(subject, field);
     const current = many(valueAt(subject, predicate));
     // Preserve structured values rather than flattening them into a second model.
-    if (current.some(structured)) {
+    if (current.some((value) => structured(value, field))) {
       throw new Error(
         `solid-profile: ${field.label} uses structured RDF. Editing this field is not available yet.`
       );

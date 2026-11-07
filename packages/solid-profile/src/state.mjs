@@ -1,3 +1,4 @@
+import { from } from '@muze-nl/jaqt';
 import { fields } from './index.mjs';
 import {
   apps,
@@ -33,10 +34,12 @@ export function readDraft(state) {
   return {
     subject: state.read(apps + 'forResource', 'iri', draftNode),
     values: Object.fromEntries(
-      fields.map((field) => [
-        field.name,
-        state.read(inputPredicate(field), 'string', draftNode)
-      ])
+      from(fields)
+        .select((field) => [
+          field.name,
+          state.read(inputPredicate(field), 'string', draftNode)
+        ])
+        .toArray()
     )
   };
 }

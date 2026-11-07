@@ -1,3 +1,4 @@
+import { editableSources } from './templates.mjs';
 import path from 'node:path';
 import { rollup } from 'rollup';
 import { nodeResolve } from '@rollup/plugin-node-resolve';
@@ -26,8 +27,11 @@ function entryOwners(id, getModuleInfo) {
 
 function sharedChunk(id, { getModuleInfo }) {
   if (id.includes('/node_modules/')) {
-    if (/\/@muze-labs\/(?:simplyflow(?:-[^/]+)?|simplysolid|oldm-shape)\//
-      .test(id)) {
+    if (
+      /\/@muze-labs\/(?:simplyflow(?:-[^/]+)?|simplysolid|oldm-shape)\//.test(
+        id
+      )
+    ) {
       return 'shared/ui';
     }
     return 'shared/data';
@@ -37,8 +41,10 @@ function sharedChunk(id, { getModuleInfo }) {
   }
   // Collection wiring belongs with SimplySolid; the lower data layer must
   // remain independent of rendering and the workspace-to-view bridge.
-  if (id.includes('/packages/solid-app-data/') &&
-    !id.endsWith('/collection.mjs')) {
+  if (
+    id.includes('/packages/solid-app-data/') &&
+    !id.endsWith('/collection.mjs')
+  ) {
     return 'shared/data';
   }
   return 'shared/ui';
@@ -46,13 +52,18 @@ function sharedChunk(id, { getModuleInfo }) {
 
 export async function bundleApplications(root) {
   const composition = path.join(root, 'packages/solid-app-data/src/oldm.mjs');
-  const input = Object.fromEntries(appNames.map(name =>
-    [name + '/src/index', path.join(root, `apps/${name}/src/index.mjs`)]));
+  const input = Object.fromEntries(
+    appNames.map((name) => [
+      name + '/src/index',
+      path.join(root, `apps/${name}/src/index.mjs`)
+    ])
+  );
   input.redirect = path.join(root, 'packages/solid-app-data/src/redirect.mjs');
   const bundle = await rollup({
     input,
     preserveEntrySignatures: false,
     plugins: [
+      editableSources(),
       {
         name: 'solid-apps-rdf',
         resolveId(source) {
@@ -82,11 +93,13 @@ export async function bundleApplications(root) {
     for (const suffix of ['', '.min']) {
       const plugins = [];
       if (suffix) {
-        plugins.push(terser({
-          maxWorkers: 1,
-          keep_fnames: true,
-          keep_classnames: true
-        }));
+        plugins.push(
+          terser({
+            maxWorkers: 1,
+            keep_fnames: true,
+            keep_classnames: true
+          })
+        );
       }
       const result = await bundle.generate({
         dir: path.join(root, 'www/assets'),
@@ -98,13 +111,21 @@ export async function bundleApplications(root) {
         manualChunks: sharedChunk,
         plugins
       });
-      const chunks = new Map(result.output.filter(item => item.type === 'chunk')
-        .map(item => [item.fileName, item]));
+      const chunks = new Map(
+        result.output
+          .filter((item) => item.type === 'chunk')
+          .map((item) => [item.fileName, item])
+      );
       const data = chunks.get('shared/data' + suffix + '.js');
       const ui = chunks.get('shared/ui' + suffix + '.js');
-      if (!data || !ui || data.imports.length || data.dynamicImports.length ||
-        ui.imports.some(name => name !== data.fileName) ||
-        ui.dynamicImports.length) {
+      if (
+        !data ||
+        !ui ||
+        data.imports.length ||
+        data.dynamicImports.length ||
+        ui.imports.some((name) => name !== data.fileName) ||
+        ui.dynamicImports.length
+      ) {
         throw new Error('bundle: Shared bundles must depend only UI → data.');
       }
       for (const chunk of chunks.values()) {

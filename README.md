@@ -243,3 +243,68 @@ All four apps follow the original `poef/solid-apps` Contacts styling: blue accen
 square controls, panel spacing and the compact account dropdown. The shared menu
 contains WebID/connection and Preferences. Each application has its own toolbar;
 only Launcher links to the other applications. Contacts shows profiles inline.
+
+## Editable app features
+
+Launcher, Contacts, Files and Profile now register named SimplyFlow feature
+components. Each feature lives in its own `src/components/<feature>.mjs`
+module in the owning app or shared package. `src/features.mjs` is the consistent
+re-export index; source metadata points through it to the defining component file.
+Shared account/connection, Preferences and profile editing use the
+same structure. The profile editor is registered directly in the owning Contacts
+or Profile app; its persistence policy stays with that app.
+
+Inspect `launcherApp`, `contactsApp`, `filesApp` or `profileApp` in the browser.
+The existing `solidLauncher`, `solidContacts`, `solidFiles` and `solidProfile`
+handles remain available. Each main app exposes:
+
+- `components`: original named SimplyFlow datasets, with templates, commands,
+  actions and other entries belonging to each feature.
+- `definition.sources`: authored behavior source and source-file origins,
+  captured before minification. For example,
+  `contactsApp.definition.sources.contactList.actions.matchesPerson`.
+- `definition.modules`: readable app-owned data/launch helper modules and their
+  import dependencies where those helpers form a separate API boundary.
+- `definition.overrides`: app-level entry sections supplied to SimplyFlow.
+  Native SimplyFlow composition selects them over component defaults.
+- `definition.instances`: the account and Preferences app instances, each with
+  its own registered components, source entries, API and definition.
+- `api`: explicit callable dependencies and data APIs. Shared profile dependencies
+  are under `api.profile`. `runtime` holds app-owned service/model state;
+  `data` holds the reactive view projection and drafts.
+
+Editable functions use SimplyFlow's supplied `this`: `this.data`, `this.actions`,
+`this.api`, `this.runtime` and `this.container`. Commands read UI input and perform
+native UI operations; named actions can be called with values and data API
+fixtures. Source reconstruction does not require the original module closure or
+bundler-local variable names. The build retains readable sources in production
+as well as readable bundles; source retention is included in the size budget.
+
+HTML remains in authored `.html` files. `{{view:name:./feature.html}}` wires a named
+view at build time to an ordinary SimplyFlow field/template binding. The generated
+page contains the template markup for useful View Source. Runtime template entries
+use `import template from './feature.html' with { type: 'text' }`. These text
+imports preserve the authored UTF-8 source, including its root wrapper. Styles
+and retained module sources also use text imports. Shared account/Preferences
+imports explicitly request build-time composition with `?template` and the same
+text attribute; includes and app-specific placeholders are expanded there.
+Rollup and the Node test loader handle text imports for the supported runtimes.
+`?entries` imports capture authored named behavior and its origins. These build
+steps add no runtime renderer or second component merger.
+
+Contacts search/sort, Files visibility/picker state, Launcher shortcut selection
+and profile detail lists use SimplyFlow models. jaqt expresses queries inside
+model effects where useful. Commands change model options and actions refresh
+source projections without replacing native RDF. Named predicates/comparators
+remain editable. Picker/provider and workspace object queries also reuse jaqt.
+
+`test/features.test.mjs` checks model refresh, draft/RDF preservation and Files
+failure contracts with data doubles. Browser checks also reconstruct retained
+production sources and wire the migrated Contacts list into a separate fixture
+host with a template override. Existing end-to-end and RDF preservation coverage
+remains in place. Fixtures do not establish credential-isolated IDE previews or
+live Solid OIDC behavior.
+
+The in-app IDE, persisted user edits, live template reapplication/reset controls
+and preview isolation remain future roadmap work. Installed-library limitations
+and their evidence are retained in `.spiral/moldability-refactor-investigation.md`.

@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@muze-labs/simplyflow": "^0.10.4",
-    "@muze-labs/solid-app-data": "0.1.0"
+    "@muze-labs/solid-app-data": "0.1.0",
+    "@muze-nl/jaqt": "^0.10.7"
   }
 }
