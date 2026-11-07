@@ -1,6 +1,13 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
+export function applicationTitle(appName) {
+  if (appName === 'launcher') {
+    return 'Solid Workbench';
+  }
+  return appName[0].toUpperCase() + appName.slice(1);
+}
+
 // Both View Source and the editable runtime entries use these authored files.
 export async function composeTemplate(filename, { appName = '' } = {}) {
   let source = await readFile(filename, 'utf8');
@@ -33,7 +40,7 @@ export async function composeTemplate(filename, { appName = '' } = {}) {
   if (appName) {
     source = source.replaceAll(
       '{{title}}',
-      appName[0].toUpperCase() + appName.slice(1)
+      applicationTitle(appName)
     );
   }
   if (source.includes('{{profile}}')) {

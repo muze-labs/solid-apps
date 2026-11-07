@@ -1,4 +1,12 @@
-# Solid Apps roadmap
+# Solid Workbench and apps roadmap
+
+Naming update, 2026-11-07: the repository is now
+[muze-labs/solid-workbench](https://github.com/muze-labs/solid-workbench), and
+the Launcher is named **Solid Workbench**. Earlier references to Launcher
+describe that app's role. Its canonical app route is /workbench/; the maintainer
+explicitly declines a /launcher/ compatibility entry or old-workspace migration.
+Other app routes, package names, RDF identifiers and historical document/artifact
+names are retained.
 
 Status: maintainer-requested direction, recorded 2026-11-01, with subsequent
 refinements below. Work is selected through future implementation cycles; this
@@ -262,6 +270,30 @@ Future verification: compare network traces before/after for public and protecte
 resources, multiple storage locations and a different account. Avoid repeatedly
 challenging a known protected origin without breaking anonymous/public access.
 
+### Startup sign-in and decentralized sign-up
+
+Requested by the maintainer on 2026-11-07. On loading Solid Workbench or any
+suite app, present a shared sign-in/sign-up style dialog when the user is not
+signed in. Attempt existing session restoration first so a signed-in user does
+not receive an unnecessary prompt. Reuse the current Metro authentication and
+shared dialog components; distinguish first-use onboarding from stale-session
+recovery rather than creating another authentication mechanism.
+
+**Design sign-up before implementation.** The experience must support Solid's
+decentralized model rather than imply one central Workbench account service.
+Explore choosing an identity and Pod provider, using an existing account or
+self-hosting, and explaining where the account and data live. Provider choice,
+discovery, account/storage relationships and any handoff back to the app need
+explicit design; no default provider, signup service or flow is selected here.
+
+Resolve dismissal/local-only use, deliberate anonymous launches and embedded
+capability behavior in that design. Keep existing public content and drafts
+safe, and do not assume that a missing signed-in session means the user must
+create a new account. Evaluate first visits, restored sessions, cancellation,
+provider choice and return from signup across apps and phone/desktop layouts.
+This is roadmap work, not implementation of a startup dialog in the rename
+cycle.
+
 ### Expired authorization and sign-in recovery
 
 Accepted [CYC67](../.spiral/cycles/CYC-20261107-QG24H-67.md) implements
@@ -379,6 +411,12 @@ Pod/local persistence and switching recovery extend the existing
 Keep each workspace's shortcuts, resource contexts, pending edits and restoration
 state distinct. The current implementation checkpoints only one default workspace.
 
+Reaffirmed by the maintainer on 2026-11-07: support multiple workspaces and let
+the user switch between them in Solid Workbench. Make the active workspace and
+switching action clear, and protect unsaved changes during a switch. This
+extends the existing named-workspace item rather than creating a duplicate
+feature; creation, selection and switching remain future implementation work.
+
 The maintainer explicitly clarifies the lifecycle:
 
 - Closing Launcher still closes its managed apps.
@@ -448,6 +486,23 @@ necessary feedback and recovery remain available. Check shared dialogs and menus
 for consistent behavior, keyboard operation and focus return. Preserve the
 JavaScript budget and existing data/RDF contracts. This is a roadmap item, not
 a selected cycle, a new delivery order or an implementation change.
+
+### Short suite prefixes
+
+Requested by the maintainer on 2026-11-07. Use **swb-** or **swb_** as the
+default namespace for suite-owned MVP UI names where it avoids conflicts;
+there is no need to include Muze or the full package name. Prefer swb- for
+HTML IDs/classes/template names and data-swb-* attributes, --swb-* for custom
+CSS properties, and swb_ for JavaScript names such as commands/actions that
+need a shared namespace. Add a short feature/app qualifier only where an actual
+collision requires it, keeping names readable and easy to alter.
+
+Plan a coordinated refactor of existing long suite-owned prefixes across
+component definitions, authored templates/styles, bindings, references and
+verification. Keep third-party library names/public APIs intact and preserve
+editable feature reconstruction and embedding behavior. This is UI naming,
+not a rename of persisted RDF, capability identifiers or published packages.
+It is recorded future work; CYC73 does not silently rewrite all existing names.
 
 ### Remaining UI work per app and in Preferences
 

@@ -304,7 +304,8 @@ try {
       await loaded;
     }
     await page.ready();
-    const name = path.split('/')[0];
+    const route = path.split('/')[0];
+    const name = route === 'workbench' ? 'launcher' : route;
     const exportedApp = 'window.solid' + name[0].toUpperCase() + name.slice(1);
     await wait(exportedApp);
     await evaluate('await ' + exportedApp + '.host.ready;');
@@ -327,12 +328,17 @@ try {
     );
     assert.equal(
       await evaluate('return document.querySelector("h1").textContent;'),
-      path.split('/')[0][0].toUpperCase() + path.split('/')[0].slice(1)
+      name === 'launcher'
+        ? 'Solid Workbench'
+        : name[0].toUpperCase() + name.slice(1)
     );
-    if (!path.startsWith('launcher/')) {
+    if (name === 'launcher') {
+      assert.equal(await evaluate('return document.title;'), 'Solid Workbench');
+    }
+    if (name !== 'launcher') {
       assert.deepEqual(
         await evaluate(
-          'return [...document.querySelectorAll("a[href]:not(.account-name)")].map(link=>link.getAttribute("href")).filter(href=>/^(?:\\.\\.\\/|\\/)(?:launcher|contacts|profile|files)(?:\\/|$)/.test(href));'
+          'return [...document.querySelectorAll("a[href]:not(.account-name)")].map(link=>link.getAttribute("href")).filter(href=>/^(?:\\.\\.\\/|\\/)(?:workbench|launcher|contacts|profile|files)(?:\\/|$)/.test(href));'
         ),
         []
       );
@@ -943,7 +949,12 @@ try {
     true,
     'Closing the profile dialog returns keyboard focus to its name button'
   );
-  await visit('launcher/');
+  await visit('workbench/');
+  await page.send('Page.navigate', { url: appBase });
+  await wait('location.pathname === "/workbench/" && Boolean(window.solidLauncher)');
+  await page.ready();
+  assert.equal((await fetch(appBase + 'launcher/')).status, 404,
+    'The retired Launcher route has no compatibility entry');
   await wait(
     'window.solidLauncher?.store && document.body.classList.contains("ds-darkmode")'
   );
@@ -1521,7 +1532,7 @@ try {
   assert.equal(await evaluate('return Boolean(window.opener);'), true);
   assert.equal(
     await launcherPage.evaluate(() => location.pathname),
-    '/launcher/'
+    '/workbench/'
   );
   assert.equal(
     await launcherPage.evaluate(() => window.solidLauncher.host.session.webId),
@@ -1630,7 +1641,7 @@ try {
   await wait(
     'document.querySelector(".muze-solid-design-toast").textContent.includes("Shortcuts synchronized")'
   );
-  await visit('launcher/');
+  await visit('workbench/');
   await wait(
     'window.solidLauncher?.host.session && ' +
       declaredLink +
@@ -1670,7 +1681,7 @@ try {
     String(resources.get(base + '/launcher.ttl').body),
     /preserve other subject/
   );
-  await visit('launcher/');
+  await visit('workbench/');
   await wait(
     'window.solidLauncher?.host.session && ' +
       declaredLink +
@@ -1744,7 +1755,7 @@ try {
   await wait(
     'document.querySelector(".muze-solid-design-toast").textContent.includes("Shortcuts synchronized")'
   );
-  await visit('launcher/');
+  await visit('workbench/');
   await wait(
     'window.solidLauncher?.host.session && ' +
       anonymousLink +
@@ -1765,7 +1776,7 @@ try {
   await wait(
     'document.querySelector(".muze-solid-design-toast").textContent.includes("Shortcuts synchronized")'
   );
-  await visit('launcher/');
+  await visit('workbench/');
   await wait(
     'window.solidLauncher?.host.session && ' +
       anonymousLink +
@@ -2197,7 +2208,7 @@ try {
   );
   assert.match(tombstone, /deleted/);
   const otherTarget = await page.send('Target.createTarget', {
-    url: appBase + 'launcher/'
+    url: appBase + 'workbench/'
   });
   otherPage = await chrome.page(otherTarget.targetId);
   await otherPage.ready();
@@ -2257,7 +2268,7 @@ try {
     'document.querySelector(".suite-status").textContent.includes("Connect to Solid first")'
   );
   assert.equal(calls.length, beforeLogout);
-  await visit('launcher/');
+  await visit('workbench/');
   await wait(
     'window.solidLauncher?.store && [...document.querySelectorAll(".saved-apps a")].some(a=>a.textContent==="Profile launch example")'
   );

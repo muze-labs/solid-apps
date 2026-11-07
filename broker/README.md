@@ -6,7 +6,7 @@ its implementation and evaluation remain in Git history.
 
 ## Try it locally
 
-Run `npm run dev` and open `http://127.0.0.1:4174/launcher/`. Connect Launcher
+Run `npm run dev` and open `http://127.0.0.1:4174/workbench/`. Connect Solid Workbench
 through **WebID / connection**, then click **Choose in Files**. Launcher focuses
 one allowed live Files provider, or opens/reuses a built-in Files instance if
 needed. No manual pre-opening is required. Files keeps its own Solid connection;

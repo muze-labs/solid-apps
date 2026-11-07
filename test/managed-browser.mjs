@@ -305,7 +305,7 @@ try {
   chrome = await startChrome('about:blank', { allowPopups: true });
   control = await chrome.page();
   await control.ready();
-  let root = await newPage(appBase + 'launcher/');
+  let root = await newPage(appBase + 'workbench/');
   launcher = root.page;
   await wait(launcher, 'window.solidLauncher?.workspace');
   await connect(launcher, 'Launcher');
@@ -744,7 +744,7 @@ try {
   chrome = await startChrome('about:blank', { allowPopups: true });
   control = await chrome.page();
   await control.ready();
-  root = await newPage(appBase + 'launcher/');
+  root = await newPage(appBase + 'workbench/');
   launcher = root.page;
   await wait(launcher, 'window.solidLauncher?.workspace');
   await connect(launcher, 'Launcher');

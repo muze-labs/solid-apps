@@ -1,4 +1,4 @@
-import { composeTemplate } from './templates.mjs';
+import { composeTemplate, applicationTitle } from './templates.mjs';
 import { bundleApplications } from './bundle.mjs';
 import { mkdir, copyFile, writeFile, rm } from 'node:fs/promises';
 import path from 'node:path';
@@ -15,6 +15,8 @@ const bundles = await bundleApplications(root);
 // current outputs so deployment contains only this build's import graph.
 await rm(path.join(root, 'www/assets'), { recursive: true, force: true });
 await mkdir(path.join(root, 'www/assets'), { recursive: true });
+// The maintainer explicitly retires the old entry; no compatibility page.
+await rm(path.join(root, 'www/launcher'), { recursive: true, force: true });
 await copyFile(
   path.join(root, 'node_modules/@muze-nl/theds/dist/theds.css'),
   path.join(root, 'www/assets/theds.css')
@@ -36,6 +38,9 @@ for (const output of bundles) {
   );
 }
 for (const name of ['launcher', 'contacts', 'files', 'profile']) {
+  const route = name === 'launcher' ? 'workbench' : name;
+  const title = applicationTitle(name);
+  const pageTitle = name === 'launcher' ? title : title + ' · Solid Workbench';
   const content = await composeTemplate(
     path.join(root, `apps/${name}/src/index.html`),
     { appName: name }
@@ -51,10 +56,10 @@ for (const name of ['launcher', 'contacts', 'files', 'profile']) {
   const body = shell
     .replace('{{content}}', content)
     .replace('{{preferences}}', preferences);
-  await mkdir(path.join(root, `www/${name}`), { recursive: true });
+  await mkdir(path.join(root, `www/${route}`), { recursive: true });
   await writeFile(
-    path.join(root, `www/${name}/index.html`),
-    `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${name[0].toUpperCase() + name.slice(1)} · Solid Apps</title><link rel="stylesheet" href="../assets/theds.css"><link rel="stylesheet" href="../assets/apps.css"></head><body class="ds-darkmode-auto"><div id="app">${body}</div><script type="module" src="../assets/${name}/src/index${scriptSuffix}.js"></script></body></html>`
+    path.join(root, `www/${route}/index.html`),
+    `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${pageTitle}</title><link rel="stylesheet" href="../assets/theds.css"><link rel="stylesheet" href="../assets/apps.css"></head><body class="ds-darkmode-auto"><div id="app">${body}</div><script type="module" src="../assets/${name}/src/index${scriptSuffix}.js"></script></body></html>`
   );
 }
 await writeFile(
@@ -65,7 +70,7 @@ await writeFile(
 );
 await writeFile(
   path.join(root, 'www/index.html'),
-  '<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=launcher/"><a href="launcher/">Open Solid Apps</a>'
+  '<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=workbench/"><a href="workbench/">Open Solid Workbench</a>'
 );
 console.log('Built all four apps in www/');
 const outputs = Object.fromEntries(

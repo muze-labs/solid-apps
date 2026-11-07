@@ -1,8 +1,10 @@
-# Muze Solid Apps
+# Solid Workbench
 
-Four small browser applications using SimplyFlow, the Muze design system and the
-Solid stack. This is an experimental, private npm workspace: no packages need to
-be published to run it.
+Solid Workbench is the launcher for a suite of small browser applications using
+SimplyFlow, the Muze design system and the Solid stack. The repository is
+[muze-labs/solid-workbench](https://github.com/muze-labs/solid-workbench).
+This is an experimental, private npm workspace: no packages need to be published
+to run it.
 
 See the [Solid Apps roadmap](design/solid-apps-roadmap.md) for planned apps,
 mobile/local-first and PWA requirements, account improvements and decentralized
@@ -15,7 +17,8 @@ npm ci
 npm run dev
 ```
 
-Open <http://127.0.0.1:4174/>. The launcher links to Contacts, Files and Profile.
+Open <http://127.0.0.1:4174/> or <http://127.0.0.1:4174/workbench/>.
+Solid Workbench links to Contacts, Files and Profile.
 Node 20.6 or newer is required for the build; the browser integration harness uses
 Node 22 or newer (native WebSocket) and `google-chrome` on PATH. Use localhost or
 HTTPS so browser storage, crypto and authentication work. Deploy `www/` as static
@@ -45,7 +48,7 @@ logout from these apps; the identity provider may retain its own login session.
 
 | App | Working basic slice |
 | --- | --- |
-| Launcher | Shortcuts and explicit Solid sync; browser-local capability routing; app lifecycle and local/Pod workspace checkpoints. |
+| Solid Workbench (launcher) | Shortcuts and explicit Solid sync; browser-local capability routing; app lifecycle and local/Pod workspace checkpoints. |
 | Contacts | Add sparse contacts, search, view/edit profiles, delete with tombstones, local persistence and explicit Solid sync. |
 | Profile | Read a WebID profile, edit your connected profile, or edit a local contact using the same component as Contacts. |
 | Files | Browse folders, create folders, upload/download binary files, and mark resources deleted through link metadata. |
