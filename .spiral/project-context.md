@@ -909,3 +909,19 @@ remove their old workspace.ttl themselves. Generate no /launcher/ alias and
 remove only the retired build output; do not touch Pod data. The roadmap also
 records shorter swb-/swb_ suite-owned UI prefixes, with actual collision-based
 qualifiers and a later coordinated refactor rather than a mass rename now.
+
+
+## Solid Workbench naming accepted, 2026-11-07
+
+The maintainer confirms "Works fine, commit, merge and push". ACC76 records
+acceptance of CYC73 implementation/evidence at
+7a3e660b58c64d51e9bc9d4c01467f397e6ad1b8. CYC73 is Accepted, superseding its
+Active/pending state above. The request authorizes direct normal main integration
+instead of a PR and pushing main; no package publication is requested.
+
+The accepted name and canonical route are Solid Workbench and /workbench/.
+The old generated /launcher/ entry is removed without compatibility or Pod-data
+migration, as explicitly requested. Origin and local checkout use solid-workbench.
+Workspace switching, startup sign-in/sign-up with decentralized signup design
+first, and swb-/swb_ UI prefix refactoring are recorded future roadmap work.
+No new implementation cycle or delivery order is selected by this acceptance.
