@@ -1,13 +1,12 @@
 # Roadmap and next-cycle assessment
 
-Current disposition: **CYC-20261107-QG24H-87 is Active** on its matching
-moldable-style-ownership branch from accepted main a4422ec. The maintainer agrees
-to named feature/shared styles preserving appearance, cascade and phone/access
-behavior, then clarifies that the IDE can update SimplyFlow's existing linked
-style elements by ID. This resolves the library-scope question: no new API or
-external library work is needed for this cycle. DES88/IMP89/EVD90 retain the
-clarification, migration and evaluation. No acceptance, commit, merge, push or
-publication is authorized.
+Current disposition: **CYC-20261107-QG24H-87 is Accepted** (ACC91).
+The maintainer requests commit, normal direct main merge and push. IMP89/EVD90
+retain exact implementation/verification. The explicit style-ID clarification
+supersedes the initial library-scope question; no new API or external library
+work is needed. The earlier workspace fixture timeout remains recorded despite
+final passing checks. No next cycle is selected. Earlier planning below remains
+historical and is not a new implementation authorization.
 
 The initial investigation found that the coarse 744-line sheet already lived
 in suiteAppearance as well as apps.css. The gap was per-feature ownership and

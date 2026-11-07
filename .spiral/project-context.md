@@ -1064,3 +1064,16 @@ keep component originals and unsaved drafts, and compare loaded cascade/layout
 against the pre-refactor workflows. Broader forms redesign, mass prefix renaming,
 actual IDE UI/persistence and lifecycle ownership remain future work. Human
 acceptance, commits and integration remain pending.
+
+
+## Feature-owned styles accepted, 2026-11-07
+
+The maintainer explicitly requests "accepted, commit, merge and push please".
+ACC91 records acceptance of CYC87, implementation e26e6570b77df9dda2cba47d314bf124ffb1dd1d
+and evidence c773d7e29ce9c2c8591c76474ef39cb4d87f701d. CYC87 is Accepted, superseding
+earlier Active/pending statements. Normal direct main integration and push are
+authorized; no package publication, rewritten history or next cycle is requested.
+The existing style-ID mechanism, named feature ownership and checked layouts/data
+are accepted. The documented workspace timing concern remains unresolved; the
+final pass does not erase its evidence. The unrelated untracked design copy is
+left untouched.
