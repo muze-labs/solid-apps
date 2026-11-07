@@ -1,0 +1,9 @@
+body:has(.muze-solid-ui-embedded:not([hidden]))
+  .suite-header:has(.logout-section:not([hidden])):has(.suite-status:empty):not(
+    :has(.muze-solid-ui-recovery-notice:not([hidden]))
+  ):not(:has(.muze-solid-ui-recovery-dialog[open])) {
+  display: none;
+}
+.muze-solid-ui-recovery-dialog .muze-solid-design-dialog-content {
+  flex: 1;
+}

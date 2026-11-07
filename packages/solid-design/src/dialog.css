@@ -81,3 +81,20 @@
   color: white;
   box-shadow: none;
 }
+
+/* Shared suite primitives formerly in the coarse appearance sheet. */
+.ds-dialog {
+  width: min(90vw, 45rem);
+  min-width: 0;
+  max-height: 90dvh;
+  overflow: auto;
+  padding: var(--ds-space);
+  border-radius: 0;
+}
+.ds-dialog h2 {
+  margin-top: 0;
+}
+.ds-dialog::backdrop {
+  background: #0007;
+  backdrop-filter: blur(3px);
+}

@@ -1,6 +1,8 @@
+import styles from './workspace-controls.css' with { type: 'text' };
 import sourceLauncherWorkspace from '../workspace.html' with { type: 'text' };
 
 export const workspaceControls = {
+  styles: { 'swb-workspace': styles },
   templates: { 'launcher-workspace': sourceLauncherWorkspace },
   commands: {
     workspaceChanged(element) {

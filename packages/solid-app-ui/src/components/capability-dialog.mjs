@@ -1,6 +1,8 @@
+import styles from './capability-dialog.css' with { type: 'text' };
 import template from '../capability-dialog.html' with { type: 'text' };
 
 export const muzeSolidUiCapabilityDialog = {
+  styles: { 'swb-capability-dialog': styles },
   templates: { 'muze-solid-ui-capability-dialog': template },
   commands: {
     muzeSolidUiOpenCapabilityTab() {

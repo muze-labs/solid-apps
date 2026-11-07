@@ -237,6 +237,31 @@ export async function checkRetainedProfileDraft(page) {
         );
       }
       const state = await owner.runtime.host.managed.getState();
+      const style = [...owner.container.querySelectorAll('style')].find(
+        (element) => element.id === 'swb-profile-editing.css'
+      );
+      const originalCSS = style.textContent;
+      try {
+        style.textContent =
+          originalCSS +
+          '\n.profile-card textarea[name="notes"] {' +
+          'background-color: rgb(7, 77, 177) !important; }';
+        const field = owner.container.querySelector(
+          '.profile-card [name="notes"]'
+        );
+        if (
+          getComputedStyle(field).backgroundColor !== 'rgb(7, 77, 177)' ||
+          JSON.stringify(widget.draft()) !== JSON.stringify(draft)
+        ) {
+          throw new Error(
+            'style-ownership-test: Live CSS edit must retain the profile draft'
+          );
+        }
+      }
+      finally {
+        style.textContent = originalCSS;
+      }
+
       const originalDraft =
         owner.components.profileEditing.actions.profileDraft;
       const originalRestore =

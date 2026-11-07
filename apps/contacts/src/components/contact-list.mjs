@@ -1,6 +1,8 @@
+import styles from './contact-list.css' with { type: 'text' };
 import sourceContactsList from '../list.html' with { type: 'text' };
 
 export const contactList = {
+  styles: { 'swb-contact-list': styles },
   templates: { 'contacts-list': sourceContactsList },
   actions: {
     initializeList() {

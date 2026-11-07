@@ -1,3 +1,3 @@
-import suiteStyles from '../style.css' with { type: 'text' };
+import styles from './suite-appearance.css' with { type: 'text' };
 
-export const suiteAppearance = { styles: { 'suite-appearance': suiteStyles } };
+export const suiteAppearance = { styles: { 'swb-foundation': styles } };

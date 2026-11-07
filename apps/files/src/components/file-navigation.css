@@ -1,0 +1,36 @@
+.file-list {
+  width: 100%;
+  border-collapse: collapse;
+  margin-block: var(--ds-space);
+}
+.file-list th,
+.file-list td {
+  padding: var(--ds-space-d2);
+  text-align: left;
+  border-bottom: 1px solid var(--ds-grey-medium);
+}
+.file-list button {
+  margin: 0;
+}
+.file-list th {
+  font-weight: 700;
+}
+[data-density='compact'] .file-list td {
+  padding-block: var(--ds-space-d4);
+}
+@media (max-width: 720px) {
+  .file-list {
+    table-layout: fixed;
+  }
+  .file-list th,
+  .file-list td {
+    padding: var(--ds-space-d4);
+    overflow-wrap: anywhere;
+  }
+  .file-list th:first-child {
+    width: 45%;
+  }
+  .file-list .ds-button {
+    padding-inline: var(--ds-space-d4);
+  }
+}

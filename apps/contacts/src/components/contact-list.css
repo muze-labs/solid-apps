@@ -1,0 +1,74 @@
+.contacts-list {
+  display: flex;
+  flex-direction: column;
+  min-height: 22rem;
+}
+.person-list button[data-simply-command='select'] {
+  display: flex;
+  gap: var(--ds-space-d2);
+  align-items: center;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: var(--ds-space-d4) 0;
+  overflow-wrap: anywhere;
+}
+.person-list button[data-simply-command='select']:hover,
+.person-list button[data-simply-command='select']:focus-visible {
+  background: var(--ds-grey-low);
+}
+.person-avatar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 2.25rem;
+  aspect-ratio: 1;
+  background: var(--ds-grey-medium);
+}
+.contacts-toolbar {
+  position: sticky;
+  bottom: 0;
+  background: var(--ds-color-background);
+  padding-block: var(--ds-space-d2);
+  margin-block: auto 0;
+  flex-wrap: nowrap;
+}
+.contact-search {
+  display: flex;
+  align-items: center;
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+.contact-search > svg {
+  position: absolute;
+  left: var(--ds-space-d4);
+  pointer-events: none;
+}
+.contact-search input {
+  min-width: 0;
+  padding-inline-start: 2rem;
+  border: 1px solid var(--ds-grey-medium);
+}
+@media (max-width: 720px) {
+  .contacts-list {
+    min-height: 0;
+  }
+}
+.contacts-list .person-list {
+  flex: 1;
+}
+
+.icon-button {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  min-width: 2.5rem;
+  min-height: 2.75rem;
+  padding: var(--ds-space-d4);
+  margin: 0;
+}

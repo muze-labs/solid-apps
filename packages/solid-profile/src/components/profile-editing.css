@@ -1,0 +1,30 @@
+textarea[name='notes'] {
+  min-height: 7rem;
+}
+.profile-card form {
+  max-width: 48rem;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.profile-card form > h2 {
+  margin-block: 0 var(--ds-space-d2);
+}
+.profile-card form .actions {
+  flex: none;
+  margin-block: 0;
+}
+.profile-card textarea[rows='1'] {
+  height: 2.75rem;
+}
+.muze-solid-profile-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.muze-solid-profile-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-d2);
+}

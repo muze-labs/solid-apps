@@ -1,0 +1,24 @@
+body:has(.muze-solid-ui-embedded:not([hidden])) .file-controls {
+  padding-bottom: 8rem;
+}
+body:has(.muze-solid-ui-embedded:not([hidden])) .picker-request {
+  padding: var(--ds-space-d2);
+  border: 0;
+  background: none;
+}
+body:has(.muze-solid-ui-embedded:not([hidden])) .picker-request h2 {
+  display: none;
+}
+body:has(.muze-solid-ui-embedded:not([hidden])) .picker-request p {
+  font-size: 0.85rem;
+  margin-block: var(--ds-space-d4);
+}
+body:has(.muze-solid-ui-embedded:not([hidden])) .picker-request .actions {
+  position: fixed;
+  inset: auto 0 0;
+  margin: 0;
+  padding: var(--ds-space-d2);
+  background: var(--ds-color-background);
+  border-top: 1px solid var(--ds-grey-low);
+  z-index: 5;
+}

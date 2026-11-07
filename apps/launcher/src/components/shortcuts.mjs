@@ -1,7 +1,9 @@
+import styles from './shortcuts.css' with { type: 'text' };
 import sourceLauncherNavigation from '../navigation.html' with { type: 'text' };
 import sourceLauncherShortcuts from '../shortcuts.html' with { type: 'text' };
 
 export const shortcuts = {
+  styles: { 'swb-workbench-shortcuts': styles },
   templates: {
     'launcher-navigation': sourceLauncherNavigation,
     'launcher-shortcuts': sourceLauncherShortcuts

@@ -134,6 +134,13 @@ verified (EVD85). The maintainer has requested commit, merge and push. CSS migra
 lifecycle listener ownership and the wider IDE remain future work; current-action
 dispatch alone does not complete those separate recommendations.
 
+CYC-20261107-QG24H-87 is **Accepted** (ACC91) for feature-owned CSS. The maintainer clarifies
+that the future IDE can update SimplyFlow's installed named style elements by ID;
+a new library style-update API is not a prerequisite. The suite migration exposes
+feature CSS and preserves originals/ID linking, without implementing an IDE or
+persistent override layer. EVD90 retains final preservation/visual checks and
+known timing limits; the maintainer requests commit, merge and push.
+
 Track these follow-ups in the review's recommended order:
 
 1. **Reconcile the design documents.** Resolve the review's described personal

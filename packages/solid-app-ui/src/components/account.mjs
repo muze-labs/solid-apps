@@ -1,4 +1,6 @@
+import styles from './account.css' with { type: 'text' };
 export const account = {
+  styles: { 'swb-account': styles },
   commands: {
     muzeSolidUiOwnProfile() {
       return this.actions.run(async () => {

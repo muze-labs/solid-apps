@@ -1025,3 +1025,55 @@ history rewrite or new implementation cycle is selected. The proposed next step
 is component-owned styles following the review, subject to style-update API and
 bundle-cost investigation; shared Preferences propagation remains the immediate
 user-facing alternative. See the next-cycle assessment for scope and limits.
+
+
+## Style ownership cycle selected and API gap investigated, 2026-11-07
+
+The maintainer answers "agreed" to moldable style ownership. CYC87 is Active on
+spiral/CYC-20261107-QG24H-87-moldable-style-ownership from accepted main
+a4422ec5de08c823cf6b2831aee9d383ae191733; the branch was mechanically checked.
+The unrelated untracked design/Moldable-Solid-Apps(3).md is preserved.
+
+DES88/EVD90 record current installed/published APIs, the real built-app style
+mutation probe, a source ownership map and cascade/budget constraints. The full
+CSS is already exposed as suiteAppearance and embedded in JS, as well as copied
+to apps.css; source ownership needs splitting, not inventing metadata availability.
+SimplyFlow app 0.10.3 (current npm version; facade 0.10.4) installs styles only at
+construction. Mutating named source changes neither the installed style nor
+computed appearance. Lower-library live support versus source-only migration
+with explicit deferral is a pending scope choice. No app-owned renderer, external
+repository edit, dependency change or release is inferred. Product code remains
+unchanged while required clarification is pending; no acceptance/commit/merge/
+push/publication is authorized by the cycle selection.
+
+
+## Style element linking resolves the ownership cycle's API question
+
+The maintainer clarifies: "SimplyFlow also add style elements with an id linked
+to each named style. So the IDE can easily find the linked style element and
+update that as well." This supersedes the earlier library-support-first framing:
+CYC87 proceeds with existing SimplyFlow style installation and its named element
+IDs. The future IDE coordinates source overrides and those elements; this cycle
+adds no app-owned updater, new library API, dependency or publication.
+
+Feature-owned CSS is split into named styles with authored source origins; shared
+foundation/control/layout rules remain in shared components. The coarse CSS file
+and duplicate apps.css link/copy are removed while the external the-ds sheet
+remains. Browser checks simulate IDE source/element editing and in-place removal,
+keep component originals and unsaved drafts, and compare loaded cascade/layout
+against the pre-refactor workflows. Broader forms redesign, mass prefix renaming,
+actual IDE UI/persistence and lifecycle ownership remain future work. Human
+acceptance, commits and integration remain pending.
+
+
+## Feature-owned styles accepted, 2026-11-07
+
+The maintainer explicitly requests "accepted, commit, merge and push please".
+ACC91 records acceptance of CYC87, implementation e26e6570b77df9dda2cba47d314bf124ffb1dd1d
+and evidence c773d7e29ce9c2c8591c76474ef39cb4d87f701d. CYC87 is Accepted, superseding
+earlier Active/pending statements. Normal direct main integration and push are
+authorized; no package publication, rewritten history or next cycle is requested.
+The existing style-ID mechanism, named feature ownership and checked layouts/data
+are accepted. The documented workspace timing concern remains unresolved; the
+final pass does not erase its evidence. The unrelated untracked design copy is
+left untouched.

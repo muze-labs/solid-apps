@@ -1,4 +1,6 @@
+import styles from './session-recovery.css' with { type: 'text' };
 export const sessionRecovery = {
+  styles: { 'swb-session-recovery': styles },
   behaviors: {
     muzeSolidUiRecoveryDialog(dialog) {
       const cancelled = (event) => {
