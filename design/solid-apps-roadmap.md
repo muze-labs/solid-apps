@@ -3,9 +3,10 @@
 Status: maintainer-requested direction, recorded 2026-11-01. Implementation is
 deferred to future cycles; this update selects no next cycle or delivery order.
 All conversation and project documentation should use English. The additions
-below are grouped by subject, not priority. The latest refinements come from
-[SRC31](../.spiral/sources/SRC-20261101-QG24H-31.md); no new implementation cycle
-or delivery order is selected.
+below are grouped by subject, not priority. Earlier refinements come from
+[SRC31](../.spiral/sources/SRC-20261101-QG24H-31.md). The moldable-app additions
+follow the maintainer's 2026-11-07 request and the linked design; no new
+implementation cycle or delivery order is selected.
 
 This records suite-wide direction alongside the
 [capability-broker roadmap](solid-capability-broker-roadmap.md), which continues
@@ -44,6 +45,148 @@ the application owns its note list, toolbar and persistence. Plan the Solid app
 around that boundary. Choose the initial note types, persistence representation
 and editor integration during a future cycle. Follow the published-npm
 dependency policy; this roadmap does not add sibling repository links.
+
+## Moldable apps and the future in-app IDE
+
+Added at the maintainer's request on 2026-11-07, following
+[Moldable Solid Apps](Moldable-Solid-Apps.md), now required reading in
+`AGENTS.md`. Apply the design's rules for apps today to Launcher, Contacts,
+Files and Profile, and from the first integration of Zett and Notebook. Make
+each app ready for the IDE as its features are developed; building the IDE is
+separate future work. This addition selects no implementation cycle.
+
+### Current gaps
+
+The four current apps use SimplyFlow, but their entry points create separate
+view instances with commands that close over module-local state and helpers.
+The shared shell, Preferences and profile view use similar factories. Existing
+`window.solidLauncher`, `solidContacts`, `solidFiles` and `solidProfile` handles
+expose runtime objects, but do not provide complete editable feature datasets.
+`scripts/build.mjs` composes HTML and copies shared CSS separately; those sources
+are not exposed as named entries in the running app definition. Existing module
+and browser tests are not associated with editable entries. The roadmap has not
+previously covered these prerequisites or the IDE workflow.
+
+### Foundations to add to every app
+
+- Define app-owned features as named SimplyFlow component datasets containing
+  their templates, styles, commands, actions and relevant bindings, routes or
+  initialization behavior. Behavior-only components are valid. Register them in
+  `app.components` and explicitly include their views in the owning templates.
+  Choose boundaries around useful features, rather than splitting by file type.
+- Expose the running app and its editable definitions through a documented
+  public handle. Retain useful source for each named entry, component originals
+  and app-level overrides, with enough origin information to find the active
+  definition. A running dataset must be sufficient without a source checkout.
+  Keep build-time HTML composition and useful View Source; generate runtime
+  entries from the same HTML/CSS sources so there is no second maintained copy.
+- Keep DOM reads, feedback and native UI operations in commands. Put reusable
+  behavior and state changes in actions, and storage operations behind an
+  explicit data API. Editable replacements must work with SimplyFlow's context
+  and documented public dependencies, without recreating private module
+  closures. Keep implementation helpers private only when their behavior does
+  not need to be edited. Metro, oldm and workspace libraries remain callable
+  dependencies outside the app's editing boundary; suite-owned feature wiring
+  belongs inside it.
+- Use SimplyFlow models for list filtering, sorting, paging and other supported
+  transformations in every app. Replace equivalent manual array pipelines in
+  UI update helpers with model effects and options. Expose app-specific model
+  setup, predicates and comparators as editable entries; commands/actions change
+  options and SimplyFlow binds the resulting view. Keep native RDF authoritative.
+- Preserve SimplyFlow's component/app override precedence. An edit replaces an
+  entry by the same name in the app's corresponding section, leaving the
+  component original inspectable. Removing the override must reveal the
+  underlying definition. Verify this for every supported entry kind, including
+  templates, styles, commands, actions and key bindings; do not add another
+  renderer or a competing composition system.
+- Associate optional sample data and tests with the named parts they describe.
+  Provide fixtures and data API doubles for meaningful previews and action
+  tests, while retaining existing end-to-end and RDF preservation coverage.
+
+Check the published SimplyFlow API before migrating features. The installed
+`@muze-labs/simplyflow-app` 0.10.3 uses `templates`, `styles` and `shortcuts` for
+the design's HTML, CSS and key-binding concepts. It installs templates/styles
+without retaining those app-level source sections on the runtime instance,
+and its component merge skips component `start` hooks. Resolve source retention,
+override restoration and component initialization against the supported API;
+do not assume the design's examples are already executable here. If library
+work is needed, keep it separately scoped and consume a published npm version.
+
+### Coverage by application
+
+- **Launcher:** expose shortcut listing/editing/launching, resource selection,
+  and workspace controls as editable slices. Keep app behavior accessible while
+  broker routing, session authority and conditional checkpoint mechanisms remain
+  behind explicit APIs. Future catalog and named-workspace features must follow
+  the same model. App navigation continues to belong to Launcher.
+- **Contacts:** expose list/filter/selection, contact creation and deletion, and
+  inline profile viewing/editing. Replace the list update helper's manual
+  filtering/sorting pipeline with a SimplyFlow model. Expose its app-specific
+  rules, selection and save behavior through named entries. Keep contact drafts
+  and the authoritative RDF distinct; reuse the shared profile component.
+- **Files:** expose folder navigation/listing, upload/download, folder creation,
+  deletion and resource-picker interaction. Actions take values rather than DOM
+  elements. Retain root checks, conditional writes and PDS Interop tombstones
+  behind the data API; importing or editing a slice grants no new authority.
+- **Profile:** expose resource loading, own-profile selection and the shared
+  profile editor. Keep storage policy in the app's data API so Contacts and
+  Profile can use the same editable view with different persistence policies.
+  Preserve unsupported RDF and refuse edits that would flatten structure.
+- **Zett:** assess the chosen source against these requirements during intake.
+  Plan worksheet, resource, entity/property view and editing boundaries from its
+  actual workflows; make the first integrated workflow moldable rather than
+  wrapping the whole application in one opaque component.
+- **Notebook:** expose note selection/list/navigation, toolbar and note-adapter
+  integration as app-owned slices. Keep the published notebook package behind
+  its API; expose the suite's adapter and persistence choices without requiring
+  users to edit the dependency's internals. Select concrete slices with the
+  initial note types and editor integration.
+
+The shared account shell, Preferences and profile editor must also expose their
+app-owned parts through registered datasets. Include app-specific preference
+templates. Shared defaults remain inspectable and overridable per app without
+forking the shared component. Preserve the existing visual language, inline
+Contacts profiles and native-operation exceptions.
+
+### Acceptance before calling an app ready for the IDE
+
+For each app, verify that a user can locate a rendered control's named template
+and command, inspect their originals, and replace a template, style and behavior
+through app-level entries. Run a replacement reconstructed from the exposed
+source with only documented context/dependencies to catch hidden closure or
+bundler dependencies. Removing overrides must restore the original behavior.
+For list features, verify that changing model options or source items updates
+the bound filtered/sorted view without mutating the authoritative source.
+Exercise an action without DOM access using a data API double. Register a slice
+in a second app/test host and explicitly wire its view, demonstrating reuse
+without the source app's private state. Check initialization and cleanup without
+duplicate listeners or effects, and preserve drafts and RDF through the change.
+These checks establish app readiness; they do not claim an IDE already exists.
+
+### Later IDE work
+
+- Open the IDE beside the app in the same page. Navigate components and named
+  entries, show origins and active overrides, and offer an inspect mode that
+  jumps from a rendered control to its template and active command.
+- Create or import component datasets, register them, and let the user wire
+  them into views. Export either the original component or a copy with that
+  component's app overrides applied, in the same editable import format.
+- Preview drafts with sample data and run associated tests in isolated state
+  without live write credentials or write-capable APIs. A test double alone in
+  the live app's credential context does not establish this isolation.
+- Apply valid edits on explicit save, live wherever possible; optionally update
+  valid HTML/CSS while typing. Persist app-level edits locally, with Pod storage
+  as another possible destination. Choose the format, dependency loading and
+  runtime update mechanism during IDE design. Native Turtle and RDF preservation
+  rules still apply to Pod resources and Turtle caches. This does not expand
+  the workspace's opaque-state exception or authorize JSON-in-Turtle snapshots.
+- Provide correction after runtime errors, reload/reset controls, and a safe
+  reload that skips local changes even if both app and IDE fail. Retain skipped
+  edits for separate recovery. Verify import/export round trips, isolation from
+  live writes, failed-edit recovery and safe reload with broken overrides.
+
+Keep the ordinary app usable without the IDE and retain the per-app JavaScript
+budget. Plan IDE loading and measure its cost explicitly when implementing it.
 
 ## Profile and account experience
 
