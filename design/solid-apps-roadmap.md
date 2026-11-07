@@ -420,9 +420,12 @@ creation/switching still needs its own implementation and verification.
 ### Preferences source display and recovery after saving
 
 Reported by the maintainer on 2026-11-07 during CYC67 evaluation. Selected as
-CYC-20261107-QG24H-77 after the guardrail discussion; implementation and evaluation
-are on its dedicated branch, awaiting human acceptance. EVD80 records the
-bounded regression/browser evidence. The following preserves the original gap;
+CYC-20261107-QG24H-77 after the guardrail discussion; now **Accepted** (ACC81).
+The maintainer confirms repeated saves and toast behavior work. EVD80 records
+bounded regression/browser evidence. The accepted repair reacquires validators
+safely, preserves native RDF and open-form choices, adds explicit review/restore,
+and removes the bare URL. Reload-persistent drafts/full offline startup and the
+wider forms visual language remain future work. The following preserves the original gap;
 it is not a claim that the live provider's response has been captured.
 
 - Remove the unexplained `prefs.ttl` URL from the ordinary Preferences dialog.

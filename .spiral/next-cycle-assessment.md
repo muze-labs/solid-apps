@@ -1,14 +1,12 @@
 # Roadmap and next-cycle assessment
 
-Current disposition: **CYC-20261107-QG24H-77 is Active**, implementing reliable
-Preferences saves and recovery. The maintainer selects this recommendation with
-"Ok, lets do that." This continues the stage-one Preferences roadmap repair;
-it does not select the wider forms redesign, swb prefix migration, workspace
-switching or onboarding. CYC73's Solid Workbench rename was previously accepted,
-merged and pushed; main at cycle creation is
-71d2737d5e7203188f503b50d184d606556f2c8f. The confirmed focused-app, local/mobile,
-accessibility and first-use download guardrails apply to CYC77. See its cycle,
-DES78, IMP79 and EVD80 for scope and evaluation. Human acceptance remains pending.
+Current disposition: **CYC-20261107-QG24H-77 is Accepted** (ACC81).
+The maintainer confirms repeated Preferences saves and toast behavior and requests
+commit, merge to main and push. IMP79/EVD80 retain the exact implementation and
+evidence. This continues the stage-one Preferences repair; broader forms design,
+swb prefix migration, workspace switching and onboarding remain future work.
+The focused-app, local/mobile, accessibility, first-use size and source readability
+guardrails remain in force. No next implementation cycle has been selected.
 The candidate comparisons below are retained historical planning.
 
 ## Candidates after CYC49 acceptance, 2026-11-07

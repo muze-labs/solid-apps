@@ -966,3 +966,17 @@ renewal/recovery remains reused. No dependency, automatic sync, full offline
 startup or reload-persistent Preferences draft cache is added. Those local-first
 limitations remain explicit; wider forms styling is a separate roadmap item.
 Human acceptance, commit, merge and push have not been requested for CYC77.
+
+
+## Preferences saving and recovery accepted, 2026-11-07
+
+The maintainer confirms saving twice in succession and working toasts, explicitly
+accepts CYC77, and requests commit, merge and push. ACC81 records acceptance of
+IMP79 at 6dcbb5ab117d29731aaedafa3aa4056b20ffd1e7 and EVD80 at
+0fbe7861d62f76b636e9a883436945090e5aab7e. This supersedes earlier pending and
+no-commit entries; normal direct main integration and push are authorized. No
+package publication or new cycle is requested. The guardrail documentation is
+included; the unrelated untracked Moldable-Solid-Apps(3).md is preserved outside
+the commits. Reload-persistent Preferences drafts, full offline startup, automatic
+sync and wider forms design remain future work; accepted fixtures do not establish
+live-provider internals or a screen-reader user study.
