@@ -1,6 +1,8 @@
+import styles from './profile-details.css' with { type: 'text' };
 import editorTemplate from '../editor.html' with { type: 'text' };
 
 export const profileDetails = {
+  styles: { 'swb-profile-details': styles },
   templates: { 'profile-editor': editorTemplate },
   actions: {
     initializeProfileDetails() {

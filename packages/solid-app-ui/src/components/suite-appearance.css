@@ -1,0 +1,167 @@
+/* App palette from the original Contacts page. Keep this above DS defaults. */
+:root {
+  --ds-primary: oklch(0.4866 0.1142 255.31);
+  --ds-primary-contrast: white;
+  --ds-box-radius: 0;
+  --ds-dialog-radius: 0;
+  --ds-panels-list-width: 20em;
+}
+html,
+body {
+  min-height: 100%;
+}
+body {
+  margin: 0;
+  min-height: 100dvh;
+}
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+}
+button,
+a[data-simply-command] {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+.ds-button {
+  border-radius: 0;
+  text-transform: none;
+}
+.ds-icon-feather {
+  width: 1.2em;
+  height: 1.2em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+[hidden] {
+  display: none !important;
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.empty:empty {
+  display: none;
+}
+.suite-main {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--ds-space-d2) var(--ds-space) var(--ds-space-x2);
+}
+.app-content {
+  max-width: 80rem;
+}
+.app-toolbar,
+.toolbar,
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--ds-space-d2);
+}
+.app-toolbar {
+  margin-block: var(--ds-space-d2) var(--ds-space);
+}
+.actions {
+  margin-block: var(--ds-space);
+}
+.toolbar {
+  margin: 0;
+}
+.toolbar > label {
+  flex: 1;
+  min-width: min(100%, 15rem);
+}
+label {
+  display: block;
+  margin-block: var(--ds-space-d2);
+}
+label input,
+label textarea,
+label select {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+}
+input,
+textarea,
+select {
+  padding: var(--ds-space-d4) var(--ds-space-d2);
+  font: inherit;
+}
+label input,
+label textarea,
+label select,
+.app-toolbar .ds-button {
+  margin-block: 0;
+}
+textarea {
+  min-height: 2.75rem;
+  resize: vertical;
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: 0 var(--ds-space);
+}
+.form-grid > * {
+  min-width: 0;
+}
+.person-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.person-list li {
+  margin: 0;
+}
+.muted {
+  font-size: 0.85em;
+  opacity: 0.8;
+}
+.empty {
+  padding-block: var(--ds-space);
+  opacity: 0.8;
+}
+fieldset {
+  min-width: 0;
+  padding: var(--ds-space-d2);
+  border: 1px solid var(--ds-grey-medium);
+}
+@media (max-width: 720px) {
+  .suite-main {
+    padding-inline: var(--ds-space-d2);
+  }
+}
+.muze-solid-ui-embedded {
+  display: none;
+}
+body:has(.muze-solid-ui-embedded:not([hidden])) .suite-main {
+  display: flex;
+  overflow: hidden;
+  padding-bottom: var(--ds-space-d2);
+}
+body:has(.muze-solid-ui-embedded:not([hidden])) .app-content {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+[data-density='compact'] .person-list button {
+  padding-block: var(--ds-space-d4);
+}

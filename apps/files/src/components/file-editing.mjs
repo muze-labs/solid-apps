@@ -1,6 +1,8 @@
+import styles from './file-editing.css' with { type: 'text' };
 import sourceFilesEditing from '../editing.html' with { type: 'text' };
 
 export const fileEditing = {
+  styles: { 'swb-file-editing': styles },
   templates: { 'files-editing': sourceFilesEditing },
   commands: {
     mkdir(form) {

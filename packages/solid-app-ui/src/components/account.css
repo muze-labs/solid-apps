@@ -1,0 +1,145 @@
+.suite-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  padding: var(--ds-space-d2) var(--ds-space);
+  background: var(--ds-color-background);
+  overflow: visible;
+}
+.suite-header h1 {
+  margin: 0;
+  padding-inline-end: 3rem;
+}
+/* The DS heading mask belongs to horizontally scrolling panel headings. */
+.suite-header::after {
+  content: none;
+}
+.account {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-d2);
+  position: fixed;
+  inset: 0 0 auto auto;
+  z-index: 100;
+}
+.account-button {
+  clip-path: polygon(0 0, 17px 100%, 100% 100%, 100% 0);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.75rem;
+  padding: 0 15px 0 30px;
+  background: var(--ds-grey-70);
+  color: white;
+  margin: 0;
+  min-height: 2.75rem;
+}
+.account-button:hover,
+.account-button:focus-visible {
+  background: var(--ds-primary);
+}
+.account .ds-dropdown-nav {
+  position: fixed;
+  position-anchor: auto;
+  position-area: none;
+  inset: 3.25rem 0.5rem auto auto;
+  margin: 0;
+  width: min(14rem, calc(100vw - 1rem));
+  max-height: calc(100dvh - 4rem);
+  overflow: auto;
+}
+.account .ds-dropdown-list {
+  margin: 0;
+  padding: 0;
+}
+.account .ds-dropdown-item {
+  margin: 0;
+}
+.account .ds-dropdown-link {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: var(--ds-space-d2);
+  text-align: left;
+  color: inherit;
+}
+.suite-status {
+  margin: var(--ds-space-d2) 0 0;
+  padding: var(--ds-space-d4) var(--ds-space-d2);
+  border-inline-start: 0.25rem solid var(--ds-primary);
+  font-size: 0.85em;
+  overflow-wrap: anywhere;
+}
+.suite-status:empty {
+  display: none;
+}
+@media (max-width: 720px) {
+  .suite-header {
+    padding-inline: var(--ds-space-d2);
+  }
+  .suite-header h1 {
+    font-size: 1.5rem;
+  }
+}
+.account-name {
+  max-width: min(24rem, 40vw);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 0.85em;
+}
+.account-name:empty {
+  display: none;
+}
+@media (max-width: 720px) {
+  .account-name {
+    max-width: clamp(2rem, calc(100vw - 19rem), 12rem);
+  }
+}
+.logout-section {
+  margin-top: var(--ds-space);
+  padding-top: var(--ds-space-d2);
+  border-top: 1px solid var(--ds-grey-medium);
+}
+/* App-specific content inside the shared panel and dialog components. */
+.account-name {
+  max-width: min(16rem, 35vw);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.9rem;
+}
+.account-name:has(span:empty) {
+  display: none;
+}
+body:has(.muze-solid-ui-embedded:not([hidden])) .suite-header h1,
+body:has(.muze-solid-ui-embedded:not([hidden])) .account-name {
+  display: none;
+}
+body:has(.muze-solid-ui-embedded:not([hidden])) .suite-header {
+  min-height: 2.75rem;
+}
+.account-name {
+  appearance: none;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  text-decoration: none;
+  font-family: inherit;
+  line-height: 1.4;
+  padding: 0.5rem;
+  margin: 0;
+  min-height: 2.75rem;
+  cursor: pointer;
+}
+.account-name:hover {
+  background: var(--ds-grey-low);
+}
+.account-name:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
+.account-name:has([data-simply-field='accountName']:empty) {
+  display: none;
+}

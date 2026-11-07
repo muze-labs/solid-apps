@@ -1,0 +1,57 @@
+.profile-card {
+  padding: 0;
+  height: 100%;
+  min-height: 0;
+}
+.profile-card h2 {
+  margin-block-start: 0;
+  overflow-wrap: anywhere;
+}
+.profile-card dl {
+  display: grid;
+  grid-template-columns: minmax(6rem, max-content) minmax(0, 1fr);
+  gap: var(--ds-space-d2) var(--ds-space);
+}
+.profile-card dl > div {
+  display: contents;
+}
+.profile-card dt {
+  font-weight: 700;
+}
+.profile-card dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+@media (max-width: 720px) {
+  .profile-card dl {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--ds-space-d4);
+  }
+  .profile-card dd {
+    margin-bottom: var(--ds-space-d2);
+  }
+}
+.profile-details {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.profile-details > dl {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  align-content: start;
+}
+.profile-details > button {
+  align-self: start;
+}
+.muze-solid-profile-source {
+  margin-block: var(--ds-space-d2);
+}
+
+.resource-url {
+  overflow-wrap: anywhere;
+  font-size: 0.75em;
+}

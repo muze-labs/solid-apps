@@ -1,0 +1,80 @@
+/* Capability providers keep their own app and render inside this task host. */
+.muze-solid-ui-capability-dialog[open] {
+  width: min(60rem, calc(100vw - 2rem));
+  height: min(48rem, calc(100dvh - 2rem));
+}
+.muze-solid-ui-capability-dialog > .muze-solid-design-dialog-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 0;
+}
+.muze-solid-ui-capability-dialog [role='status'] {
+  margin: var(--ds-space-d2) var(--ds-space);
+}
+.muze-solid-ui-capability-dialog [role='status']:empty {
+  display: none;
+}
+.muze-solid-ui-capability-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+.muze-solid-ui-capability-frame {
+  opacity: 1;
+  transition: opacity 0.3s ease;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+.muze-solid-ui-capability-frame[data-muze-solid-ui-loading] {
+  visibility: hidden;
+  opacity: 0;
+  transition: none;
+}
+.muze-solid-ui-capability-loading {
+  opacity: 1;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 1;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ds-space-d2);
+  text-align: center;
+}
+.muze-solid-ui-capability-loading[data-muze-solid-ui-fading] {
+  opacity: 0;
+}
+.muze-solid-ui-capability-spinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid var(--ds-grey-low);
+  border-top-color: var(--ds-primary);
+  border-radius: 50%;
+  animation: muze-solid-ui-capability-spin 1s linear infinite;
+}
+@keyframes muze-solid-ui-capability-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .muze-solid-ui-capability-frame,
+  .muze-solid-ui-capability-loading {
+    transition: none;
+  }
+  .muze-solid-ui-capability-spinner {
+    animation: none;
+  }
+}
+@media (max-width: 719px) {
+  .muze-solid-ui-capability-dialog[open] {
+    width: 100%;
+    height: 100dvh;
+  }
+}

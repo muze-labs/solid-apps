@@ -1,4 +1,6 @@
+import styles from './contact-session.css' with { type: 'text' };
 export const contactSession = {
+  styles: { 'swb-contact-layout': styles },
   actions: {
     async initialize() {
       this.actions.initializeList();

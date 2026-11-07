@@ -1,0 +1,29 @@
+.managed-workspace .person-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space-d2);
+  margin-block: var(--ds-space-d2);
+}
+.managed-workspace .person-list li > span:first-child {
+  flex: 1 1 15rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.managed-workspace input[type='checkbox'] {
+  display: inline-block;
+  width: auto;
+  margin-inline-end: 0.4rem;
+}
+.managed-workspace [role='status'] {
+  overflow-wrap: anywhere;
+}
+.managed-workspace pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 20rem;
+  overflow-y: auto;
+}
+.muze-solid-launcher-workspace-apps {
+  margin-block: var(--ds-space);
+}

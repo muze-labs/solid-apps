@@ -22,10 +22,6 @@ await copyFile(
   path.join(root, 'www/assets/theds.css')
 );
 await copyFile(
-  path.join(root, 'packages/solid-app-ui/src/style.css'),
-  path.join(root, 'www/assets/apps.css')
-);
-await copyFile(
   path.join(root, 'packages/solid-app-ui/src/icons.svg'),
   path.join(root, 'www/assets/icons.svg')
 );
@@ -59,7 +55,7 @@ for (const name of ['launcher', 'contacts', 'files', 'profile']) {
   await mkdir(path.join(root, `www/${route}`), { recursive: true });
   await writeFile(
     path.join(root, `www/${route}/index.html`),
-    `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${pageTitle}</title><link rel="stylesheet" href="../assets/theds.css"><link rel="stylesheet" href="../assets/apps.css"></head><body class="ds-darkmode-auto"><div id="app">${body}</div><script type="module" src="../assets/${name}/src/index${scriptSuffix}.js"></script></body></html>`
+    `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${pageTitle}</title><link rel="stylesheet" href="../assets/theds.css"></head><body class="ds-darkmode-auto"><div id="app">${body}</div><script type="module" src="../assets/${name}/src/index${scriptSuffix}.js"></script></body></html>`
   );
 }
 await writeFile(

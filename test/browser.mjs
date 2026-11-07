@@ -1,3 +1,5 @@
+import { checkStyleOwnership } from './support/style-ownership.mjs';
+import { recordVisualStyles } from './support/visual-styles.mjs';
 import {
   checkCurrentActions,
   checkRetainedProfileDraft
@@ -316,6 +318,7 @@ try {
     if (!inspectedFeatures.has(name)) {
       await checkFeatureSources(page, name);
       await checkCurrentActions(page);
+      await checkStyleOwnership(page);
       inspectedFeatures.add(name);
     }
     const storageFields = {
@@ -400,6 +403,7 @@ try {
   async function capture(name) {
     await fs.mkdir('/tmp/solid-apps-review', { recursive: true });
     const shot = await page.send('Page.captureScreenshot', { format: 'png' });
+    await recordVisualStyles(page, name, shot.data);
     await fs.writeFile(
       `/tmp/solid-apps-review/${name}.png`,
       Buffer.from(shot.data, 'base64')

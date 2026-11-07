@@ -1,0 +1,37 @@
+.app-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: var(--ds-space);
+}
+.app-card {
+  padding: var(--ds-space);
+  border-block-start: 0.25rem solid var(--ds-primary);
+  background: var(--ds-grey-low);
+}
+.app-card h2 {
+  margin-block-start: 0;
+}
+.app-card .ds-button {
+  margin-bottom: 0;
+}
+.saved-apps {
+  margin-block-start: var(--ds-space-x2);
+}
+.saved-apps .person-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ds-space);
+}
+.saved-apps .person-list a {
+  overflow-wrap: anywhere;
+}
+.muze-solid-launcher-suite-apps {
+  margin-block: var(--ds-space);
+}
+.muze-solid-launcher-shortcut-settings {
+  margin-inline-start: auto;
+}
+.muze-solid-launcher-shortcut-settings[open] {
+  flex-basis: 100%;
+}

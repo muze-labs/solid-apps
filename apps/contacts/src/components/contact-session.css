@@ -1,0 +1,9 @@
+.contact-details {
+  display: flex;
+  flex-direction: column;
+}
+.contact-profile {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}

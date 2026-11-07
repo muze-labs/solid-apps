@@ -684,6 +684,11 @@ try {
       '!window.solidLauncher.persistence.reviewedDocument'
   );
   assert.equal(readSnapshot().launcher.resource, base + '/newer-version');
+  // Conflict data can arrive before the previous operation has finished.
+  // Require both idle runtime state and an enabled user-facing action.
+  await wait(launcher,
+    '!window.solidLauncher.ui.runtime.workspaceBusy && ' +
+    '!document.querySelector("[data-simply-command=reviewConflict]").disabled');
   await click(launcher, '[data-simply-command=reviewConflict]');
   await wait(launcher, 'window.solidLauncher.persistence.reviewedDocument');
   delayPut = 250;

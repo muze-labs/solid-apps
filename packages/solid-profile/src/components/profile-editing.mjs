@@ -1,4 +1,6 @@
+import styles from './profile-editing.css' with { type: 'text' };
 export const profileEditing = {
+  styles: { 'swb-profile-editing': styles },
   commands: {
     profileChanged(element) {
       this.actions.profileUpdateDraft(element.name, element.value);

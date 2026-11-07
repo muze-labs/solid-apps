@@ -1,6 +1,8 @@
+import styles from './profile-resource.css' with { type: 'text' };
 import sourceProfileResource from '../resource.html' with { type: 'text' };
 
 export const profileResource = {
+  styles: { 'swb-profile-resource': styles },
   templates: { 'profile-resource': sourceProfileResource },
   commands: {
     load(form) {

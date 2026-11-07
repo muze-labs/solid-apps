@@ -1,7 +1,9 @@
+import styles from './file-navigation.css' with { type: 'text' };
 import sourceFilesLocation from '../location.html' with { type: 'text' };
 import sourceFilesNavigation from '../navigation.html' with { type: 'text' };
 
 export const fileNavigation = {
+  styles: { 'swb-file-list': styles },
   templates: {
     'files-navigation': sourceFilesNavigation,
     'files-location': sourceFilesLocation

@@ -1,6 +1,8 @@
+import styles from './resource-selection.css' with { type: 'text' };
 import sourceLauncherResourceSelection from '../resource-selection.html' with { type: 'text' };
 
 export const resourceSelection = {
+  styles: { 'swb-resource-selection': styles },
   templates: { 'launcher-resource-selection': sourceLauncherResourceSelection },
   commands: {
     pickResource(...values) {
