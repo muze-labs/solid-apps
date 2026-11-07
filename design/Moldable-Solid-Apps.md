@@ -107,9 +107,37 @@ A component can carry sample data for its templates and tests for its commands a
 
 A newly authored or imported slice is a component dataset. Include it in `app.components`. If an existing template or view should offer the new feature, edit that template or view to include it. A component may provide a `start` hook that uses JavaScript's `import()` to load a library when needed.
 
-### Use SimplyFlow's existing override rules
+### Keep originals and apply personal overrides last
 
-Keep the component's original definitions available for inspection and reuse. Store a user's replacement in the app's corresponding section under the same entry name. For example, editing a component template called `solid-contacts-filter` creates an app-level `html` entry called `solid-contacts-filter`. SimplyFlow's existing composition rules select the effective definition. Removing the app override reveals the underlying definition according to those same rules. Apply this model to commands, actions, key bindings, and other named entries where SimplyFlow supports overrides.
+Keep the original component definitions and authored source available for
+inspection and reuse. A user's personal override layer applies after those
+originals and the app's own definitions. Replace a named entry in its matching
+section; removing that personal override reveals the previously effective app
+or component definition. Do not lose an app-owned default override by restoring
+only the component's definition. Use SimplyFlow's existing composition rules;
+its current sections include `templates`, `styles`, `actions`, `commands` and
+`shortcuts`. A dedicated component versus app-level personal layer remains an
+IDE implementation choice.
+
+### Resolve current actions at invocation
+
+A long-lived widget method, host method, callback, timer or event connection
+must invoke the current effective action. Do not capture a bound action during
+initialization if that would bypass later replacement. Preserve arguments,
+return values/promises, SimplyFlow context/error handling and listener cleanup.
+Use supported library dispatch; when its API binds at retrieval, a narrow
+forwarding callback can resolve `this.actions.actionName` when invoked. Keep
+that wiring readable and local rather than adding a second component runtime.
+An invocation already in progress continues; replacement affects later calls.
+
+The installed SimplyFlow action table supports assigning a replacement function
+and restoring a previously effective authored function. Keep that raw definition
+as the original; a retrieved bound callable may already include error handling.
+Source metadata exposed through
+`view.definition` is separate: changing it alone does not apply runtime edits.
+The future IDE must coordinate its personal layer and effective definitions
+through SimplyFlow. This contract does not claim a persistent override manager,
+automatic model reevaluation or live template replacement already exists.
 
 ### Known limitation: build-time composition
 
@@ -141,6 +169,24 @@ Export a component in the same editable dataset format the IDE accepts for impor
 If a change causes a runtime error and the IDE is still usable, the user can correct the entry there. Give the IDE controls to reload or reset the app. Also provide a safe reload that skips all local changes and remains reachable when both the app and the IDE fail. Skipping changes lets the user start from the original app and recover their edits separately.
 
 The storage format, dependency loading details, and runtime update mechanism belong to the IDE implementation. The app design depends on the editable parts and SimplyFlow's composition rules.
+
+### Definition history, sharing and upstream changes
+
+The future IDE's undo/redo history tracks definition edits separately from the
+app's data history. Undoing a template/action edit must not undo a contact edit,
+and app undo must not remove a personal customization. Saving/applying personal
+overrides remains separate from optional marketplace publishing and discovery.
+
+Effective template changes need notification to SimplyFlow's rendering runtime,
+including when an override is removed, preserving bound working state. The
+accepted build-time include-composition boundary still applies until revisited.
+Choose the runtime API in that future work rather than implementing a second
+renderer in an app.
+
+Retain source origins for inspection and maintenance. An upstream update may
+change the original entry beneath a personal override; how to identify its base
+version, show that change and recover remains an open design question. Upstream
+source maintenance and package publication are separate from runtime IDE edits.
 
 ## Reference example
 
