@@ -139,6 +139,31 @@ The future IDE must coordinate its personal layer and effective definitions
 through SimplyFlow. This contract does not claim a persistent override manager,
 automatic model reevaluation or live template replacement already exists.
 
+### Keep styles with their owning feature
+
+Put a feature's authored CSS in its component's named `styles` entries, beside
+its templates and behavior. Keep genuinely shared palette, controls and layout
+in named shared components; do not hide app-specific rules in a suite-wide
+stylesheet. Import CSS source with the existing text-module build composition.
+Use swb- names for new suite-owned styles and retain their source origins.
+
+SimplyFlow installs each named style as a style element whose ID is the style
+name followed by `.css`. This existing link is sufficient for the future IDE:
+coordinate an effective source override with updates to its corresponding
+installed style element(s), scoped to the relevant app/view instances. Locate
+that ID as an ID, without treating its dot as a CSS class selector. Preserve
+the element's position in the cascade; restoring an override must restore the
+previous effective CSS in place and keep component originals inspectable.
+
+Changing `view.definition` metadata alone does not change installed CSS. The
+maintainer explicitly confirms that the IDE can find the linked style element
+and update it as well; a new SimplyFlow style-update API is not a prerequisite
+for this ownership refactor. Ordinary apps do not gain a second stylesheet
+renderer or an IDE updater. Keep working data and drafts intact during visual
+edits, and avoid a duplicate coarse stylesheet delivery when SimplyFlow already
+installs those same styles. External design-library CSS remains outside the
+app-owned editing boundary.
+
 ### Known limitation: build-time composition
 
 The current suite expands shared account/Preferences includes, app titles and
