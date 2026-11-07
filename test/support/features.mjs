@@ -4,7 +4,8 @@ import assert from 'node:assert/strict';
 // All storage APIs in the second host are explicit fixture doubles.
 export async function checkFeatureSources(page, appName) {
   const result = await page.evaluate(() => {
-    const name = location.pathname.split('/').filter(Boolean).at(-1);
+    const route = location.pathname.split('/').filter(Boolean).at(-1);
+    const name = route === 'workbench' ? 'launcher' : route;
     const owner =
       globalThis['muzeSolid' + name[0].toUpperCase() + name.slice(1) + 'App'];
     const entries = [];

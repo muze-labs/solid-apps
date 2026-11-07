@@ -1,4 +1,4 @@
-# Solid Apps project context
+# Solid Workbench project context
 
 Intake status: **Complete**
 
@@ -882,3 +882,30 @@ not proven. The reported Preferences ETag/repeated-save failure and unexplained
 prefs.ttl URL, and a shared form visual language, are retained future roadmap
 work. They are not fixed or waived by accepting this cycle. Hidden-iframe sign-in,
 broader account ownership/logout and the remaining app UI work stay deferred.
+
+
+## Solid Workbench naming and onboarding direction, 2026-11-07
+
+After accepting/merging/pushing CYC67, the maintainer reports renaming the GitHub
+repository to solid-workbench. They request "Solid Workbench" as the Launcher's
+name and solid-workbench as the local directory name. CYC73 is Active on
+spiral/CYC-20261107-QG24H-73-solid-workbench-name for this small display/checkout
+rename, with direct maintainer intent as its confirmed goal. IMP74/EVD75 retain
+execution and verification. Existing URLs, persisted/package IDs and historical
+Spiral artifacts remain stable. No commit, merge or push is requested here.
+
+The maintainer also reaffirms multiple workspace support and user switching,
+already present in the suite roadmap. On app/Workbench startup, unsigned-in users
+should receive a sign-in/sign-up style dialog. Sign-up must be designed first
+around a decentralized system, including provider/account/data choices. These
+are roadmap additions only; the rename does not implement them or silently
+replace local-only/anonymous flows. Their concrete interaction design remains
+future work.
+
+
+The maintainer's CYC73 feedback revises the app URL to /workbench/ as well as
+its display name. They explicitly decline backwards compatibility and can
+remove their old workspace.ttl themselves. Generate no /launcher/ alias and
+remove only the retired build output; do not touch Pod data. The roadmap also
+records shorter swb-/swb_ suite-owned UI prefixes, with actual collision-based
+qualifiers and a later coordinated refactor rather than a mass rename now.

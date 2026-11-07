@@ -38,5 +38,5 @@ http
     }
   })
   .listen(Number(process.env.PORT || 4174), '127.0.0.1', () =>
-    console.log('Solid Apps: http://127.0.0.1:' + (process.env.PORT || 4174))
+    console.log('Solid Workbench: http://127.0.0.1:' + (process.env.PORT || 4174))
   );
