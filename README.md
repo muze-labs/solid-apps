@@ -145,8 +145,11 @@ WebIDs does not create separate local stores or automatically migrate their data
 These are experimental workspace packages, not commitments to new general-purpose
 stack libraries. Models keep native OLDM graphs authoritative; views use small
 projections and drafts. Saving preserves facts the app does not understand.
-The build selects oldm-turtle for this suite without changing the shared OLDM
-default, and rejects bundles containing N3. Readable bundles and source maps are
+The build selects oldm-turtle for every app and the authentication callback
+without changing the shared OLDM default, and rejects the build if its import
+graph contains oldm-n3 or N3. They remain installed as transitive dependencies of
+the upstream OLDM facade, but that facade is replaced by the suite's Turtle
+composition when bundling. Readable bundles and source maps are
 included; all dynamic content rendering uses SimplyFlow. Shared HTML is composed
 at build time, with no extra runtime template engine.
 
@@ -196,11 +199,43 @@ four apps, reload persistence, shared profile editing, preferences across apps,
 synchronization, binary upload and tombstones. It also checks text escaping and
 captures desktop/mobile views in `/tmp/solid-apps-review/`.
 
+The harness waits for app initialization, the rendered Profile resource field,
+and managed-child reconnection before dependent assertions. Page load, a profile
+heading or a restored conflict alone does not establish those later states.
+Earlier combined runs had intermittent readiness failures; the Profile case was
+reproduced as an assertion preceding the input binding update. The workspace
+wait closes an observed synchronization gap, without establishing the cause of
+the earlier workspace failure. Checks use isolated fixtures, not real OIDC.
+
 The build measures each app's JavaScript import graph plus the authentication
 callback, counting shared chunks once per app. It writes `www/size-report.json`
-and rejects totals of 200,000 gzip bytes or more (gzip level 6; source maps are
-excluded). The development server serves readable JavaScript; this budget is
-the compressed production transfer size, not a claim of offline/PWA support.
+and rejects totals of 200,000 gzip bytes or more for either output variant
+(gzip level 6; source maps are excluded). The report's `apps` entries describe
+minified production graphs; `readableApps` contains readable totals, and
+`servedVariant` identifies which entry scripts the generated pages load. This
+budget measures compressed JavaScript, not offline/PWA support.
+
+Rollup builds two shared ES modules: `assets/shared/data.js` contains Metro,
+OLDM with oldm-turtle, Solid Workspace, and shared data/session helpers;
+`assets/shared/ui.js` contains SimplyFlow, SimplySolid, and shared suite views.
+The UI bundle imports data; data has no UI dependency. Each app's
+`assets/<app>/src/index.js` contains its own remaining code, including modules
+used only by that app. The small `assets/redirect.js` authentication callback
+imports data alone. The app and callback graphs reuse the same emitted modules
+instead of bundling duplicate RDF or reactive runtimes.
+
+Every build also emits matching `.min.js` modules using Rollup's Terser plugin.
+Minified modules import only the minified graph. Both variants retain source
+maps with original source content; function/class names and object property
+names remain available for inspection. `npm run build` makes app pages and the
+authentication callback load minified scripts. `npm run dev` selects readable
+scripts through `npm run build -- --readable`. Both sets remain available in
+`www/assets/` with either selection.
+
+The build checks these shared-layer boundaries and writes
+`www/bundle-report.json` with each bundle's modules, imports and gzip size.
+Source maps include source text. Rebuilding replaces the generated assets
+directory so retired chunks are not deployed alongside the current outputs.
 
 ## Shared appearance
 

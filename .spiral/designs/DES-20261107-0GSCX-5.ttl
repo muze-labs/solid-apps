@@ -1,0 +1,12 @@
+@prefix sd: <https://muze.nl/ns/spiral-developer#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix project: <urn:muze-labs:solid-apps:spiral:> .
+project:DES-20261107-0GSCX-5 a sd:Design ;
+    dcterms:identifier "DES-20261107-0GSCX-5" ;
+    sd:repositoryPath ".spiral/designs/DES-20261107-0GSCX-5.md" ;
+    sd:status sd:Active ;
+    sd:derivedFrom [
+        a sd:ArtifactReference ;
+        sd:artifact project:SRC-20261107-0GSCX-4 ;
+        sd:gitCommit "f494079ac3196511212cf4b39ef100b8f76673a9"
+    ] .
