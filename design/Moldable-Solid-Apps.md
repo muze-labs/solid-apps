@@ -8,6 +8,29 @@ These rules apply to apps built today with SimplyFlow, Metro, oldm and the Solid
 
 ## Rules for apps today
 
+### Write for the person changing the app
+
+The ultimate goal is for people to alter these apps through the moldable IDE.
+The editable code must be understandable to people without a professional
+programming background. Exposing an entry is only part of that goal: someone
+should be able to read it, follow what it does and find the step to change.
+This is a current app-authoring requirement, not work postponed until the IDE.
+
+Use descriptive names drawn from the user's task, straightforward control flow
+and named intermediate values when they make a calculation or decision clearer.
+Keep inputs, state changes, storage calls and other effects visible. Avoid
+clever language tricks, dense expressions and unnecessary layers that obscure
+a simple operation. Prefer a clear sequence of steps over saving a few lines.
+Use the existing library APIs directly when they express the operation clearly;
+readability does not require reimplementing them or wrapping them in new names.
+
+Keep feature entries focused and their context/dependencies explicit. Add short
+comments for reasons or constraints the code cannot explain on its own. When a
+comment merely decodes a complicated expression, first try rewriting that
+expression. Review a typical edit from the user's perspective: can someone
+identify the relevant entry and follow the behavior they want to change without
+first learning the whole application or a custom abstraction?
+
 ### Reuse the Muze library stack
 
 Use SimplyFlow and the other Muze libraries wherever their public APIs
@@ -115,6 +138,7 @@ The Contacts app in `poef/solid-apps` exposes the running app as `globalThis.con
 
 ## Contributor review
 
+- Can a person without a professional programming background follow the editable code and identify a straightforward change, without decoding clever tricks?
 - Does the feature reuse the relevant Muze library APIs, with any missing capability documented concretely?
 - Does SimplyFlow render all runtime content, and do application HTTP requests use the configured Metro/data APIs?
 - Do lists use SimplyFlow models for filtering, sorting, paging and other supported transformations, with editable app-specific rules?

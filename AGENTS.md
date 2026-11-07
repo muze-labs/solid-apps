@@ -122,6 +122,16 @@ New shared packages stay experimental under `@muze-labs`; publication readiness
 requires its own review. Do not change the shared OLDM parser default: this app
 composition selects oldm-turtle and the build checks that N3 is absent.
 
+Write app code for people who will inspect and alter it through the moldable
+IDE, including people without a professional programming background. Prefer
+self-explanatory names, straightforward control flow and clearly named steps
+over clever tricks or dense expressions. Make inputs, state changes and effects
+easy to follow. Use direct library APIs where they clarify the work; avoid
+unnecessary indirection and abstractions that require learning a private coding
+style. Explain non-obvious reasons in comments, and simplify code before adding
+comments that merely translate it. Readability is a product requirement for
+moldability, not just a contributor preference.
+
 Use braces around control-flow bodies, readable intermediate values, and roughly
 80-column source. Put else/catch/finally on their own lines. Prefix thrown errors
 with their module. Test observable contracts, including failure and preservation

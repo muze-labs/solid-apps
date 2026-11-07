@@ -55,6 +55,14 @@ Files and Profile, and from the first integration of Zett and Notebook. Make
 each app ready for the IDE as its features are developed; building the IDE is
 separate future work. This addition selects no implementation cycle.
 
+The maintainer further clarifies that the ultimate goal is easy alteration
+through the moldable IDE by people without a professional programming background.
+Readable, self-explanatory feature code is therefore a requirement for apps today:
+prefer clear names and straightforward steps, and avoid clever tricks and
+unnecessary indirection. Apply the design's
+[readability rules](Moldable-Solid-Apps.md#write-for-the-person-changing-the-app)
+to new and changed features, including shared MVP UI components.
+
 ### Deferred: runtime template composition
 
 On 2026-11-07 the maintainer accepts build-time composition as sufficient for
@@ -301,6 +309,47 @@ reopen without mixing state, and check the specified Launcher/child logout
 behavior. With multiple profile storage roots, the default home contains only
 the corresponding Files links; adding a shortcut through the dialog adds that
 item without introducing permanent built-in app tiles.
+
+## MVP UI and reusable design components
+
+Added at the maintainer's request on 2026-11-07. Bring Launcher, Contacts,
+Files and Profile closer to the UI in
+[poef/solid-apps](https://github.com/poef/solid-apps), turning the current
+prototype screens into an MVP UI for ordinary use. Review the reference UI
+alongside the current suite when selecting this work. Retain its blue accent,
+square controls, panel layouts and compact account dropdown, with app-owned
+toolbars, Launcher-only app navigation and inline profiles in Contacts.
+
+Inventory the visible controls and remove those present mainly for testing or
+demonstrating implementation details from the ordinary app interface. Choose
+what to remove from actual user workflows; keep necessary account, save/sync,
+error and recovery interactions understandable and reachable. Developer checks
+belong in tests or explicit developer tooling rather than permanent product
+controls. This item does not predetermine a list of controls to delete.
+
+Create and reuse common design components across the suite, including dialogs
+and dropdown menus, wherever the interaction is shared. Inspect the installed
+the-ds and SimplyFlow APIs and existing suite components first; extend that
+composition rather than introduce a parallel design system. Shared components
+must follow the moldable feature structure, expose app-specific content and
+commands, and keep SimplyFlow responsible for runtime rendering. Retain direct
+native dialog/popover lifecycle and focus operations where appropriate.
+
+Required reading when designing or implementing this item:
+[Jon Yablonski's Laws of UX](https://lawsofux.com/llms.txt), read during this
+roadmap update on 2026-11-07. Use the relevant principles to assess concrete
+choices: familiar interactions (Jakob's Law), fewer competing choices (Hick's
+Law), lower cognitive load, clear visual grouping, and usable targets (Fitts's
+Law). Treat these as design guidance and check the resulting workflows with
+users; they do not supply a ready-made layout or an arbitrary numerical limit
+on controls.
+
+Future evaluation: review the core flows in all four apps on mobile and desktop
+against the reference UI; verify that testing-oriented clutter is gone while
+necessary feedback and recovery remain available. Check shared dialogs and menus
+for consistent behavior, keyboard operation and focus return. Preserve the
+JavaScript budget and existing data/RDF contracts. This is a roadmap item, not
+a selected cycle, a new delivery order or an implementation change.
 
 ## Mobile first and JavaScript budget
 

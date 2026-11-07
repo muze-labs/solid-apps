@@ -769,3 +769,25 @@ The accepted implementation/evidence is 24e48e4d0adc33d3bc3a87b5a57fa5eee0b193fc
 Runtime template composition remains a recorded future investigation, with
 build-time expansion sufficient for now. No next cycle or IDE implementation
 is selected. No product changes follow the final passing EVD47 checks.
+
+
+## MVP UI roadmap addition, 2026-11-07
+
+After accepting and merging CYC37, the maintainer requests an MVP UI closer to
+poef/solid-apps, removal of testing-oriented interface elements, and more shared
+design components such as dialogs and dropdown menus. The suite roadmap records
+this future work and requires reading https://lawsofux.com/llms.txt during its
+design/implementation. That resource was retrieved and read for this update.
+No cycle, control-removal list or delivery priority is selected. This change is
+documentation only and does not extend the accepted refactor cycle.
+
+
+## Readability for people altering their apps, 2026-11-07
+
+The maintainer clarifies the ultimate goal: apps should be easy to alter using
+the moldable IDE, including by people without a professional programming
+background. They explicitly ask for self-explanatory code and avoidance of clever
+programming tricks. AGENTS.md, the moldable design and suite roadmap now record
+this as an app-authoring requirement today. Prefer descriptive names and clear
+steps/effects; use existing library APIs without adding unnecessary indirection.
+This documentation update does not start a refactor or new implementation cycle.
