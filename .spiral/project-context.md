@@ -925,3 +925,44 @@ migration, as explicitly requested. Origin and local checkout use solid-workbenc
 Workspace switching, startup sign-in/sign-up with decentralized signup design
 first, and swb-/swb_ UI prefix refactoring are recorded future roadmap work.
 No new implementation cycle or delivery order is selected by this acceptance.
+
+
+## Standing feature guardrails confirmed, 2026-11-07
+
+The maintainer proposes avoiding feature-heavy apps in favor of focused apps,
+considering local-first/mobile-first for every feature, declining features whose
+core task cannot be made accessible, and keeping the download for meaningful
+interaction small enough for slow connections. After discussing concrete checks,
+they explicitly answer "agreed".
+
+AGENTS.md, the suite roadmap and moldable design now record those constraints,
+including the existing readability requirement. Each cycle briefly states and
+evaluates app boundaries, offline/recovery behavior, phone interaction, accessible
+interaction and download impact. The existing complete-graph limit below 200000
+bytes of gzipped JavaScript per app remains a ceiling, not a target; first-use
+assessment also covers other assets, required requests and usable core tasks on
+a cold cache. No new numeric total-transfer/time limit is invented.
+
+This documentation-only agreement selects no implementation cycle and does not
+claim existing apps already satisfy full offline, accessibility or first-use
+performance requirements. No product code, tests, build configuration or budget
+enforcement is changed. No commit, merge or push is requested.
+
+
+## Preferences save recovery selected, 2026-11-07
+
+The maintainer confirms the proposed reliable Preferences cycle: "Ok, lets do
+that." CYC-20261107-QG24H-77 is Active on its matching dedicated branch from
+accepted main 71d2737d5e7203188f503b50d184d606556f2c8f. DES78 records the confirmed
+save/recovery intent and actual-API probes; IMP79/EVD80 retain implementation
+and evaluation. This continues the Preferences reliability roadmap item.
+
+The implementation distinguishes acknowledged writes from acquiring the next
+ETag, reacquires a missing strong validator only after whole-RDF comparison,
+keeps conditional writes, and preserves unknown native RDF in Preferences.
+The dialog retains choices through failed requests and offers explicit Pod
+review/restore of user edits. It removes the bare source URL. Existing session
+renewal/recovery remains reused. No dependency, automatic sync, full offline
+startup or reload-persistent Preferences draft cache is added. Those local-first
+limitations remain explicit; wider forms styling is a separate roadmap item.
+Human acceptance, commit, merge and push have not been requested for CYC77.

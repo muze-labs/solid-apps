@@ -27,6 +27,48 @@ baseline includes one native-RDF workspace, conditional checkpoints and the
 Files picker. Items below describe future work or refinements, not implemented
 claims unless explicitly identified as existing behavior.
 
+## Standing feature guardrails
+
+Confirmed by the maintainer on 2026-11-07 after discussing focused apps,
+local-first/mobile-first design, accessibility and slow-connection usability.
+These are standing planning and delivery constraints for both roadmap stages,
+not optional polish or proof that current apps already meet them.
+
+- **Focused apps:** keep each app centered on a clear user purpose. Consider a
+  separate capability-connected app when a feature introduces a separate task.
+  Split around coherent workflows, not an arbitrary feature count; users should
+  not have to assemble fragments of one ordinary task across many tiny apps.
+- **Local-first and mobile-first:** define what works offline, what data must
+  already be available, and how edits survive reload, reconnection, expired
+  authorization and conflicts. Start with the phone workflow and verify it
+  there before expanding to desktop. Network-dependent parts must be explicit;
+  uncached resources cannot be assumed to work offline.
+- **Accessible core tasks:** ship only an interaction that can be completed with
+  keyboard and assistive technology. Prefer native controls; design labels,
+  focus, feedback and alternatives to gestures alongside the feature. Redesign
+  or defer an inaccessible core interaction rather than postponing accessibility.
+  Use appropriate automated checks and manual review; passing tests or a good
+  screenshot alone does not establish accessible task completion.
+- **Small meaningful first use:** keep the existing complete-app JavaScript
+  limit below 200000 gzip bytes, including shared dependencies and the auth
+  callback, as a ceiling rather than a target. Also measure the cold-cache
+  transfer and required requests across HTML, CSS, JavaScript, fonts, images
+  and data needed for the core task, plus time until that task is usable on a
+  representative slow connection. Define the task for each app/feature; a
+  loading shell is not success. Optional functionality may load later, while
+  the existing complete-graph budget remains enforced. Do not rely on a warm
+  cache to disguise first-use cost. No additional numeric transfer/time limit
+  or specific network profile is selected by this agreement.
+
+Retain the existing readability requirement: small apps should be easy for
+people to understand and alter, without compressed or clever source code.
+Before implementing each cycle, briefly state the feature's app boundary,
+offline/recovery behavior, phone interaction, accessible interaction and download
+impact. Evaluate the same claims with relevant evidence. If the proposed feature
+cannot meet these constraints, redesign, split or defer it rather than silently
+waive them. This agreement does not start a cycle, implement offline/sync/PWA
+support or certify the accessibility/performance of existing apps.
+
 ## Applications
 
 ### Zett
@@ -377,8 +419,11 @@ creation/switching still needs its own implementation and verification.
 
 ### Preferences source display and recovery after saving
 
-Reported by the maintainer on 2026-11-07 during CYC67 evaluation; retained as
-future roadmap work, without expanding that cycle's implementation scope.
+Reported by the maintainer on 2026-11-07 during CYC67 evaluation. Selected as
+CYC-20261107-QG24H-77 after the guardrail discussion; implementation and evaluation
+are on its dedicated branch, awaiting human acceptance. EVD80 records the
+bounded regression/browser evidence. The following preserves the original gap;
+it is not a claim that the live provider's response has been captured.
 
 - Remove the unexplained `prefs.ttl` URL from the ordinary Preferences dialog.
   If source information serves a useful diagnostic task, give it a clear label
@@ -540,15 +585,19 @@ selected implementation cycle, control library replacement or delivery date.
 
 ## Mobile first and JavaScript budget
 
-Design and validate core workflows on mobile first, preserving the suite's
-existing visual language and supporting larger screens as well.
+Apply the [standing feature guardrails](#standing-feature-guardrails) to each
+new feature. Design and validate core workflows on mobile first, preserving the
+suite's existing visual language and supporting larger screens as well.
 
 Target: **less than 200 KB of gzipped JavaScript per app**. Measure the app and
 its required shared dependencies together, including the auth callback. The
 merged build now enforces a strict 200000-byte limit on the complete graph;
 [EVD30](../.spiral/evidence/EVD-20261101-QG24H-30.md) records the current passing
 sizes and verification limits. Preserve that enforcement as features are added;
-a small entry file alone does not establish compliance.
+a small entry file alone does not establish compliance. This ceiling is not a
+target to fill, and JavaScript size alone does not establish useful first-load
+performance. Also evaluate the complete cold first-use path and the actual core
+task, as specified in the standing guardrails.
 
 ## Local first and automatic sync
 

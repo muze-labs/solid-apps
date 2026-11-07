@@ -1,13 +1,15 @@
 # Roadmap and next-cycle assessment
 
-Current disposition: CYC49 is Accepted on 2026-11-07. ACC66 records the
-maintainer's explicit acceptance and instruction to commit and merge the integrated
-UI/capability result. The confirmed scope and implementation are retained in
-SRC50/DES51/IMP52; final verification is EVD65. The proposal and older assessments
-below are historical planning. The maintainer selects session renewal/recovery;
-CYC-20261107-QG24H-67 is now Accepted (ACC72), including the confirmed
-refresh-first implementation and shared toast motion. Commit/merge/push are
-explicitly authorized. Hidden-iframe authorization remains deferred.
+Current disposition: **CYC-20261107-QG24H-77 is Active**, implementing reliable
+Preferences saves and recovery. The maintainer selects this recommendation with
+"Ok, lets do that." This continues the stage-one Preferences roadmap repair;
+it does not select the wider forms redesign, swb prefix migration, workspace
+switching or onboarding. CYC73's Solid Workbench rename was previously accepted,
+merged and pushed; main at cycle creation is
+71d2737d5e7203188f503b50d184d606556f2c8f. The confirmed focused-app, local/mobile,
+accessibility and first-use download guardrails apply to CYC77. See its cycle,
+DES78, IMP79 and EVD80 for scope and evaluation. Human acceptance remains pending.
+The candidate comparisons below are retained historical planning.
 
 ## Candidates after CYC49 acceptance, 2026-11-07
 

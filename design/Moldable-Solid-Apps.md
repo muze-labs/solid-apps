@@ -8,6 +8,16 @@ These rules apply to apps built today with SimplyFlow, Metro, oldm and the Solid
 
 ## Rules for apps today
 
+### Keep the app and its core task approachable
+
+Apply the suite's [standing feature guardrails](solid-apps-roadmap.md#standing-feature-guardrails)
+to every new feature: focused app boundaries, local-first/mobile-first design,
+accessible core interactions and small meaningful first loads. Consider separate
+capability-connected apps for separate user tasks, while keeping each ordinary
+workflow coherent. Exposing editable source does not excuse inaccessible
+interaction, avoidable network dependence or unnecessary download cost. Keep the source easy for
+people to understand and alter rather than using clever code to save bytes.
+
 ### Write for the person changing the app
 
 The ultimate goal is for people to alter these apps through the moldable IDE.
