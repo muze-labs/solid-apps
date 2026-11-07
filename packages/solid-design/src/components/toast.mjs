@@ -38,7 +38,7 @@ export const muzeSolidDesignToast = {
         'data-muze-solid-design-toast-closing': null
       };
       this.runtime.muzeSolidDesignToastTimer = setTimeout(
-        this.actions.muzeSolidDesignExpireToast,
+        () => this.actions.muzeSolidDesignExpireToast(),
         8000
       );
     },
@@ -46,7 +46,7 @@ export const muzeSolidDesignToast = {
       const element = this.runtime.muzeSolidDesignToastElement;
       if (element?.matches(':hover, :focus-within')) {
         this.runtime.muzeSolidDesignToastTimer = setTimeout(
-          this.actions.muzeSolidDesignExpireToast,
+          () => this.actions.muzeSolidDesignExpireToast(),
           1000
         );
         return;
@@ -60,7 +60,8 @@ export const muzeSolidDesignToast = {
         this.runtime.muzeSolidDesignToastReturn?.focus({ preventScroll: true });
       }
       if (
-        !element || element.hidden ||
+        !element ||
+        element.hidden ||
         window.matchMedia('(prefers-reduced-motion: reduce)').matches
       ) {
         this.actions.muzeSolidDesignFinishToast();
@@ -72,7 +73,7 @@ export const muzeSolidDesignToast = {
         'data-muze-solid-design-toast-closing': ''
       };
       this.runtime.muzeSolidDesignToastTimer = setTimeout(
-        this.actions.muzeSolidDesignFinishToast,
+        () => this.actions.muzeSolidDesignFinishToast(),
         300
       );
     },

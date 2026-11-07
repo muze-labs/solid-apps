@@ -55,11 +55,12 @@ export const muzeSolidUiCapabilityDialog = {
         event.preventDefault();
         this.actions.run(this.actions.muzeSolidUiCheckCapabilityClose);
       };
-      this.runtime.muzeSolidUiLoad = this.actions.muzeSolidUiAttachCapability;
+      this.runtime.muzeSolidUiLoad = (event) =>
+        this.actions.muzeSolidUiAttachCapability(event);
       dialog.addEventListener('cancel', this.runtime.muzeSolidUiCancel);
       window.addEventListener('message', this.runtime.muzeSolidUiLoad);
-      this.runtime.muzeSolidUiFrameLoad =
-        this.actions.muzeSolidUiCapabilityLoaded;
+      this.runtime.muzeSolidUiFrameLoad = (event) =>
+        this.actions.muzeSolidUiCapabilityLoaded(event);
       frame.addEventListener('load', this.runtime.muzeSolidUiFrameLoad);
     },
     muzeSolidUiAttachCapability(event) {

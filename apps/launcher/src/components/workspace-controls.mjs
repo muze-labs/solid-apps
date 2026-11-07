@@ -133,9 +133,9 @@ export const workspaceControls = {
         ],
         snapshot: this.runtime.persistence.snapshot,
         keys: this.runtime.persistence.keys,
-        authorize: this.actions.authorizeRoute,
-        onMessage: this.actions.workspaceNotice,
-        onChange: this.actions.stageWorkspace
+        authorize: (...args) => this.actions.authorizeRoute(...args),
+        onMessage: (...args) => this.actions.workspaceNotice(...args),
+        onChange: (...args) => this.actions.stageWorkspace(...args)
       });
       this.runtime.host.capabilityBroker = this.runtime.workspace;
       this.runtime.workspace.presentation =

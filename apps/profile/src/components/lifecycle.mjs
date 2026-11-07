@@ -43,11 +43,11 @@ export const lifecycle = {
       this.runtime.host.manage({
         capabilities: [this.api.editProfileCapability],
         waitForPresentation: true,
-        onRequest: this.actions.muzeSolidProfileReceive,
-        onCancel: this.actions.muzeSolidProfileCancel,
-        canClose: this.actions.muzeSolidProfileCanClose,
-        getState: this.actions.captureState,
-        restoreState: this.actions.restoreState
+        onRequest: (...args) => this.actions.muzeSolidProfileReceive(...args),
+        onCancel: (...args) => this.actions.muzeSolidProfileCancel(...args),
+        canClose: (...args) => this.actions.muzeSolidProfileCanClose(...args),
+        getState: (...args) => this.actions.captureState(...args),
+        restoreState: (...args) => this.actions.restoreState(...args)
       });
     },
     cleanup() {

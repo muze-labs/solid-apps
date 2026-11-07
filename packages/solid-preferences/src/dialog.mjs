@@ -63,10 +63,10 @@ export function preferencesDialog(
   });
   return {
     app: view,
-    load: view.actions.load,
-    recover: view.actions.recover,
-    show: view.actions.show,
-    reset: view.actions.reset,
+    load: (...args) => view.actions.load(...args),
+    recover: (...args) => view.actions.recover(...args),
+    show: (...args) => view.actions.show(...args),
+    reset: (...args) => view.actions.reset(...args),
     destroy: view.destroy.bind(view)
   };
 }

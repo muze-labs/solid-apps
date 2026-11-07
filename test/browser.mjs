@@ -1,3 +1,7 @@
+import {
+  checkCurrentActions,
+  checkRetainedProfileDraft
+} from './support/action-dispatch.mjs';
 import { checkFeatureSources } from './support/features.mjs';
 import { spawn } from 'node:child_process';
 import * as fs from 'node:fs/promises';
@@ -311,6 +315,7 @@ try {
     await evaluate('await ' + exportedApp + '.host.ready;');
     if (!inspectedFeatures.has(name)) {
       await checkFeatureSources(page, name);
+      await checkCurrentActions(page);
       inspectedFeatures.add(name);
     }
     const storageFields = {
@@ -777,6 +782,7 @@ try {
       )
     ).includes('Unsaved workspace draft')
   );
+  await checkRetainedProfileDraft(page);
   await submit('.profile-card form', {
     name: 'Edited contact',
     email: 'first@example.org\nsecond@example.org'

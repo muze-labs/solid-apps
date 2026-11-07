@@ -13,8 +13,8 @@ export const lifecycle = {
       this.runtime.managedOptions = {
         capabilities: [this.api.browseCapability],
         waitForPresentation: true,
-        onRequest: this.actions.receiveBrowseRequest,
-        onCancel: this.actions.cancelBrowseRequest
+        onRequest: (...args) => this.actions.receiveBrowseRequest(...args),
+        onCancel: (...args) => this.actions.cancelBrowseRequest(...args)
       };
       this.runtime.host.onConnect = async () => {
         const url = this.runtime.restoredFolder || this.actions.locationValue();
@@ -25,8 +25,8 @@ export const lifecycle = {
       this.runtime.appState = new this.api.AppState();
       this.runtime.host.manage({
         ...this.runtime.managedOptions,
-        getState: this.actions.captureState,
-        restoreState: this.actions.restoreState
+        getState: (...args) => this.actions.captureState(...args),
+        restoreState: (...args) => this.actions.restoreState(...args)
       });
     },
     cleanup() {

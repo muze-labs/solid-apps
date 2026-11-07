@@ -7,7 +7,7 @@ export const contactSession = {
         {
           app: this,
           emptyText: 'Select a contact to view their profile.',
-          onChange: this.actions.publish
+          onChange: (...args) => this.actions.publish(...args)
         }
       );
       await this.runtime.host.run(async () => {
@@ -22,8 +22,8 @@ export const contactSession = {
         );
       this.runtime.appState = new this.api.AppState();
       this.runtime.host.manage({
-        getState: this.actions.captureState,
-        restoreState: this.actions.restoreState
+        getState: (...args) => this.actions.captureState(...args),
+        restoreState: (...args) => this.actions.restoreState(...args)
       });
     },
     captureState() {

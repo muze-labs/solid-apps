@@ -73,9 +73,9 @@ export function profileView(
   view.actions.initializeProfileDetails();
   return {
     app: view,
-    draft: view.actions.profileDraft,
-    restoreDraft: view.actions.profileRestoreDraft,
-    show: view.actions.showProfile,
-    destroy: view.actions.cleanupProfile
+    draft: (...args) => view.actions.profileDraft(...args),
+    restoreDraft: (...args) => view.actions.profileRestoreDraft(...args),
+    show: (...args) => view.actions.showProfile(...args),
+    destroy: (...args) => view.actions.cleanupProfile(...args)
   };
 }
