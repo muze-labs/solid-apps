@@ -757,3 +757,15 @@ workspace/auth feature changes remain deferred. New policy clarifies using jaqt
 with SimplyFlow models where it simplifies the code. Existing library contracts,
 RDF preservation, tests and human acceptance requirements remain in force.
 No acceptance, commit, merge or publication is inferred from implementation.
+
+
+## Moldable suite cycle accepted, 2026-11-07
+
+The maintainer explicitly accepts CYC-20261107-QG24H-37 and authorizes marking,
+committing, merging to main and pushing it. ACC-20261107-QG24H-48 records this
+closure, superseding the Active/pending state above. For this cycle, that direct
+instruction replaces the usual PR route; pre-merge validation still applies.
+The accepted implementation/evidence is 24e48e4d0adc33d3bc3a87b5a57fa5eee0b193fc.
+Runtime template composition remains a recorded future investigation, with
+build-time expansion sufficient for now. No next cycle or IDE implementation
+is selected. No product changes follow the final passing EVD47 checks.

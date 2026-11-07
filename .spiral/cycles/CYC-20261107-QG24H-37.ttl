@@ -4,4 +4,4 @@
 project:CYC-20261107-QG24H-37 a sd:Cycle ;
     dcterms:identifier "CYC-20261107-QG24H-37" ;
     sd:repositoryPath ".spiral/cycles/CYC-20261107-QG24H-37.md" ;
-    sd:status sd:Active .
+    sd:status sd:Accepted .
