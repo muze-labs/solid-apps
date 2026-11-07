@@ -1,13 +1,13 @@
 # Roadmap and next-cycle assessment
 
-Current disposition: CYC49 is Accepted on 2026-11-07. ACC66 records the
-maintainer's explicit acceptance and instruction to commit and merge the integrated
-UI/capability result. The confirmed scope and implementation are retained in
-SRC50/DES51/IMP52; final verification is EVD65. The proposal and older assessments
-below are historical planning. The maintainer selects session renewal/recovery;
-CYC-20261107-QG24H-67 is now Accepted (ACC72), including the confirmed
-refresh-first implementation and shared toast motion. Commit/merge/push are
-explicitly authorized. Hidden-iframe authorization remains deferred.
+Current disposition: **CYC-20261107-QG24H-77 is Accepted** (ACC81).
+The maintainer confirms repeated Preferences saves and toast behavior and requests
+commit, merge to main and push. IMP79/EVD80 retain the exact implementation and
+evidence. This continues the stage-one Preferences repair; broader forms design,
+swb prefix migration, workspace switching and onboarding remain future work.
+The focused-app, local/mobile, accessibility, first-use size and source readability
+guardrails remain in force. No next implementation cycle has been selected.
+The candidate comparisons below are retained historical planning.
 
 ## Candidates after CYC49 acceptance, 2026-11-07
 

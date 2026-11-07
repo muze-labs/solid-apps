@@ -1,4 +1,5 @@
 import oldm from './oldm.mjs';
+import { sameGraph } from './state-rdf.mjs';
 import { oidcStore } from '@muze-nl/metro-oidc';
 import { client as metroClient } from '@muze-nl/metro-core';
 import { isExpired } from '@muze-nl/metro-oauth2/oauth2';
@@ -69,13 +70,13 @@ export async function loadDocument(client, url, { allowMissing = false } = {}) {
     };
   }
   requireOk(response);
+  const source = await response.text();
   return {
     url,
     missing: false,
     etag: response.headers.get('ETag'),
-    graph: oldm
-      .context({ prefixes })
-      .parse(await response.text(), url, 'text/turtle')
+    source,
+    graph: oldm.context({ prefixes }).parse(source, url, 'text/turtle')
   };
 }
 export async function copyDocument(document) {
@@ -86,24 +87,75 @@ export async function copyDocument(document) {
       .parse(await document.graph.write(), document.url, 'text/turtle')
   };
 }
-export async function saveDocument(client, document) {
-  if (!document.missing && !document.etag) {
-    throw new Error(
-      'solid-app-data: This server supplied no ETag. Safe editing requires a conditional write.'
+function documentError(code, message, cause) {
+  const error = new Error('solid-app-data: ' + message, { cause });
+  error.code = code;
+  return error;
+}
+function strongETag(value) {
+  // HTTP opaque tags exclude quotes and control characters; weak tags cannot
+  // protect an If-Match write.
+  return (
+    typeof value === 'string' && /^"[\x21\x23-\x7e\x80-\xff]*"$/.test(value)
+  );
+}
+async function documentForSave(client, document) {
+  if (document.missing || strongETag(document.etag)) {
+    return document;
+  }
+  if (document.source === undefined) {
+    throw documentError(
+      'validator_missing',
+      'This server supplied no ETag. Safe editing requires a conditional write.'
     );
   }
-  const response = requireOk(
-    await client.put(document.url, {
-      body: await document.graph.write(),
+  const remote = await loadDocument(client, document.url);
+  if (!sameGraph(document.source, remote.source, document.url)) {
+    throw documentError(
+      'document_conflict',
+      'This resource changed elsewhere. Review its current contents before saving.'
+    );
+  }
+  if (!strongETag(remote.etag)) {
+    throw documentError(
+      'validator_missing',
+      'Your Pod is not providing the version information needed for a safe save.'
+    );
+  }
+  return { ...document, etag: remote.etag };
+}
+export async function saveDocument(client, document) {
+  document = await documentForSave(client, document);
+  const source = await document.graph.write();
+  let response;
+  try {
+    response = await client.put(document.url, {
+      body: source,
       headers: {
         'Content-Type': 'text/turtle',
         [document.missing ? 'If-None-Match' : 'If-Match']: document.missing
           ? '*'
           : document.etag
       }
-    })
-  );
-  return { ...document, missing: false, etag: response.headers.get('ETag') };
+    });
+  }
+  catch (error) {
+    if (error.code) {
+      throw error;
+    }
+    throw documentError(
+      'save_unconfirmed',
+      'Could not confirm whether your Pod saved these changes.',
+      error
+    );
+  }
+  requireOk(response);
+  return {
+    ...document,
+    source,
+    missing: false,
+    etag: response.headers.get('ETag')
+  };
 }
 export async function connectSession(
   webId,

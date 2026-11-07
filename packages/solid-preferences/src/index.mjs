@@ -4,10 +4,14 @@ import {
   prefixes,
   valueAt,
   loadDocument,
-  copyDocument,
   saveDocument,
   httpUrl
 } from '@muze-labs/solid-app-data';
+import {
+  StateGraph,
+  named,
+  literal
+} from '@muze-labs/solid-app-data/state-rdf.mjs';
 export const defaults = Object.freeze({
   theme: 'system',
   textScale: '100',
@@ -27,12 +31,16 @@ function readWorkspaceResource(subject) {
   }
   if (Array.isArray(value)) {
     if (value.length !== 1) {
-      throw new Error('solid-preferences: Workspace resource has multiple values.');
+      throw new Error(
+        'solid-preferences: Workspace resource has multiple values.'
+      );
     }
     value = value[0];
   }
   if (!value?.id || String(value.id).startsWith('_:')) {
-    throw new Error('solid-preferences: Workspace resource must be a named URL.');
+    throw new Error(
+      'solid-preferences: Workspace resource must be a named URL.'
+    );
   }
   return httpUrl(value.id);
 }
@@ -43,15 +51,17 @@ function readLaunchTarget(subject) {
   }
   if (Array.isArray(value)) {
     if (value.length !== 1) {
-      throw new Error('solid-preferences: App launch target has multiple values.');
+      throw new Error(
+        'solid-preferences: App launch target has multiple values.'
+      );
     }
     value = value[0];
   }
   if (
     !(typeof value === 'string' || value instanceof String) ||
     value.language ||
-    (value.type && String(value.type) !==
-      'http://www.w3.org/2001/XMLSchema#string') ||
+    (value.type &&
+      String(value.type) !== 'http://www.w3.org/2001/XMLSchema#string') ||
     !['tab', 'window'].includes(String(value))
   ) {
     throw new Error('solid-preferences: Unsupported app launch target.');
@@ -92,7 +102,12 @@ export function validatePreferences(settings) {
   if (!/^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/.test(settings.language)) {
     throw new Error('solid-preferences: Use a language tag such as en or nl.');
   }
-  for (const key of ['contactsResource', 'launcherResource', 'workspaceResource', 'filesRoot']) {
+  for (const key of [
+    'contactsResource',
+    'launcherResource',
+    'workspaceResource',
+    'filesRoot'
+  ]) {
     if (!settings[key]) {
       continue;
     }
@@ -121,30 +136,41 @@ export async function loadPreferences(session) {
 }
 export async function savePreferences(session, document, settings) {
   validatePreferences({ ...defaults, ...settings });
-  const keys = Object.keys(defaults).filter(key => Object.hasOwn(settings, key));
+  const keys = Object.keys(defaults).filter((key) =>
+    Object.hasOwn(settings, key)
+  );
   const subject = document.graph.get(document.url + '#solid-apps');
   readLaunchTarget(subject);
   readWorkspaceResource(subject);
-  const draft = await copyDocument(document);
-  const id = draft.url + '#solid-apps';
-  const node = draft.graph.get(id);
+  const source =
+    document.source ??
+    document.graph.originalSource ??
+    (await document.graph.write());
+  const graph = new StateGraph(source, document.url);
+  const subjectId = named(document.url + '#solid-apps');
+  const resourceKeys = [
+    'contactsResource',
+    'launcherResource',
+    'workspaceResource',
+    'filesRoot'
+  ];
   for (const key of keys) {
-    const property = draft.graph.propertyName(namespace + key);
+    let value;
     if (settings[key]) {
-      draft.graph.set(
-        id,
-        namespace + key,
-        ['contactsResource', 'launcherResource', 'workspaceResource', 'filesRoot'].includes(key)
-          ? draft.graph.addNamedNode(settings[key])
-          : oldm.literal(String(settings[key]))
-      );
+      value = resourceKeys.includes(key)
+        ? named(settings[key])
+        : literal(String(settings[key]));
     }
-    else if (node) {
-      delete node[property];
-    }
+    graph.set(subjectId, namespace + key, value);
   }
-  const saved = await saveDocument(session.client, draft);
-  return { document: saved, settings: readPreferences(saved) };
+  const saved = await saveDocument(session.client, { ...document, graph });
+  const result = {
+    ...saved,
+    graph: oldm
+      .context({ prefixes })
+      .parse(saved.source, saved.url, 'text/turtle')
+  };
+  return { document: result, settings: readPreferences(result) };
 }
 export function applyPreferences(settings, root = document.documentElement) {
   root.lang = settings.language;

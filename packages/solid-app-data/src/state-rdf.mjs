@@ -228,12 +228,12 @@ export class StateGraph {
 // Exact isomorphism; blank labels and triple order are not graph identity.
 // Bound ambiguous searches conservatively: inequality may cause review, never
 // incorrectly acknowledge a remote change as our own accepted baseline.
-export function sameGraph(left, right) {
+export function sameGraph(left, right, base = stateRoot) {
   if (left === right) {
     return true;
   }
-  const a = new StateGraph(left).quads,
-    b = new StateGraph(right).quads;
+  const a = new StateGraph(left, base).quads,
+    b = new StateGraph(right, base).quads;
   const unique = (quads) => [
     ...new Map(quads.map((q) => [tripleText(q), q])).values()
   ];

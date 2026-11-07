@@ -20,6 +20,36 @@ Documentation-only changes may be made outside a cycle; Git history is
 sufficient for those changes. This exception does not cover implementation
 mixed into a documentation update. Do not commit, merge or publish unless asked.
 
+## Feature guardrails
+
+Apply these maintainer-confirmed constraints to every new feature:
+
+- Keep each app focused on a coherent user purpose. When a feature introduces a
+  separate task, consider a separate app connected through capabilities. Choose
+  boundaries around useful workflows rather than an arbitrary feature count.
+- Design local-first and mobile-first from the start. Define locally available
+  data, offline behavior and preservation of edits through reload, reconnection,
+  authentication failure and conflicts. Design and verify the core phone workflow
+  before expanding it to desktop; do not assume uncached data is available offline.
+- Accessibility is a delivery condition. The core task must work with keyboard
+  and assistive technology. Prefer native controls and design labels, focus,
+  feedback and equivalent gesture alternatives with the feature. Redesign or
+  defer a feature whose core interaction cannot be made accessible.
+- Keep useful interaction affordable on slow connections. Retain the existing
+  strict limit of less than 200000 bytes of gzipped JavaScript per complete app
+  graph, including required shared dependencies and the auth callback. This is
+  a ceiling, not a target. Also assess cold first-load HTML, CSS, fonts, images
+  and required requests, and time to a real core task. A loading shell is not
+  meaningful interaction. Optional features may load later; do not hide the core
+  task's cost behind a small entry bundle or an assumed warm cache.
+
+Before implementation, briefly record the app boundary, offline/recovery behavior,
+phone interaction, accessible core interaction and download impact in the cycle.
+Evaluate those same claims with appropriate evidence, distinguishing automated
+checks from keyboard/assistive-technology and usability review. Keep code readable
+for people altering their apps; do not trade clarity for clever size tricks.
+See the [standing guardrails](design/solid-apps-roadmap.md#standing-feature-guardrails).
+
 ## Engineering requirements
 
 This is the Muze-owned Solid Apps monorepo. It explicitly adopts:
