@@ -12,6 +12,7 @@
     "@muze-nl/theds": "^0.2.7",
     "@muze-labs/solid-app-data": "0.1.0",
     "@muze-labs/solid-preferences": "0.1.0",
-    "@muze-labs/solid-profile": "0.1.0"
+    "@muze-labs/solid-profile": "0.1.0",
+    "@muze-labs/solid-design": "0.1.0"
   }
 }

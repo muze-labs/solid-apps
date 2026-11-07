@@ -15,6 +15,7 @@ import {
 const resources = new Map();
 let base;
 let version = 1;
+let profileSaveDelay = 0;
 const calls = [];
 const server = http.createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -22,6 +23,74 @@ const server = http.createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Methods', 'GET,HEAD,PUT,OPTIONS,DELETE');
   res.setHeader('Access-Control-Expose-Headers', 'ETag,Link,Location');
   const url = new URL(req.url, base).href;
+  const requestedPath = new URL(url).pathname;
+  if (requestedPath === '/presentation-capabilities.mjs') {
+    res.writeHead(200, { 'Content-Type': 'text/javascript' });
+    res.end(
+      await fs.readFile(
+        new URL(
+          '../packages/solid-app-data/src/capabilities.mjs',
+          import.meta.url
+        )
+      )
+    );
+    return;
+  }
+  if (requestedPath === '/presentation-provider/') {
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    res.end(`<!doctype html><title>Presentation fixture</title>
+      <p>Provider content ready</p>
+      <script type="module">
+        import { ManagedApp, editProfileCapability } from '/presentation-capabilities.mjs';
+        const mode = new URL(location.href).searchParams.get('mode');
+        const managed = new ManagedApp({
+          name: 'Presentation fixture',
+          capabilities: [editProfileCapability],
+          waitForPresentation: mode !== 'legacy',
+          onRequest: () => parent.postMessage({
+            type: 'fixture-presentation-request', id: managed.resume.id
+          }, managed.resume.origin)
+        });
+        addEventListener('message', event => {
+          if (event.source !== parent || event.origin !== managed.resume?.origin ||
+              event.data?.type !== 'fixture-present') { return; }
+          if (event.data.id) {
+            parent.postMessage({type:'solid-apps:presentation-ready',id:event.data.id}, managed.resume.origin);
+          }
+          else { managed.presentationReady(); }
+        });
+      </script>`);
+    return;
+  }
+  if (requestedPath === '/embedded-profile/') {
+    res.writeHead(200, {
+      'Content-Type': 'text/html',
+      'Content-Security-Policy': "frame-ancestors 'none'"
+    });
+    const html = await fs.readFile(
+      new URL('../www/profile/index.html', import.meta.url),
+      'utf8'
+    );
+    res.end(html.replaceAll('../assets/', '/assets/'));
+    return;
+  }
+  if (requestedPath.startsWith('/assets/')) {
+    const file = new URL('../www' + requestedPath, import.meta.url);
+    try {
+      const type = requestedPath.endsWith('.css')
+        ? 'text/css'
+        : requestedPath.endsWith('.svg')
+          ? 'image/svg+xml'
+          : 'text/javascript';
+      res.writeHead(200, { 'Content-Type': type });
+      res.end(await fs.readFile(file));
+    }
+    catch {
+      res.writeHead(404).end();
+    }
+    return;
+  }
+
   calls.push({ method: req.method, url });
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
@@ -29,6 +98,9 @@ const server = http.createServer(async (req, res) => {
     return;
   }
   if (req.method === 'PUT') {
+    if (new URL(url).pathname === '/profile' && profileSaveDelay) {
+      await new Promise((resolve) => setTimeout(resolve, profileSaveDelay));
+    }
     const existing = resources.get(url);
     if (
       (req.headers['if-none-match'] === '*' && existing) ||
@@ -194,7 +266,8 @@ try {
     mobile: false
   });
   await page.send('Page.addScriptToEvaluateOnNewDocument', {
-    source: 'window.confirm=()=>true;'
+    source:
+      'window.confirm=()=>true; window.__fixtureErrors=[]; addEventListener("error",e=>__fixtureErrors.push(e.message)); addEventListener("unhandledrejection",e=>__fixtureErrors.push(String(e.reason?.stack || e.reason)));'
   });
   async function evaluate(expression) {
     const result = await page.send('Runtime.evaluate', {
@@ -259,7 +332,7 @@ try {
     if (!path.startsWith('launcher/')) {
       assert.deepEqual(
         await evaluate(
-          'return [...document.querySelectorAll("a[href]")].map(link=>link.getAttribute("href")).filter(href=>/^(?:\\.\\.\\/|\\/)(?:launcher|contacts|profile|files)(?:\\/|$)/.test(href));'
+          'return [...document.querySelectorAll("a[href]:not(.account-name)")].map(link=>link.getAttribute("href")).filter(href=>/^(?:\\.\\.\\/|\\/)(?:launcher|contacts|profile|files)(?:\\/|$)/.test(href));'
         ),
         []
       );
@@ -272,6 +345,18 @@ try {
     await page.ready();
   }
   async function click(selector) {
+    await page.send('Page.bringToFront');
+    await evaluate(`
+      for (const dialog of document.querySelectorAll('dialog[open]')) {
+        await Promise.all(dialog.getAnimations().map(animation =>
+          animation.finished.catch(() => {})));
+      }
+    `);
+    await evaluate(
+      'const target=document.querySelector(' +
+        JSON.stringify(selector) +
+        ');for(let element=target?.parentElement;element;element=element.parentElement){if(element.tagName==="DETAILS" && !element.open){element.querySelector("summary").click();}}'
+    );
     await wait(
       `document.querySelector(${JSON.stringify(selector)}) && !document.querySelector(${JSON.stringify(selector)}).disabled && document.querySelector(${JSON.stringify(selector)}).getClientRects().length`
     );
@@ -294,11 +379,11 @@ try {
   async function account(command) {
     await click('.account-button');
     await wait(
-      'document.querySelector("#account-menu").matches(":popover-open")'
+      'document.querySelector("#muze-solid-ui-account-menu").matches(":popover-open")'
     );
     await click(`[data-simply-command=${command}]`);
     await wait(
-      '!document.querySelector("#account-menu").matches(":popover-open")'
+      '!document.querySelector("#muze-solid-ui-account-menu").matches(":popover-open")'
     );
   }
   async function capture(name) {
@@ -535,7 +620,7 @@ try {
   await wait('window.solidContacts?.store');
   await click('.account-button');
   await wait(
-    'document.querySelector("#account-menu").matches(":popover-open")'
+    'document.querySelector("#muze-solid-ui-account-menu").matches(":popover-open")'
   );
   await page.send('Input.dispatchKeyEvent', {
     type: 'keyDown',
@@ -550,16 +635,110 @@ try {
     windowsVirtualKeyCode: 27
   });
   await wait(
-    '!document.querySelector("#account-menu").matches(":popover-open")'
+    '!document.querySelector("#muze-solid-ui-account-menu").matches(":popover-open")'
   );
   await click('.account-button');
   await wait(
-    'document.querySelector("#account-menu").matches(":popover-open")'
+    'document.querySelector("#muze-solid-ui-account-menu").matches(":popover-open")'
   );
   await click('h1');
   await wait(
-    '!document.querySelector("#account-menu").matches(":popover-open")'
+    '!document.querySelector("#muze-solid-ui-account-menu").matches(":popover-open")'
   );
+  assert.equal(
+    await evaluate(`
+      const button = document.querySelector('[data-simply-command=newContact]');
+      button.focus(); button.click();
+      await new Promise(resolve => setTimeout(resolve, 100));
+      const dialog = document.querySelector('.new-contact-dialog');
+      const opacity = Number(getComputedStyle(dialog).opacity);
+      const scale = new DOMMatrix(getComputedStyle(dialog).transform).a;
+      return dialog.open && dialog.matches(':modal') &&
+        opacity > 0 && opacity < 1 && scale > 0.7 && scale < 1;
+    `),
+    true,
+    'Dialog opens with the reference fade and scale while remaining modal'
+  );
+  await evaluate(`
+    const dialog = document.querySelector('.new-contact-dialog');
+    await Promise.all(dialog.getAnimations().map(animation => animation.finished));
+  `);
+  await page.send('Input.dispatchKeyEvent', {
+    type: 'keyDown',
+    key: 'Escape',
+    code: 'Escape',
+    windowsVirtualKeyCode: 27
+  });
+  await page.send('Input.dispatchKeyEvent', {
+    type: 'keyUp',
+    key: 'Escape',
+    code: 'Escape',
+    windowsVirtualKeyCode: 27
+  });
+  assert.equal(
+    await evaluate(`
+      await new Promise(resolve => setTimeout(resolve, 100));
+      const dialog = document.querySelector('.new-contact-dialog');
+      const opacity = Number(getComputedStyle(dialog).opacity);
+      return dialog.open && dialog.matches(':modal') && opacity > 0 && opacity < 1;
+    `),
+    true,
+    'Escape animates closing before releasing native modality'
+  );
+  await wait('!document.querySelector(".new-contact-dialog").open');
+  assert.equal(
+    await evaluate('return document.activeElement.dataset.simplyCommand;'),
+    'newContact',
+    'Closing restores focus to the dialog invoker'
+  );
+  await evaluate(`
+    document.querySelector('[data-simply-command=newContact]').click();
+  `);
+  await evaluate(`
+    const dialog = document.querySelector('.new-contact-dialog');
+    await Promise.all(dialog.getAnimations().map(animation => animation.finished));
+    document.querySelector('[data-simply-command=cancelNew]').click();
+  `);
+  const animationTarget = await page.send('Target.createTarget', {
+    url: 'about:blank'
+  });
+  const animationTab = await chrome.page(animationTarget.targetId);
+  await animationTab.ready();
+  await animationTab.send('Page.bringToFront');
+  await wait('document.visibilityState==="hidden"');
+  await wait('!document.querySelector(".new-contact-dialog").open');
+  await page.send('Target.closeTarget', { targetId: animationTarget.targetId });
+  animationTab.close();
+  await page.send('Page.bringToFront');
+  await page.send('Emulation.setEmulatedMedia', {
+    features: [{ name: 'prefers-reduced-motion', value: 'reduce' }]
+  });
+  await page.send('Emulation.setDeviceMetricsOverride', {
+    width: 390,
+    height: 844,
+    deviceScaleFactor: 1,
+    mobile: true
+  });
+  assert.equal(
+    await evaluate(`
+      document.querySelector('[data-simply-command=newContact]').click();
+      const dialog = document.querySelector('.new-contact-dialog');
+      const bounds = dialog.getBoundingClientRect();
+      return dialog.getAnimations().length === 0 && bounds.x === 0 && bounds.y === 0 &&
+        bounds.width === innerWidth && bounds.height === innerHeight;
+    `),
+    true,
+    'Phone dialogs fill the viewport and reduced motion skips animation'
+  );
+  await click('[data-simply-command=cancelNew]');
+  await wait('!document.querySelector(".new-contact-dialog").open');
+  await page.send('Emulation.setEmulatedMedia', { features: [] });
+  await page.send('Emulation.setDeviceMetricsOverride', {
+    width: 1280,
+    height: 900,
+    deviceScaleFactor: 1,
+    mobile: false
+  });
   await evaluate(
     'document.querySelector("[data-simply-command=newContact]").click();'
   );
@@ -628,11 +807,11 @@ try {
     'window.solidContacts.host.session && !document.querySelector(".connect-dialog").open'
   );
   await wait(
-    'document.querySelector(".account-name").textContent==="Remote Person"'
+    'document.querySelector(".account-name").textContent.trim()==="Remote Person"'
   );
   assert.equal(
     await evaluate(
-      'return document.querySelector("#account-menu").textContent.includes(window.solidContacts.host.session.webId);'
+      'return document.querySelector("#muze-solid-ui-account-menu").textContent.includes(window.solidContacts.host.session.webId);'
     ),
     false
   );
@@ -654,7 +833,7 @@ try {
     contactsResource: base + '/contacts.ttl'
   });
   await wait(
-    'document.querySelector(".preferences-dialog [role=status]").textContent.includes("saved")'
+    'document.querySelector(".preferences-dialog .muze-solid-design-toast").textContent.includes("saved")'
   );
   assert.match(String(resources.get(base + '/prefs').body), /untouched/);
   assert.match(String(resources.get(base + '/prefs').body), /launcher\.ttl/);
@@ -663,7 +842,7 @@ try {
     'document.querySelector(".preferences-dialog [data-simply-command=close]").click();document.querySelector("[data-simply-command=sync]").click();'
   );
   await wait(
-    'document.querySelector(".suite-status").textContent.includes("Contacts synchronized")'
+    'document.querySelector(".muze-solid-design-toast").textContent.includes("Contacts synchronized")'
   );
   assert.match(
     String(resources.get(base + '/contacts.ttl').body),
@@ -679,7 +858,7 @@ try {
   );
   assert.equal(await evaluate('return document.documentElement.lang;'), 'nl');
   await wait(
-    'document.querySelector(".account-name").textContent==="Remote Person"'
+    'document.querySelector(".account-name").textContent.trim()==="Remote Person"'
   );
   await evaluate(
     'document.querySelector("[data-simply-command=mine]").click();'
@@ -693,22 +872,556 @@ try {
   await wait(
     'document.querySelector(".profile-card [name=email]").value==="owner@example.org"'
   );
-  assert.doesNotMatch(await evaluate(
-    'return document.querySelector(".profile-details").textContent;'
-  ), /\[object Object\]|unresolved-email/);
+  assert.doesNotMatch(
+    await evaluate(
+      'return document.querySelector(".profile-details").textContent;'
+    ),
+    /\[object Object\]|unresolved-email/
+  );
   await submit('.profile-card form', { name: 'Changed remote profile' });
   await wait(
     'document.querySelector(".profile-card h2")?.textContent==="Changed remote profile"'
   );
   assert.match(String(resources.get(base + '/profile').body), /Keep me/);
-  assert.match(String(resources.get(base + '/profile').body), /unresolved-email/);
-  assert.match(String(resources.get(base + '/profile').body), /keep email metadata/);
+  assert.match(
+    String(resources.get(base + '/profile').body),
+    /unresolved-email/
+  );
+  assert.match(
+    String(resources.get(base + '/profile').body),
+    /keep email metadata/
+  );
 
   await capture('profile-desktop');
+  assert.equal(
+    await evaluate(`
+      const button = document.querySelector('.account-name');
+      return button.tagName === 'BUTTON' &&
+        button.getAttribute('aria-haspopup') === 'dialog' &&
+        button.getAttribute('aria-label').includes(button.textContent.trim()) &&
+        getComputedStyle(button).textDecorationLine === 'none' &&
+        getComputedStyle(button).color === getComputedStyle(button.parentElement).color;
+    `),
+    true,
+    'Account name is a plain, labelled dialog button with inherited text color'
+  );
+  await evaluate('document.querySelector(".account-name").focus();');
+  await page.send('Input.dispatchKeyEvent', {
+    type: 'keyDown',
+    key: ' ',
+    code: 'Space',
+    windowsVirtualKeyCode: 32
+  });
+  await page.send('Input.dispatchKeyEvent', {
+    type: 'keyUp',
+    key: ' ',
+    code: 'Space',
+    windowsVirtualKeyCode: 32
+  });
+  await wait(
+    '!document.querySelector(".muze-solid-ui-capability-dialog a").hidden'
+  );
+  assert.equal(
+    await evaluate(
+      'return new URL(document.querySelector(".muze-solid-ui-capability-dialog a").href).hash.includes("resource=");'
+    ),
+    true
+  );
+  await click('[data-simply-command=muzeSolidUiCloseCapability]');
+  await wait(
+    '!document.querySelector(".muze-solid-ui-capability-dialog").open'
+  );
+  assert.equal(
+    await evaluate(
+      'return /Selection cancelled|Task cancelled/.test(document.querySelector(".suite-status").textContent);'
+    ),
+    false,
+    'Normal capability cancellation does not produce an error notice'
+  );
+  assert.equal(
+    await evaluate('return document.activeElement.matches(".account-name");'),
+    true,
+    'Closing the profile dialog returns keyboard focus to its name button'
+  );
   await visit('launcher/');
   await wait(
     'window.solidLauncher?.store && document.body.classList.contains("ds-darkmode")'
   );
+  // Exercise the real shared host and Profile provider, not a copied editor.
+  const profileFrame =
+    'document.querySelector(".muze-solid-ui-capability-frame").contentWindow';
+  await evaluate(`
+    window.presentationMessages = [];
+    addEventListener('message', event => {
+      if (event.data?.type === 'solid-apps:presentation-ready' &&
+          event.source === document.querySelector('.muze-solid-ui-capability-frame').contentWindow) {
+        window.presentationMessages.push(event.data.id);
+      }
+    });
+  `);
+  await click('.account-name');
+  await wait('document.querySelector(".muze-solid-ui-capability-dialog").open');
+  await wait(profileFrame + '.solidProfile?.host.managed?.ready');
+  await wait(
+    profileFrame + '.document.querySelector(".profile-card")?.hidden===false'
+  );
+  await wait('window.presentationMessages.length > 0');
+  await wait(
+    'document.querySelector(".muze-solid-ui-capability-loading").hidden'
+  );
+  assert.equal(
+    await evaluate(
+      'return getComputedStyle(document.querySelector(".muze-solid-ui-capability-frame")).visibility;'
+    ),
+    'visible',
+    'Profile signals presentation readiness after its initial view is bound'
+  );
+  assert.equal(
+    await evaluate(
+      'return ' + profileFrame + '.solidProfile.host.managed.embedded;'
+    ),
+    true
+  );
+  assert.equal(
+    await evaluate('return ' + profileFrame + '.location.hash;'),
+    '',
+    'Task launch context is consumed before Metro authorization'
+  );
+  assert.equal(
+    await evaluate(
+      'return ' + profileFrame + '.solidProfile.host.launch.webId;'
+    ),
+    base + '/profile#me',
+    'Task retains the launch WebID after consuming the URL'
+  );
+  assert.equal(
+    await evaluate(`
+      const provider = ${profileFrame};
+      provider.solidProfile.host.message('Connection needs attention');
+      return true;
+    `),
+    true
+  );
+  await wait(
+    profileFrame +
+      '.document.querySelector(".suite-status").textContent.includes("Connection needs attention")'
+  );
+  assert.equal(
+    await evaluate(`
+      const provider = ${profileFrame};
+      const account = provider.document.querySelector('.account');
+      const connect = provider.document.querySelector('.muze-solid-ui-task-connect');
+      return account.getClientRects().length === 0 &&
+        connect.getClientRects().length > 0;
+    `),
+    true,
+    'Tasks hide the preferences dropdown while keeping connection reachable'
+  );
+  assert.equal(
+    await evaluate(`
+      const dialog = document.querySelector('.muze-solid-ui-capability-dialog');
+      const close = dialog.querySelector('.muze-solid-design-dialog-close');
+      const bounds = dialog.getBoundingClientRect();
+      const button = close.getBoundingClientRect();
+      const style = getComputedStyle(dialog);
+      return Math.abs(button.top - bounds.top - parseFloat(style.borderTopWidth)) < 1 &&
+        Math.abs(bounds.right - button.right - parseFloat(style.borderRightWidth)) < 1;
+    `),
+    true,
+    'Close button meets the dialog top and right border'
+  );
+  assert.equal(
+    await evaluate(`
+      const provider = ${profileFrame};
+      const edit = provider.document.querySelector('[data-simply-command=editProfile]');
+      const buttonColor = provider.getComputedStyle(edit).backgroundColor;
+      const surfaceColor = provider.getComputedStyle(provider.document.body).backgroundColor;
+      return Boolean(edit.querySelector('svg use')) &&
+        buttonColor !== 'rgba(0, 0, 0, 0)' && buttonColor !== surfaceColor;
+    `),
+    true,
+    'Edit profile has an icon and a distinct button background'
+  );
+  await evaluate(profileFrame + '.solidProfile.host.message("");');
+  await evaluate(
+    profileFrame +
+      '.document.querySelector("[data-simply-command=editProfile]").click();'
+  );
+  await wait(
+    profileFrame +
+      '.document.querySelector(".profile-card form").hidden===false'
+  );
+  await evaluate(
+    'const input=' +
+      profileFrame +
+      '.document.querySelector(".profile-card [name=name]");input.value="Capability edited profile";input.dispatchEvent(new Event("input",{bubbles:true}));'
+  );
+  await capture('capability-profile-desktop');
+  await page.send('Emulation.setDeviceMetricsOverride', {
+    width: 390,
+    height: 844,
+    deviceScaleFactor: 1,
+    mobile: true
+  });
+  await wait(profileFrame + '.innerWidth < 500');
+  assert.equal(
+    await evaluate(
+      'const provider=' +
+        profileFrame +
+        ';const footer=provider.document.querySelector(".profile-card form .muze-solid-design-dialog-footer").getBoundingClientRect();return footer.top>=0 && footer.bottom<=provider.innerHeight;'
+    ),
+    true,
+    'Profile actions stay visible on mobile without scrolling the form'
+  );
+  await capture('capability-profile-mobile');
+  await page.send('Emulation.setDeviceMetricsOverride', {
+    width: 1280,
+    height: 900,
+    deviceScaleFactor: 1,
+    mobile: false
+  });
+  profileSaveDelay = 500;
+  await evaluate(
+    profileFrame +
+      '.document.querySelector(".profile-card form").requestSubmit();'
+  );
+  await click('[data-simply-command=muzeSolidUiCloseCapability]');
+  await wait(
+    'document.querySelector(".muze-solid-ui-capability-dialog [role=status]").textContent.includes("Wait for the save")'
+  );
+
+  await wait(
+    '!document.querySelector(".muze-solid-ui-capability-dialog").open'
+  );
+  assert.equal(
+    await evaluate(
+      'return /Selection cancelled|Task cancelled/.test(document.querySelector(".suite-status").textContent);'
+    ),
+    false,
+    'Normal capability cancellation does not produce an error notice'
+  );
+  profileSaveDelay = 0;
+  assert(
+    String(resources.get(base + '/profile').body).includes(
+      'keep email metadata'
+    )
+  );
+  assert(String(resources.get(base + '/profile').body).includes('Keep me'));
+  assert.equal(
+    await evaluate(
+      'return [...solidLauncher.workspace.instances.values()].some(record=>record.embedded);'
+    ),
+    false
+  );
+
+  const profileWrites = calls.filter(
+    (call) => call.method === 'PUT' && call.url === base + '/profile'
+  ).length;
+  await click('.account-name');
+  await wait(profileFrame + '.solidProfile?.host.managed?.ready');
+  await wait(
+    profileFrame + '.document.querySelector(".profile-card")?.hidden===false'
+  );
+  await evaluate(
+    profileFrame +
+      '.document.querySelector("[data-simply-command=editProfile]").click();'
+  );
+  await wait(
+    profileFrame +
+      '.document.querySelector(".profile-card form").hidden===false'
+  );
+  await evaluate(
+    'const input=' +
+      profileFrame +
+      '.document.querySelector(".profile-card [name=name]");input.value="Unsaved capability name";input.dispatchEvent(new Event("input",{bubbles:true}));'
+  );
+  await click('[data-simply-command=muzeSolidUiCloseCapability]');
+  await wait(
+    '!document.querySelector(".muze-solid-ui-capability-dialog footer").hidden'
+  );
+  assert.equal(
+    await evaluate(
+      'return document.querySelector(".muze-solid-ui-capability-dialog").open;'
+    ),
+    true
+  );
+  await click('[data-simply-command=muzeSolidUiKeepCapability]');
+  assert.equal(
+    await evaluate(
+      'return ' +
+        profileFrame +
+        '.document.querySelector(".profile-card [name=name]").value;'
+    ),
+    'Unsaved capability name'
+  );
+  await evaluate(
+    'solidLauncher.workspace.endEmbedded(solidLauncher.host.view.runtime.muzeSolidUiCall.ticket.id);'
+  );
+  await wait('solidLauncher.host.view.runtime.muzeSolidUiCall.failed');
+  assert.equal(
+    await evaluate(
+      'return ' +
+        profileFrame +
+        '.document.querySelector(".profile-card [name=name]").value;'
+    ),
+    'Unsaved capability name',
+    'A routing failure must preserve the provider and its draft until explicit discard'
+  );
+  await click('[data-simply-command=muzeSolidUiCloseCapability]');
+  await wait(
+    '!document.querySelector(".muze-solid-ui-capability-dialog footer").hidden'
+  );
+  await click('[data-simply-command=muzeSolidUiDiscardCapability]');
+  await wait(
+    '!document.querySelector(".muze-solid-ui-capability-dialog").open'
+  );
+  assert.equal(
+    await evaluate(
+      'return /Selection cancelled|Task cancelled/.test(document.querySelector(".suite-status").textContent);'
+    ),
+    false,
+    'Normal capability cancellation does not produce an error notice'
+  );
+  assert.equal(
+    calls.filter(
+      (call) => call.method === 'PUT' && call.url === base + '/profile'
+    ).length,
+    profileWrites
+  );
+
+  await click('[data-simply-command=pickResource]');
+  await wait(
+    'document.querySelector(".muze-solid-ui-capability-loading").hidden && document.querySelector(".muze-solid-ui-capability-frame").getAttribute("aria-busy")==="false"'
+  );
+  await wait(profileFrame + '.solidFiles?.host.managed?.ready');
+  await wait(
+    profileFrame + '.document.querySelector(".picker-request")?.hidden===false'
+  );
+  await wait(profileFrame + '.solidFiles.ui.runtime.current');
+  await evaluate(
+    profileFrame +
+      '.document.querySelector("[data-simply-command=selectFolder]").click();'
+  );
+  await wait(
+    '!document.querySelector(".muze-solid-ui-capability-dialog").open'
+  );
+  assert.equal(
+    await evaluate(
+      'return /Selection cancelled|Task cancelled/.test(document.querySelector(".suite-status").textContent);'
+    ),
+    false,
+    'Normal capability cancellation does not produce an error notice'
+  );
+  assert.equal(
+    await evaluate('return solidLauncher.ui.data.resource;'),
+    base + '/storage/'
+  );
+  await evaluate('solidLauncher.ui.actions.setResource("");');
+
+  const profileProvider = await evaluate(
+    'return solidLauncher.workspace.embeddedProviders[0].url;'
+  );
+  await evaluate(`
+    window.presentationRequest = null;
+    addEventListener('message', event => {
+      if (event.data?.type === 'fixture-presentation-request') {
+        window.presentationRequest = event.data.id;
+      }
+    });
+  `);
+  for (const mode of ['manual', 'reduced', 'legacy', 'missing', 'cancel']) {
+    await evaluate(
+      'window.presentationRequest=null; solidLauncher.workspace.embeddedProviders[0].url=' +
+        JSON.stringify(base + '/presentation-provider/?mode=' + mode) +
+        ';'
+    );
+    await click('.account-name');
+    await wait('window.presentationRequest');
+    const loadingBounds = await evaluate(`
+      const bounds = document.querySelector('.muze-solid-ui-capability-stage').getBoundingClientRect();
+      return { width: document.querySelector('.muze-solid-ui-capability-stage').clientWidth,
+        height: document.querySelector('.muze-solid-ui-capability-stage').clientHeight };
+    `);
+    if (mode !== 'legacy') {
+      assert.equal(
+        await evaluate(`
+          const frame = document.querySelector('.muze-solid-ui-capability-frame');
+          return !document.querySelector('.muze-solid-ui-capability-loading').hidden &&
+            getComputedStyle(frame).visibility === 'hidden' && frame.inert &&
+            frame.getAttribute('aria-hidden') === 'true' &&
+            frame.getAttribute('aria-busy') === 'true' && frame.getBoundingClientRect().height > 100;
+        `),
+        true,
+        'Loading preserves the frame layout while keeping it inaccessible'
+      );
+    }
+    if (mode === 'manual' || mode === 'reduced') {
+      await evaluate(`
+        window.postMessage({type:'solid-apps:presentation-ready',id:window.presentationRequest},location.origin);
+        document.querySelector('.muze-solid-ui-capability-frame').contentWindow.postMessage(
+          {type:'fixture-present',id:'previous-task'}, ${JSON.stringify(base)});
+      `);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      assert.equal(
+        await evaluate(
+          'return document.querySelector(".muze-solid-ui-capability-loading").hidden;'
+        ),
+        false,
+        'Wrong source and stale task ID cannot reveal the provider'
+      );
+      await page.send('Emulation.setEmulatedMedia', {
+        features: [{ name: 'prefers-reduced-motion', value: 'reduce' }]
+      });
+      assert.equal(
+        await evaluate(
+          'return getComputedStyle(document.querySelector(".muze-solid-ui-capability-spinner")).animationName;'
+        ),
+        'none',
+        'Loading respects reduced motion'
+      );
+      await page.send('Emulation.setEmulatedMedia', {
+        features:
+          mode === 'reduced'
+            ? [{ name: 'prefers-reduced-motion', value: 'reduce' }]
+            : []
+      });
+      if (mode === 'manual') {
+        await capture('capability-loading');
+      }
+      await evaluate(`
+        document.querySelector('.muze-solid-ui-capability-frame').contentWindow.postMessage(
+          {type:'fixture-present'}, ${JSON.stringify(base)});
+      `);
+      await wait(
+        'document.querySelector(".muze-solid-ui-capability-frame").getAttribute("aria-busy")==="false"'
+      );
+      if (mode === 'manual') {
+        assert.equal(
+          await evaluate(`
+            await new Promise(resolve => setTimeout(resolve, 100));
+            const frame = document.querySelector('.muze-solid-ui-capability-frame');
+            const loader = document.querySelector('.muze-solid-ui-capability-loading');
+            const contentOpacity = Number(getComputedStyle(frame).opacity);
+            const loadingOpacity = Number(getComputedStyle(loader).opacity);
+            return getComputedStyle(frame).transitionDuration === '0.3s' &&
+              !loader.hidden && contentOpacity > 0 && contentOpacity < 1 &&
+              loadingOpacity > 0 && loadingOpacity < 1;
+          `),
+          true,
+          'Loading fades out while provider content fades in over 0.3 seconds'
+        );
+      }
+      else {
+        await wait(
+          'document.querySelector(".muze-solid-ui-capability-loading").hidden'
+        );
+        assert.equal(
+          await evaluate(
+            'return getComputedStyle(document.querySelector(".muze-solid-ui-capability-frame")).transitionDuration;'
+          ),
+          '0s',
+          'Reduced motion reveals content without a fade'
+        );
+      }
+    }
+    if (mode === 'cancel') {
+      await click('[data-simply-command=muzeSolidUiCloseCapability]');
+    }
+    else {
+      const fallbackStart = Date.now();
+      await wait(
+        'document.querySelector(".muze-solid-ui-capability-loading").hidden'
+      );
+      if (mode === 'missing') {
+        assert(
+          Date.now() - fallbackStart >= 4000,
+          'A provider promising readiness gets the bounded grace period'
+        );
+      }
+      assert.deepEqual(
+        await evaluate(`
+          const frame = document.querySelector('.muze-solid-ui-capability-frame');
+          const bounds = frame.getBoundingClientRect();
+          return { width: frame.clientWidth, height: frame.clientHeight };
+        `),
+        loadingBounds,
+        'Revealing content does not change the frame viewport'
+      );
+      assert.equal(
+        await evaluate(
+          `const frame=document.querySelector('.muze-solid-ui-capability-frame');return !frame.inert && !frame.hasAttribute('aria-hidden');`
+        ),
+        true
+      );
+      await click('[data-simply-command=muzeSolidUiCloseCapability]');
+    }
+    await wait(
+      '!document.querySelector(".muze-solid-ui-capability-dialog").open'
+    );
+    await page.send('Emulation.setEmulatedMedia', { features: [] });
+  }
+
+  // A real framing refusal must offer a tab that completes the same request.
+  await evaluate(
+    'solidLauncher.workspace.embeddedProviders[0].url=' +
+      JSON.stringify(base + '/embedded-profile/') +
+      ';'
+  );
+  await click('.account-name');
+  const framingDeadline = Date.now() + 26000;
+  while (
+    await evaluate(
+      'return document.querySelector(".muze-solid-ui-capability-dialog a").hidden;'
+    )
+  ) {
+    assert(
+      Date.now() < framingDeadline,
+      'Framing refusal must offer a top-level fallback'
+    );
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  assert.equal(
+    await evaluate(
+      'return document.querySelector(".muze-solid-ui-capability-loading").hidden;'
+    ),
+    true,
+    'A framing failure replaces loading with actionable tab recovery'
+  );
+  const originalLauncher = page;
+  const profileTab = await openApp('.muze-solid-ui-capability-dialog a');
+  launchedPage = profileTab.page;
+  page = launchedPage;
+  await wait('window.solidProfile?.host.managed?.ready');
+  await wait('document.querySelector(".profile-card")?.hidden===false');
+  assert.equal(
+    await evaluate('return solidProfile.host.managed.embedded;'),
+    false
+  );
+  assert.equal(await evaluate('return solidProfile.host.managed.task;'), true);
+  await click('[data-simply-command=editProfile]');
+  await wait('document.querySelector(".profile-card form").hidden===false');
+  await evaluate(
+    'document.querySelector(".profile-card form").requestSubmit();'
+  );
+  page = originalLauncher;
+  await wait(
+    '!document.querySelector(".muze-solid-ui-capability-dialog").open'
+  );
+  assert.equal(
+    await evaluate(
+      'return /Selection cancelled|Task cancelled/.test(document.querySelector(".suite-status").textContent);'
+    ),
+    false,
+    'Normal capability cancellation does not produce an error notice'
+  );
+  launchedPage.close();
+  launchedPage = null;
+  await evaluate(
+    'solidLauncher.workspace.embeddedProviders[0].url=' +
+      JSON.stringify(profileProvider) +
+      ';'
+  );
+
   assert.equal(
     await evaluate(
       'return document.querySelectorAll(".app-grid a[href]").length;'
@@ -726,14 +1439,14 @@ try {
     'document.querySelector("[data-simply-command=sync]").click();'
   );
   await wait(
-    'document.querySelector(".suite-status").textContent.includes("Shortcuts synchronized")'
+    'document.querySelector(".muze-solid-design-toast").textContent.includes("Shortcuts synchronized")'
   );
   assert.match(
     String(resources.get(base + '/launcher.ttl').body),
     /Example app/
   );
   await wait(
-    'document.querySelector(".account-name").textContent==="Changed remote profile"'
+    'document.querySelector(".account-name").textContent.trim()==="Capability edited profile"'
   );
   await wait(
     'new URLSearchParams(new URL(document.querySelector(".app-grid a[href*=profile]").href).hash.slice(1)).get("webid")===' +
@@ -814,6 +1527,28 @@ try {
     await launcherPage.evaluate(() => window.solidLauncher.host.session.webId),
     webId
   );
+  // A managed child delegates an embedded task through the same Launcher broker.
+  await wait('window.solidProfile.host.managed?.ready');
+  await click('.account-name');
+  await wait(profileFrame + '.solidProfile?.host.managed?.ready');
+  await wait(profileFrame + '.solidProfile.ui.runtime.muzeSolidProfileRequest');
+  await click('[data-simply-command=muzeSolidUiCloseCapability]');
+  await wait(
+    '!document.querySelector(".muze-solid-ui-capability-dialog").open'
+  );
+  assert.equal(
+    await evaluate(
+      'return /Selection cancelled|Task cancelled/.test(document.querySelector(".suite-status").textContent);'
+    ),
+    false,
+    'Normal capability cancellation does not produce an error notice'
+  );
+  assert.equal(
+    await evaluate(
+      'return document.querySelector(".profile-card h2").textContent;'
+    ),
+    'Launch Alice'
+  );
   await capture('profile-launched');
   page.close();
   await launcherPage.send('Target.closeTarget', {
@@ -831,7 +1566,7 @@ try {
   );
   await submit('.preferences-dialog form', { launchTarget: 'window' });
   await wait(
-    'document.querySelector(".preferences-dialog [role=status]").textContent.includes("saved")'
+    'document.querySelector(".preferences-dialog .muze-solid-design-toast").textContent.includes("saved")'
   );
   await click('.preferences-dialog [data-simply-command=close]');
   await reload();
@@ -893,7 +1628,7 @@ try {
   );
   await click('.saved-apps [data-simply-command=sync]');
   await wait(
-    'document.querySelector(".suite-status").textContent.includes("Shortcuts synchronized")'
+    'document.querySelector(".muze-solid-design-toast").textContent.includes("Shortcuts synchronized")'
   );
   await visit('launcher/');
   await wait(
@@ -925,7 +1660,7 @@ try {
   );
   await click('.saved-apps [data-simply-command=sync]');
   await wait(
-    'document.querySelector(".suite-status").textContent.includes("Shortcuts synchronized")'
+    'document.querySelector(".muze-solid-design-toast").textContent.includes("Shortcuts synchronized")'
   );
   assert.match(
     String(resources.get(base + '/launcher.ttl').body),
@@ -1007,7 +1742,7 @@ try {
   await wait('new URL(' + anonymousLink + '.href).searchParams.has("webid")');
   await click('.saved-apps [data-simply-command=sync]');
   await wait(
-    'document.querySelector(".suite-status").textContent.includes("Shortcuts synchronized")'
+    'document.querySelector(".muze-solid-design-toast").textContent.includes("Shortcuts synchronized")'
   );
   await visit('launcher/');
   await wait(
@@ -1028,7 +1763,7 @@ try {
   );
   await click('.saved-apps [data-simply-command=sync]');
   await wait(
-    'document.querySelector(".suite-status").textContent.includes("Shortcuts synchronized")'
+    'document.querySelector(".muze-solid-design-toast").textContent.includes("Shortcuts synchronized")'
   );
   await visit('launcher/');
   await wait(
@@ -1120,7 +1855,7 @@ try {
     'document.querySelector("[data-simply-command=remove]").click();'
   );
   await wait(
-    'document.querySelector(".suite-status").textContent.includes("Marked deleted")'
+    'document.querySelector(".muze-solid-design-toast").textContent.includes("Marked deleted")'
   );
   assert(
     !(await evaluate(
@@ -1137,7 +1872,7 @@ try {
     `const input=document.querySelector('input[type=file]');const transfer=new DataTransfer();transfer.items.add(new File([new Uint8Array([0,255,7,128])],'bytes.bin',{type:'application/octet-stream'}));input.files=transfer.files;input.dispatchEvent(new Event('change',{bubbles:true}));`
   );
   await wait(
-    'document.querySelector(".suite-status").textContent.includes("1 files uploaded")'
+    'document.querySelector(".muze-solid-design-toast").textContent.includes("1 files uploaded")'
   );
   assert.deepEqual(
     [...resources.get(base + '/storage/bytes.bin').body],
@@ -1193,12 +1928,167 @@ try {
     '/tmp/solid-apps-review/contacts-desktop.png',
     Buffer.from(desktop.data, 'base64')
   );
+  await wait('!document.querySelector("dialog:modal")');
+  await evaluate(`
+    document.querySelector('.contact-search input').focus();
+    window.solidContacts.host.message('Persistent recovery guidance');
+    window.solidContacts.host.notify('Contact changes saved.');
+  `);
+  await wait(
+    'document.querySelector(".muze-solid-design-toast").hidden===false'
+  );
+  assert.equal(
+    await evaluate(`
+      const region = document.querySelector('.muze-solid-design-toasts');
+      return region.getAttribute('role') === 'status' &&
+        region.getAttribute('aria-live') === 'polite' &&
+        document.activeElement.matches('.contact-search input') &&
+        document.querySelector('.suite-status').textContent === 'Persistent recovery guidance';
+    `),
+    true,
+    'Toast announces politely without stealing focus or replacing recovery guidance'
+  );
+  await capture('contacts-toast');
+  await evaluate(
+    `document.querySelector('.muze-solid-design-toast button').focus();`
+  );
+  await new Promise((resolve) => setTimeout(resolve, 8200));
+  assert.equal(
+    await evaluate(
+      'return document.querySelector(".muze-solid-design-toast").hidden;'
+    ),
+    false,
+    'A focused toast does not disappear on its timer'
+  );
+  await click('.muze-solid-design-toast button');
+  await wait('document.querySelector(".muze-solid-design-toast").hidden');
+  assert.equal(
+    await evaluate(
+      'return document.activeElement.matches(".contact-search input");'
+    ),
+    true,
+    'Dismissing a keyboard-focused toast restores the previous focus'
+  );
+  await page.send('Input.dispatchMouseEvent', {
+    type: 'mouseMoved',
+    x: 10,
+    y: 100
+  });
+  await evaluate(
+    `window.solidContacts.host.notify('Nonessential confirmation');`
+  );
+  await wait(
+    'document.querySelector(".muze-solid-design-toast").hidden===false'
+  );
+  await new Promise((resolve) => setTimeout(resolve, 8200));
+  await wait('document.querySelector(".muze-solid-design-toast").hidden');
+  await evaluate(`window.solidContacts.host.message('');`);
   await click('.account-button');
   await wait(
-    'document.querySelector("#account-menu").matches(":popover-open")'
+    'document.querySelector("#muze-solid-ui-account-menu").matches(":popover-open")'
   );
-  await capture('contacts-account-menu');
+  assert.equal(
+    await evaluate(`
+      const menu = document.querySelector('#muze-solid-ui-account-menu');
+      return !menu.contains(document.activeElement) &&
+        [...menu.querySelectorAll('button')].every(item =>
+          getComputedStyle(item).backgroundColor === 'rgba(0, 0, 0, 0)');
+    `),
+    true,
+    'Pointer opening does not select or highlight the first row'
+  );
+  await evaluate('document.querySelector(".account-button").focus();');
+  async function menuArrow(key) {
+    await page.send('Input.dispatchKeyEvent', {
+      type: 'keyDown',
+      key,
+      code: key
+    });
+    await page.send('Input.dispatchKeyEvent', {
+      type: 'keyUp',
+      key,
+      code: key
+    });
+  }
+  await menuArrow('ArrowDown');
+  assert.equal(
+    await evaluate('return document.activeElement.dataset.simplyCommand;'),
+    'connectDialog'
+  );
+  await menuArrow('ArrowDown');
+  assert.equal(
+    await evaluate('return document.activeElement.dataset.simplyCommand;'),
+    'preferences'
+  );
+  await menuArrow('ArrowDown');
+  assert.equal(
+    await evaluate('return document.activeElement.dataset.simplyCommand;'),
+    'connectDialog',
+    'Arrow Down wraps to the first row'
+  );
+  await menuArrow('ArrowUp');
+  assert.equal(
+    await evaluate('return document.activeElement.dataset.simplyCommand;'),
+    'preferences',
+    'Arrow Up wraps to the last row'
+  );
+  await menuArrow('ArrowDown');
+  assert.equal(
+    await evaluate(`
+      const item = document.activeElement;
+      return item.matches(':focus-visible') &&
+        getComputedStyle(item).backgroundColor !== 'rgba(0, 0, 0, 0)';
+    `),
+    true,
+    'Arrow navigation provides a visible keyboard highlight'
+  );
+  await capture('contacts-muze-solid-ui-account-menu');
+  const preferencesPoint = await evaluate(`
+    const item = document.querySelector('#muze-solid-ui-account-menu [data-simply-command=preferences]');
+    const bounds = item.getBoundingClientRect();
+    return { x: bounds.left + bounds.width / 2, y: bounds.top + bounds.height / 2 };
+  `);
+  await page.send('Input.dispatchMouseEvent', {
+    type: 'mouseMoved',
+    ...preferencesPoint
+  });
+  assert.equal(
+    await evaluate(`
+      const menu = document.querySelector('#muze-solid-ui-account-menu');
+      const [first, second] = menu.querySelectorAll('button');
+      return getComputedStyle(first).backgroundColor === 'rgba(0, 0, 0, 0)' &&
+        getComputedStyle(second).backgroundColor !== 'rgba(0, 0, 0, 0)';
+    `),
+    true,
+    'Hover highlights only Preferences even while the first row retains focus'
+  );
+  assert.equal(
+    await evaluate(`
+      const menu = document.querySelector('#muze-solid-ui-account-menu');
+      const bounds = menu.getBoundingClientRect();
+      const rows = [...menu.querySelectorAll('button')].map(item => item.getBoundingClientRect());
+      return rows.every(row => Math.abs(row.left - bounds.left) < 1 &&
+        Math.abs(row.right - bounds.right) < 1) &&
+        Math.abs(rows[0].top - bounds.top) < 1 &&
+        Math.abs(rows[0].bottom - rows[1].top) < 1 &&
+        Math.abs(rows[1].bottom - bounds.bottom) < 1;
+    `),
+    true,
+    'Menu rows meet each other and all popover edges without gaps'
+  );
+  await capture('contacts-menu-hover');
   await click('[data-simply-command=preferences]');
+  assert.equal(
+    await evaluate(`
+      return ['.account-button', '.preferences-dialog .muze-solid-design-dialog-close'].every(selector => {
+        const button = document.querySelector(selector).getBoundingClientRect();
+        const icon = document.querySelector(selector + ' svg').getBoundingClientRect();
+        return Math.abs((icon.top + icon.bottom) / 2 - (button.top + button.bottom) / 2) < 1;
+      });
+    `),
+    true,
+    'User and dialog close icons are vertically centered in their buttons'
+  );
   await page.send('Emulation.setDeviceMetricsOverride', {
     width: 390,
     height: 844,
@@ -1229,6 +2119,20 @@ try {
   await capture('preferences-storage-mobile');
   await click('.preferences-dialog [data-simply-command=close]');
   await wait('!document.querySelector(".preferences-dialog").open');
+  assert.equal(
+    await evaluate(
+      'const pane=document.querySelector(".contacts-list");const layout=document.querySelector(".split-view");return pane.clientWidth<=layout.clientWidth && [...pane.querySelectorAll(".contacts-toolbar button")].every(button=>button.getBoundingClientRect().right<=innerWidth);'
+    ),
+    true,
+    'All mobile Contacts toolbar actions must fit in the visible pane'
+  );
+  assert.equal(
+    await evaluate(
+      'const range=document.createRange();range.selectNodeContents(document.querySelector("h1"));return range.getBoundingClientRect().right<=document.querySelector(".account-name").getBoundingClientRect().left;'
+    ),
+    true,
+    'The account name must not overlap the mobile app title'
+  );
   await capture('contacts-mobile');
   assert(
     await evaluate(
@@ -1289,7 +2193,7 @@ try {
   );
   assert.equal(
     await evaluate(
-      'return document.querySelector(".account-name").textContent;'
+      'return document.querySelector(".account-name").textContent.trim();'
     ),
     ''
   );
@@ -1370,6 +2274,10 @@ catch (error) {
   console.error(
     'Current app:',
     await page.evaluate(() => ({
+      errors: window.__fixtureErrors,
+      frame: document.querySelector('iframe')?.contentDocument?.body?.innerText,
+      frameErrors:
+        document.querySelector('iframe')?.contentWindow?.__fixtureErrors,
       url: location.href,
       launch: window.solidProfile?.host.launch,
       connected: Boolean(window.solidProfile?.host.session)

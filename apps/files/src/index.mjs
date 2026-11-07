@@ -1,3 +1,7 @@
+import {
+  muzeSolidDesignDialog,
+  muzeSolidDesignListDetails
+} from '@muze-labs/solid-design';
 import fileDataSource from './data.mjs' with { type: 'text' };
 import { listFolder, readDownload, uploadFiles } from './data.mjs';
 import accountTemplate from './account-view.html?template' with { type: 'text' };
@@ -29,13 +33,20 @@ const host = shell({
 });
 const definition = {
   container: host.main.querySelector('.file-controls'),
-  components: { fileNavigation, fileEditing, resourcePicker, lifecycle },
+  components: {
+    muzeSolidDesignDialog,
+    muzeSolidDesignListDetails,
+    fileNavigation,
+    fileEditing,
+    resourcePicker,
+    lifecycle
+  },
   data: {
     entries: [],
     url: '',
     empty: '',
     picker: { hidden: '' },
-    editing: { hidden: null },
+    editing: { hidden: host.task ? '' : null },
     requester: ''
   },
   api: {
@@ -76,4 +87,4 @@ ui.definition.instances = {
   preferences: host.preferenceView
 };
 window.solidFiles = { host, ui };
-globalThis.filesApp = ui;
+globalThis.muzeSolidFilesApp = ui;

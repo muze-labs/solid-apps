@@ -1,0 +1,33 @@
+.muze-solid-design-toasts {
+  position: fixed;
+  inset: auto 1rem 1rem auto;
+  width: min(26rem, calc(100vw - 2rem));
+  z-index: 200;
+  pointer-events: none;
+}
+.muze-solid-design-toast {
+  display: flex;
+  align-items: center;
+  gap: var(--ds-space-d2);
+  float: none;
+  min-width: 0;
+  margin: 0;
+  padding: var(--ds-space-d2);
+  border-inline-start: 4px solid var(--ds-primary);
+  pointer-events: auto;
+}
+.muze-solid-design-toast p {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.muze-solid-design-toast button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  margin: 0;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+}

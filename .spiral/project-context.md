@@ -806,3 +806,42 @@ records this outcome and stage order without selecting a delivery mechanism,
 app boundaries, architecture or dates. Multi-user collaboration belongs to the
 second stage; current same-user sync/account consistency work remains in scope.
 No implementation cycle is selected by this documentation-only update.
+
+
+## Active UI/capability cycle, 2026-11-07
+
+The maintainer confirms the MVP UI work, specifying common dropdown, dialog and
+list/details design components, clear menu highlighting, visible dialog footer
+actions and prefixed globally visible names. They then propose using capabilities
+with a dialog/iframe host, making profile editing another capability, and confirm:
+"Agreed, lets see if we can make it work." This supersedes the earlier own-profile
+new-tab preference and scoped embedding deferral. CYC49/SRC50/DES51 retain that
+commitment on spiral/CYC-20261107-QG24H-49-capability-dialog-ui, from main 7fabcc1.
+The existing uncommitted assessment update is retained on this branch.
+
+The cycle uses a shared private solid-design package based on the-ds, keeps
+SimplyFlow rendering and provider-owned Metro/native RDF writes, and adds scoped
+transient provider connections through Launcher. Profile editing and Files
+selection use the dialog, with a tab continuation when framing fails. No general
+registry, recipient capability, stage-two collaboration, auth-policy rewrite or
+live IDE is included. Runtime composition remains separately deferred. IMP52/EVD53
+will retain final implementation/evaluation; human acceptance remains pending.
+No commit, merge or push is authorized by this implementation instruction.
+
+
+## UI/capability cycle acceptance, 2026-11-07
+
+The maintainer accepts the integrated CYC49 result: "Very happy with that. Mark
+it accepted, commit and merge it to main! :)" ACC66 records this acceptance and
+exact implementation/evidence references. CYC49 is now Accepted, superseding the
+Active/pending state above. The request authorizes a direct local main merge for
+this cycle instead of the normal PR route. No push or package publication is
+requested. EVD65 retains the final checks and earlier failures/limits.
+
+The accepted result includes provider-owned Profile/Files dialog tasks and tab
+continuation, shared design components, accessible menus/toasts, stable loading,
+provider readiness and 300ms content/dialog transitions with reduced motion.
+Native RDF, conditional writes and guarded draft/save close behavior remain.
+Session-renewal authorization and its recovery UI are retained future roadmap
+work, as are named workspaces, registry/recipient work, automatic sync/PWA,
+runtime composition/live IDE and stage-two collaboration.

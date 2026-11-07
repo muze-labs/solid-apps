@@ -14,6 +14,12 @@ body {
   margin: 0;
   min-height: 100dvh;
 }
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+}
 button,
 a[data-simply-command] {
   cursor: pointer;
@@ -74,11 +80,15 @@ button:disabled {
 }
 .account-button {
   clip-path: polygon(0 0, 17px 100%, 100% 100%, 100% 0);
-  padding: 6px 15px 6px 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.75rem;
+  padding: 0 15px 0 30px;
   background: var(--ds-grey-70);
   color: white;
   margin: 0;
-  min-height: 2.5rem;
+  min-height: 2.75rem;
 }
 .account-button:hover,
 .account-button:focus-visible {
@@ -90,7 +100,7 @@ button:disabled {
   position-area: none;
   inset: 3.25rem 0.5rem auto auto;
   margin: 0;
-  width: min(21rem, calc(100vw - 1rem));
+  width: min(14rem, calc(100vw - 1rem));
   max-height: calc(100dvh - 4rem);
   overflow: auto;
 }
@@ -100,7 +110,6 @@ button:disabled {
 }
 .account .ds-dropdown-item {
   margin: 0;
-  border-top: 1px solid var(--ds-grey-low);
 }
 .account .ds-dropdown-link {
   display: block;
@@ -109,10 +118,6 @@ button:disabled {
   padding: var(--ds-space-d2);
   text-align: left;
   color: inherit;
-}
-.account .ds-dropdown-link:hover,
-.account .ds-dropdown-link:focus-visible {
-  background: var(--ds-dropdown-focus);
 }
 .suite-status {
   margin: var(--ds-space-d2) 0 0;
@@ -126,6 +131,9 @@ button:disabled {
   display: none;
 }
 .suite-main {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
   padding: var(--ds-space-d2) var(--ds-space) var(--ds-space-x2);
 }
 .app-content {
@@ -193,15 +201,6 @@ textarea[name='notes'] {
   min-width: 0;
 }
 
-.split-view.ds-panels-panes {
-  display: grid;
-  grid-template-columns: minmax(15rem, var(--ds-panels-list-width)) minmax(
-      0,
-      1fr
-    );
-  gap: var(--ds-space-x2);
-  align-items: start;
-}
 .split-view .ds-panels-pane {
   width: auto;
   padding: 0;
@@ -275,12 +274,14 @@ textarea[name='notes'] {
   place-items: center;
   flex: 0 0 auto;
   min-width: 2.5rem;
-  min-height: 2.5rem;
+  min-height: 2.75rem;
   padding: var(--ds-space-d4);
   margin: 0;
 }
 .profile-card {
   padding: 0;
+  height: 100%;
+  min-height: 0;
 }
 .profile-card h2 {
   margin-block-start: 0;
@@ -304,6 +305,10 @@ textarea[name='notes'] {
 }
 .profile-card form {
   max-width: 48rem;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
 }
 .resource-url {
   overflow-wrap: anywhere;
@@ -433,18 +438,14 @@ fieldset {
   .suite-header {
     padding-inline: var(--ds-space-d2);
   }
+  .suite-header h1 {
+    font-size: 1.5rem;
+  }
   .suite-main {
     padding-inline: var(--ds-space-d2);
   }
-  .split-view.ds-panels-panes {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--ds-space);
-  }
   .contacts-list {
     min-height: 0;
-  }
-  .contacts-toolbar {
-    position: static;
   }
   .profile-card dl {
     grid-template-columns: minmax(0, 1fr);
@@ -489,4 +490,249 @@ fieldset {
   margin-top: var(--ds-space);
   padding-top: var(--ds-space-d2);
   border-top: 1px solid var(--ds-grey-medium);
+}
+
+/* App-specific content inside the shared panel and dialog components. */
+.account-name {
+  max-width: min(16rem, 35vw);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.9rem;
+}
+.account-name:has(span:empty) {
+  display: none;
+}
+.app-content:has(.muze-solid-design-list-details) {
+  height: 100%;
+  min-height: 0;
+}
+.contacts-list .person-list {
+  flex: 1;
+}
+.contact-details,
+.app-content:has(.profile-controls) {
+  display: flex;
+  flex-direction: column;
+}
+.app-content:has(.profile-controls) {
+  height: 100%;
+  min-height: 0;
+}
+.contact-profile,
+.profile-content {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.profile-controls {
+  flex: none;
+}
+.profile-details {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.profile-details > dl {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  align-content: start;
+}
+.profile-details > button {
+  align-self: start;
+}
+.profile-card form > h2 {
+  margin-block: 0 var(--ds-space-d2);
+}
+.profile-card form .actions {
+  flex: none;
+  margin-block: 0;
+}
+.profile-card textarea[rows='1'] {
+  height: 2.75rem;
+}
+.muze-solid-profile-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.muze-solid-profile-source {
+  margin-block: var(--ds-space-d2);
+}
+.muze-solid-launcher-suite-apps,
+.launch-profile,
+.muze-solid-launcher-workspace-apps {
+  margin-block: var(--ds-space);
+}
+.muze-solid-launcher-shortcut-settings {
+  margin-inline-start: auto;
+}
+.muze-solid-launcher-shortcut-settings[open] {
+  flex-basis: 100%;
+}
+
+/* Capability providers keep their own app and render inside this task host. */
+.muze-solid-ui-capability-dialog[open] {
+  width: min(60rem, calc(100vw - 2rem));
+  height: min(48rem, calc(100dvh - 2rem));
+}
+.muze-solid-ui-capability-dialog > .muze-solid-design-dialog-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 0;
+}
+.muze-solid-ui-capability-dialog [role='status'] {
+  margin: var(--ds-space-d2) var(--ds-space);
+}
+.muze-solid-ui-capability-dialog [role='status']:empty {
+  display: none;
+}
+.muze-solid-ui-capability-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+.muze-solid-ui-capability-frame {
+  opacity: 1;
+  transition: opacity 0.3s ease;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+.muze-solid-ui-capability-frame[data-muze-solid-ui-loading] {
+  visibility: hidden;
+  opacity: 0;
+  transition: none;
+}
+.muze-solid-ui-capability-loading {
+  opacity: 1;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 1;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ds-space-d2);
+  text-align: center;
+}
+.muze-solid-ui-capability-loading[data-muze-solid-ui-fading] {
+  opacity: 0;
+}
+.muze-solid-ui-capability-spinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid var(--ds-grey-low);
+  border-top-color: var(--ds-primary);
+  border-radius: 50%;
+  animation: muze-solid-ui-capability-spin 1s linear infinite;
+}
+@keyframes muze-solid-ui-capability-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .muze-solid-ui-capability-frame,
+  .muze-solid-ui-capability-loading {
+    transition: none;
+  }
+  .muze-solid-ui-capability-spinner {
+    animation: none;
+  }
+}
+.muze-solid-ui-embedded {
+  display: none;
+}
+body:has(.muze-solid-ui-embedded:not([hidden])) .suite-header h1,
+body:has(.muze-solid-ui-embedded:not([hidden])) .account-name,
+body:has(.muze-solid-ui-embedded:not([hidden])) .profile-controls {
+  display: none;
+}
+body:has(.muze-solid-ui-embedded:not([hidden])) .suite-header {
+  min-height: 2.75rem;
+}
+body:has(.muze-solid-ui-embedded:not([hidden]))
+  .suite-header:has(.logout-section:not([hidden])):has(.suite-status:empty) {
+  display: none;
+}
+body:has(.muze-solid-ui-embedded:not([hidden])) .suite-main {
+  display: flex;
+  overflow: hidden;
+  padding-bottom: var(--ds-space-d2);
+}
+body:has(.muze-solid-ui-embedded:not([hidden])) .app-content {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+body:has(.muze-solid-ui-embedded:not([hidden])) .profile-content {
+  height: 100%;
+}
+body:has(.muze-solid-ui-embedded:not([hidden])) .file-controls {
+  padding-bottom: 8rem;
+}
+body:has(.muze-solid-ui-embedded:not([hidden])) .picker-request {
+  padding: var(--ds-space-d2);
+  border: 0;
+  background: none;
+}
+body:has(.muze-solid-ui-embedded:not([hidden])) .picker-request h2 {
+  display: none;
+}
+body:has(.muze-solid-ui-embedded:not([hidden])) .picker-request p {
+  font-size: 0.85rem;
+  margin-block: var(--ds-space-d4);
+}
+body:has(.muze-solid-ui-embedded:not([hidden])) .picker-request .actions {
+  position: fixed;
+  inset: auto 0 0;
+  margin: 0;
+  padding: var(--ds-space-d2);
+  background: var(--ds-color-background);
+  border-top: 1px solid var(--ds-grey-low);
+  z-index: 5;
+}
+@media (max-width: 719px) {
+  .muze-solid-ui-capability-dialog[open] {
+    width: 100%;
+    height: 100dvh;
+  }
+}
+
+.muze-solid-profile-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ds-space-d2);
+}
+
+.account-name {
+  appearance: none;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  text-decoration: none;
+  font-family: inherit;
+  line-height: 1.4;
+  padding: 0.5rem;
+  margin: 0;
+  min-height: 2.75rem;
+  cursor: pointer;
+}
+.account-name:hover {
+  background: var(--ds-grey-low);
+}
+.account-name:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
+.account-name:has([data-simply-field='accountName']:empty) {
+  display: none;
 }

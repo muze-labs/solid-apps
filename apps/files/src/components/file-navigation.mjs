@@ -90,9 +90,9 @@ export const fileNavigation = {
         .toArray();
       this.actions.renderPicker();
       this.runtime.host.message(
-        metadata
-          ? 'Folder loaded.'
-          : 'Folder loaded. This server did not advertise link metadata; deletion is unavailable.'
+        !this.runtime.host.task && !metadata
+          ? 'This server did not advertise link metadata; deletion is unavailable.'
+          : ''
       );
       this.runtime.host.managed
         ?.publish()
@@ -103,7 +103,8 @@ export const fileNavigation = {
         return decodeURIComponent(
           new URL(url).pathname.replace(/\/$/, '').split('/').pop()
         );
-      } catch {
+      }
+      catch {
         return url;
       }
     },
@@ -126,7 +127,8 @@ export const fileNavigation = {
           async () => {
             try {
               return await fn();
-            } catch (error) {
+            }
+            catch (error) {
               if (this.runtime.pending) {
                 await this.actions
                   .finishSelection({

@@ -1,3 +1,9 @@
+import {
+  editProfileCapability,
+  capabilityError
+} from '@muze-labs/solid-app-data/capabilities.mjs';
+import { launchUrl } from '@muze-labs/solid-app-data/launch.mjs';
+import { loadDocument } from '@muze-labs/solid-app-data';
 import { app } from '@muze-labs/simplyflow/app';
 import { readProfile } from '@muze-labs/solid-profile';
 import { connectSession, httpUrl } from '@muze-labs/solid-app-data';
@@ -7,7 +13,11 @@ import { parseLaunchUrl } from '@muze-labs/solid-app-data/launch.mjs';
 import { ManagedApp } from '@muze-labs/solid-app-data/capabilities.mjs';
 import { exposeDefinition } from '@muze-labs/solid-app-data/definition.mjs';
 import {
+  muzeSolidDesignDialog,
+  muzeSolidDesignDropdown,
+  muzeSolidDesignToast,
   account,
+  muzeSolidUiCapabilityDialog,
   sessionServices,
   accountLifecycle,
   suiteAppearance
@@ -20,16 +30,20 @@ export function shell({
   templates = {}
 } = {}) {
   const root = document.querySelector('#app');
+  const task = new URL(location.href).searchParams.has('solid-apps-task');
   let launch = { webId: '', resource: '' };
   let addressLaunch = launch;
   let launchError = '';
-  if (acceptLaunch) {
+  if (acceptLaunch || task) {
     try {
       const parsed = parseLaunchUrl(location.href);
       launch = parsed.context;
       addressLaunch = launch;
-      if (parsed.url !== location.href) {
-        history.replaceState(history.state, '', parsed.url);
+      // Consume task context before Metro examines the URL for OAuth responses.
+      // The provider keeps the validated context in host.launch.
+      const address = task ? launchUrl(parsed.url) : parsed.url;
+      if (address !== location.href) {
+        history.replaceState(history.state, '', address);
         addressLaunch = { webId: '', resource: '' };
       }
     }
@@ -39,7 +53,7 @@ export function shell({
   }
   const runtime = {
     root,
-    acceptLaunch,
+    acceptLaunch: acceptLaunch || task,
     addressLaunch,
     session: null,
     settings: { ...defaults },
@@ -47,6 +61,8 @@ export function shell({
   };
   const host = {
     main: root.querySelector('.app-content'),
+    task,
+    embedded: task && window.parent !== window,
     launch,
     launchError,
     get session() {
@@ -62,16 +78,34 @@ export function shell({
   const definition = {
     container: root.querySelector('.suite-account-owner'),
     components: {
+      muzeSolidDesignDialog,
+      muzeSolidDesignDropdown,
+      muzeSolidDesignToast,
       account: {
         ...account,
         templates: { 'suite-account': templates.account }
       },
       sessionServices,
       accountLifecycle,
+      muzeSolidUiCapabilityDialog,
       suiteAppearance
     },
     data: {
+      muzeSolidDesignNotice: { text: '', visibility: { hidden: '' } },
+      muzeSolidUiEmbedded: { hidden: task ? null : '' },
+      muzeSolidUiMenuVisibility: { hidden: task ? '' : null },
+      muzeSolidUiTaskConnectVisibility: { hidden: task ? null : '' },
+      muzeSolidUiDialog: {
+        title: '',
+        message: '',
+        loading: { hidden: '' },
+        loadingText: '',
+        frame: { src: 'about:blank', hidden: '' },
+        fallback: { href: '', hidden: '' },
+        discard: { hidden: '' }
+      },
       accountName: '',
+      muzeSolidUiProfileButton: { 'aria-label': 'View and edit your profile' },
       webId: launch.webId,
       logoutVisibility: { hidden: '' },
       message: launchError,
@@ -79,6 +113,10 @@ export function shell({
     },
     api: {
       readProfile,
+      editProfileCapability,
+      capabilityError,
+      launchUrl,
+      loadDocument,
       connectSession,
       httpUrl,
       applyPreferences,
@@ -102,6 +140,7 @@ export function shell({
   for (const name of [
     'manage',
     'message',
+    'notify',
     'run',
     'resource',
     'requireSession'
@@ -110,7 +149,9 @@ export function shell({
   }
   host.view = view;
   runtime.dialog = root.querySelector('.connect-dialog');
-  runtime.menu = root.querySelector('#account-menu');
+  runtime.menu = root.querySelector('#muze-solid-ui-account-menu');
+  view.actions.muzeSolidUiInitializeCapability();
+  host.muzeSolidUiInvoke = view.actions.muzeSolidUiInvokeCapability;
   view.actions.initialize();
   host.preferenceView = runtime.preferences.app;
   return host;

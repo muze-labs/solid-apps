@@ -14,6 +14,7 @@ export class WorkspaceBroker {
     onMessage = () => {},
     authorize = () => false,
     target = window,
+    embeddedProviders = [],
     checkpointTimeout = 10000
   } = {}) {
     Object.assign(this, {
@@ -21,7 +22,8 @@ export class WorkspaceBroker {
       onMessage,
       authorize,
       target,
-      checkpointTimeout
+      checkpointTimeout,
+      embeddedProviders
     });
     this.focusTarget = 'solid-apps-launcher-' + crypto.randomUUID();
     target.name = this.focusTarget;
@@ -56,14 +58,17 @@ export class WorkspaceBroker {
       ...this.extra,
       version: 2,
       launcher: serializable(this.launcherState),
-      apps: [...this.instances.values()].map((record) =>
-        serializable(record.entry)
-      )
+      apps: from([...this.instances.values()])
+        .where((record) => !record.embedded)
+        .select((record) => serializable(record.entry))
+        .toArray()
     };
   }
   keys() {
     return Object.fromEntries(
-      [...this.instances].map(([id, record]) => [id, record.key])
+      [...this.instances]
+        .filter(([, record]) => !record.embedded)
+        .map(([id, record]) => [id, record.key])
     );
   }
   changed() {
@@ -100,7 +105,9 @@ export class WorkspaceBroker {
   }
   restore() {
     for (const record of this.instances.values()) {
-      this.open(record.entry.url, { id: record.entry.id });
+      if (!record.embedded) {
+        this.open(record.entry.url, { id: record.entry.id });
+      }
     }
   }
   inspect() {
@@ -122,6 +129,10 @@ export class WorkspaceBroker {
   }
   resume(event) {
     const data = event.data;
+    if (data?.type === 'solid-apps:embed-port') {
+      this.attachEmbedded(event);
+      return;
+    }
     const record = this.instances.get(data?.id);
     if (
       !record ||
@@ -148,6 +159,11 @@ export class WorkspaceBroker {
     this.offer(record);
   }
   offer(record) {
+    for (const child of this.instances.values()) {
+      if (child.embedded && child.owner === record.entry.id) {
+        this.endEmbedded(child.entry.id, record.entry.id);
+      }
+    }
     record.peer?.close('Application reconnected.');
     record.registered = false;
     record.ready = false;
@@ -173,6 +189,24 @@ export class WorkspaceBroker {
     if (this.instances.get(record.entry.id) !== record || this.closing) {
       throw capabilityError('Workspace instance is no longer active.');
     }
+    if (method === 'embed-provider' && record.registered && !record.embedded) {
+      return this.embeddedProvider(input.capability);
+    }
+    if (method === 'embed' && record.registered && !record.embedded) {
+      return this.beginEmbedded(input.url, input.capability, record.entry.id);
+    }
+    if (method === 'embed-call' && record.registered && !record.embedded) {
+      return this.requestEmbedded(input.id, input.input, {
+        ...options,
+        requester: record.entry.id
+      });
+    }
+    if (method === 'embed-close' && record.registered && !record.embedded) {
+      return this.endEmbedded(input.id, record.entry.id);
+    }
+    if (method === 'embed-can-close' && record.registered && !record.embedded) {
+      return this.canCloseEmbedded(input.id, record.entry.id);
+    }
     if (method === 'register') {
       if (
         !Array.isArray(input.capabilities) ||
@@ -187,22 +221,31 @@ export class WorkspaceBroker {
       record.managed = true;
       record.canResume = input.restoring === true;
       record.ready = input.restoring !== true;
-      await this.changed();
+      if (!record.embedded) {
+        await this.changed();
+      }
       return { id: record.entry.id };
     }
     if (method === 'ready' && record.registered) {
       record.ready = true;
       record.restoreError = '';
-      await this.changed();
+      if (!record.embedded) {
+        await this.changed();
+      }
       return { ready: true };
     }
     if (method === 'restore-error' && record.registered) {
       record.ready = false;
       record.restoreError = String(input.message).slice(0, 1000);
-      await this.changed();
+      if (!record.embedded) {
+        await this.changed();
+      }
       return { ready: false };
     }
     if (method === 'state') {
+      if (record.embedded) {
+        return { saved: false };
+      }
       const previous = record.entry.state;
       record.entry.state = restorationState(input);
       try {
@@ -221,6 +264,149 @@ export class WorkspaceBroker {
       });
     }
     throw capabilityError('Unsupported workspace operation.', 'denied');
+  }
+  embeddedProvider(capability) {
+    const providers = from(this.embeddedProviders)
+      .where({ capability })
+      .toArray();
+    if (providers.length !== 1) {
+      throw capabilityError(
+        'No embedded provider is configured for this capability.',
+        'denied'
+      );
+    }
+    return providers[0].url;
+  }
+  beginEmbedded(url, capability, requester = 'launcher') {
+    if (
+      requester !== 'launcher' &&
+      !this.instances.get(requester)?.registered
+    ) {
+      throw capabilityError(
+        'Requesting application is not registered.',
+        'denied'
+      );
+    }
+    const target = new URL(url);
+    const allowed = this.embeddedProviders.some((provider) => {
+      const expected = new URL(provider.url);
+      return (
+        provider.capability === capability &&
+        target.origin === expected.origin &&
+        target.pathname === expected.pathname
+      );
+    });
+    if (
+      !allowed ||
+      !['http:', 'https:'].includes(target.protocol) ||
+      target.username ||
+      target.password
+    ) {
+      throw capabilityError(
+        'This embedded provider is not configured.',
+        'denied'
+      );
+    }
+    if (
+      [...this.instances.values()].some(
+        (record) => record.embedded && record.owner === requester
+      )
+    ) {
+      throw capabilityError(
+        'Close the current capability dialog first.',
+        'busy'
+      );
+    }
+    const record = this.add({
+      id: crypto.randomUUID(),
+      url: target.href,
+      label: 'Capability dialog',
+      state: null
+    });
+    record.embedded = true;
+    record.owner = requester;
+    record.capability = capability;
+    return { id: record.entry.id, key: record.key };
+  }
+  embeddedRecord(id, requester) {
+    const record = this.instances.get(id);
+    if (!record?.embedded || record.owner !== requester) {
+      throw capabilityError(
+        'This capability dialog belongs to another caller.',
+        'denied'
+      );
+    }
+    return record;
+  }
+  attachEmbedded(event) {
+    const ticket = event.data;
+    const record = this.instances.get(ticket.id);
+    if (
+      !record?.embedded ||
+      record.peer ||
+      ticket.key !== record.key ||
+      !event.ports[0]
+    ) {
+      return;
+    }
+    const owner =
+      record.owner === 'launcher'
+        ? this.target
+        : this.instances.get(record.owner)?.win;
+    const origin =
+      record.owner === 'launcher'
+        ? this.target.location.origin
+        : new URL(this.instances.get(record.owner).entry.url).origin;
+    if (event.source !== owner || event.origin !== origin) {
+      return;
+    }
+    record.peer = new PortConnection(event.ports[0], (method, input, options) =>
+      this.handle(record, method, input, options)
+    );
+  }
+  async requestEmbedded(id, input, { requester = 'launcher', signal } = {}) {
+    const record = this.embeddedRecord(id, requester);
+    if (record.invoked) {
+      throw capabilityError('This capability task is already running.', 'busy');
+    }
+    record.invoked = true;
+    await this.whenReady(id, { signal, timeout: 20000 });
+    if (!record.capabilities.includes(record.capability)) {
+      throw capabilityError(
+        'Provider does not implement this capability.',
+        'denied'
+      );
+    }
+    const origin =
+      requester === 'launcher'
+        ? this.target.location.origin
+        : new URL(this.instances.get(requester).entry.url).origin;
+    const response = await record.peer.call(
+      'capability',
+      {
+        capability: record.capability,
+        input: serializable(input),
+        requester: { application: requester, origin }
+      },
+      { signal, timeout: null }
+    );
+    if (response.error) {
+      throw capabilityError(response.error.message, response.error.code);
+    }
+    return response.result;
+  }
+  async canCloseEmbedded(id, requester = 'launcher') {
+    const record = this.embeddedRecord(id, requester);
+    if (!record.ready || !record.peer || record.peer.closed) {
+      return { allowed: true };
+    }
+    return record.peer.call('can-close', null, { timeout: 2000 });
+  }
+  endEmbedded(id, requester = 'launcher') {
+    const record = this.embeddedRecord(id, requester);
+    record.peer?.close();
+    this.instances.delete(id);
+    return { closed: true };
   }
   whenReady(id, { signal, timeout = 30000 } = {}) {
     const deadline = Date.now() + timeout;
@@ -243,7 +429,10 @@ export class WorkspaceBroker {
         if (signal?.aborted) {
           cancel();
         }
-        else if (!record?.win || record.win.closed) {
+        else if (
+          !record ||
+          (!record.embedded && (!record.win || record.win.closed))
+        ) {
           finish(
             capabilityError(
               label +
@@ -326,60 +515,76 @@ export class WorkspaceBroker {
     return result.result;
   }
   async checkpoint() {
+    for (const record of this.instances.values()) {
+      if (record.embedded) {
+        const status = await this.canCloseEmbedded(
+          record.entry.id,
+          record.owner
+        );
+        if (!status.allowed || status.saving) {
+          throw capabilityError(
+            'Finish or discard the edits in the capability dialog before closing the workspace.',
+            'busy'
+          );
+        }
+      }
+    }
     const previous = new Map(
       [...this.instances.values()].map((record) => [record, record.entry.state])
     );
     const results = await Promise.allSettled(
-      [...this.instances.values()].map(async (record) => {
-        const label = record.entry.label
-          ? record.entry.label + ' (' + record.entry.url + ')'
-          : record.entry.url;
-        if (record.registered && !record.ready) {
-          const reason =
-            record.restoreError ||
-            'App is still restoring. Finish connecting or reload it, then retry.';
-          throw new Error(
-            'workspace-broker: ' + label + ' is not ready. ' + reason
-          );
-        }
-        if (record.registered && record.peer && !record.peer.closed) {
-          try {
-            record.entry.state = restorationState(
-              await record.peer.call('checkpoint', null, {
-                timeout: this.checkpointTimeout
-              })
-            );
-          }
-          catch (error) {
-            if (['timeout', 'disconnected'].includes(error.code)) {
-              record.peer.close();
-              record.registered = !record.canResume;
-              record.ready = false;
-              if (!record.canResume) {
-                record.restoreError = 'Reload this app to reconnect safely.';
-              }
-            }
+      [...this.instances.values()]
+        .filter((record) => !record.embedded)
+        .map(async (record) => {
+          const label = record.entry.label
+            ? record.entry.label + ' (' + record.entry.url + ')'
+            : record.entry.url;
+          if (record.registered && !record.ready) {
+            const reason =
+              record.restoreError ||
+              'App is still restoring. Finish connecting or reload it, then retry.';
             throw new Error(
-              'workspace-broker: Could not collect state from ' +
-                label +
-                '. ' +
-                error.message +
-                ' Open that app, then retry.'
+              'workspace-broker: ' + label + ' is not ready. ' + reason
             );
           }
-        }
-        else if (
-          record.win &&
-          !record.win.closed &&
-          (record.managed || record.entry.state !== null)
-        ) {
-          throw new Error(
-            'workspace-broker: ' +
-              label +
-              ' is reconnecting. Open that app, then retry.'
-          );
-        }
-      })
+          if (record.registered && record.peer && !record.peer.closed) {
+            try {
+              record.entry.state = restorationState(
+                await record.peer.call('checkpoint', null, {
+                  timeout: this.checkpointTimeout
+                })
+              );
+            }
+            catch (error) {
+              if (['timeout', 'disconnected'].includes(error.code)) {
+                record.peer.close();
+                record.registered = !record.canResume;
+                record.ready = false;
+                if (!record.canResume) {
+                  record.restoreError = 'Reload this app to reconnect safely.';
+                }
+              }
+              throw new Error(
+                'workspace-broker: Could not collect state from ' +
+                  label +
+                  '. ' +
+                  error.message +
+                  ' Open that app, then retry.'
+              );
+            }
+          }
+          else if (
+            record.win &&
+            !record.win.closed &&
+            (record.managed || record.entry.state !== null)
+          ) {
+            throw new Error(
+              'workspace-broker: ' +
+                label +
+                ' is reconnecting. Open that app, then retry.'
+            );
+          }
+        })
     );
     try {
       await this.changed();
@@ -402,6 +607,11 @@ export class WorkspaceBroker {
     await this.changed();
   }
   detach(record) {
+    for (const child of this.instances.values()) {
+      if (child.embedded && child.owner === record.entry.id) {
+        this.endEmbedded(child.entry.id, record.entry.id);
+      }
+    }
     record.peer?.close();
     record.peer = null;
     record.win = null;

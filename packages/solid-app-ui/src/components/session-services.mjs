@@ -1,5 +1,8 @@
 export const sessionServices = {
   actions: {
+    notify(text) {
+      this.actions.muzeSolidDesignNotify(text);
+    },
     message(text) {
       this.data.message = text;
     },
@@ -11,6 +14,9 @@ export const sessionServices = {
           : operation());
       }
       catch (error) {
+        if (error.code === 'cancelled') {
+          return undefined;
+        }
         this.data.message = error.message || String(error);
         return undefined;
       }

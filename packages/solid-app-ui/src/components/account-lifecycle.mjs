@@ -70,6 +70,7 @@ export const accountLifecycle = {
       window.location.reload();
     },
     cleanup() {
+      this.actions.muzeSolidUiCleanupCapability();
       window.removeEventListener('storage', this.runtime.accountListener);
       window.removeEventListener('hashchange', this.runtime.launchListener);
       this.runtime.preferences.app.destroy();

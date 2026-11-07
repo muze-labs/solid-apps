@@ -1,58 +1,72 @@
 <form data-simply-command="save">
-  <h2>Preferences</h2>
-  <p data-simply-field="source" data-simply-transform="escape_html"></p>
-  <fieldset>
-    <legend>Common to all apps</legend>
-    <div class="form-grid">
-      <label
-        >Theme<select name="theme" data-simply-field="theme">
-          <option value="system">Browser default</option>
-          <option value="light">Light</option>
-          <option value="dark">Dark</option>
-        </select></label
-      >
-      <label
-        >Text size<select name="textScale" data-simply-field="textScale">
-          <option>90</option>
-          <option>100</option>
-          <option>110</option>
-          <option>120</option>
-        </select></label
-      >
-      <label
-        >Density<select name="density" data-simply-field="density">
-          <option value="comfortable">Comfortable</option>
-          <option value="compact">Compact</option>
-        </select></label
-      >
-      <label
-        >Preferred language<input
-          name="language"
-          data-simply-field="language"
-          placeholder="en"
-      /></label>
-      <label
-        >Open apps in<select
-          name="launchTarget"
-          data-simply-field="launchTarget"
+  <header class="muze-solid-design-dialog-header">
+    <h2>Preferences</h2>
+    <button
+      type="button"
+      class="ds-button muze-solid-design-dialog-close"
+      data-simply-command="close"
+      aria-label="Close preferences"
+    >
+      <svg class="ds-icon ds-icon-feather" aria-hidden="true">
+        <use href="../assets/icons.svg#x"></use>
+      </svg>
+    </button>
+  </header>
+  <div class="muze-solid-design-dialog-content">
+    <p data-simply-field="source" data-simply-transform="escape_html"></p>
+    <fieldset>
+      <legend>Common to all apps</legend>
+      <div class="form-grid">
+        <label
+          >Theme<select name="theme" data-simply-field="theme">
+            <option value="system">Browser default</option>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select></label
         >
-          <option value="tab">New tabs (default)</option>
-          <option value="window">New windows</option>
-        </select></label
-      >
-    </div>
-    <p class="muted">
-      The interface currently uses English. Your preferred language is saved for
-      all apps.
-    </p>
-  </fieldset>
-  {{appPreferences}}
-  <p
-    role="status"
-    data-simply-field="message"
-    data-simply-transform="escape_html"
-  ></p>
-  <div class="actions">
+        <label
+          >Text size<select name="textScale" data-simply-field="textScale">
+            <option>90</option>
+            <option>100</option>
+            <option>110</option>
+            <option>120</option>
+          </select></label
+        >
+        <label
+          >Density<select name="density" data-simply-field="density">
+            <option value="comfortable">Comfortable</option>
+            <option value="compact">Compact</option>
+          </select></label
+        >
+        <label
+          >Preferred language<input
+            name="language"
+            data-simply-field="language"
+            placeholder="en"
+        /></label>
+        <label
+          >Open apps in<select
+            name="launchTarget"
+            data-simply-field="launchTarget"
+          >
+            <option value="tab">New tabs (default)</option>
+            <option value="window">New windows</option>
+          </select></label
+        >
+      </div>
+      <p class="muted">
+        The interface currently uses English. Your preferred language is saved
+        for all apps.
+      </p>
+    </fieldset>
+    {{appPreferences}}
+    <p
+      role="status"
+      data-simply-field="message"
+      data-simply-transform="escape_html"
+    ></p>
+  </div>
+  <footer class="muze-solid-design-dialog-footer">
     <button
       data-simply-field="buttons"
       data-simply-transform="attributes"
@@ -70,5 +84,5 @@
     >
       Cancel
     </button>
-  </div>
+  </footer>
 </form>

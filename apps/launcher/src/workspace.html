@@ -1,6 +1,6 @@
 <div style="display: contents">
   <section class="managed-workspace">
-    <h2>Workspace session</h2>
+    <h2>Workspace</h2>
     <p class="muted">
       Apps opened here belong to this workspace. Allow popups to restore several
       apps. Participating apps share restoration state with Launcher.
@@ -108,43 +108,46 @@
         </div>
       </div>
     </section>
-    <ul class="person-list" data-simply-list="workspaceEntries">
-      <template
-        ><li>
-          <span
-            data-simply-field="label"
-            data-simply-transform="escape_html"
-          ></span>
-          <span
-            class="muted"
-            data-simply-field="status"
-            data-simply-transform="escape_html"
-          ></span>
-          <label
-            ><input
-              type="checkbox"
-              data-simply-field="allowBrowse"
-              data-simply-command="allowBrowse"
+    <details class="muze-solid-launcher-workspace-apps">
+      <summary>Open apps and permissions</summary>
+      <ul class="person-list" data-simply-list="workspaceEntries">
+        <template
+          ><li>
+            <span
+              data-simply-field="label"
+              data-simply-transform="escape_html"
+            ></span>
+            <span
+              class="muted"
+              data-simply-field="status"
+              data-simply-transform="escape_html"
+            ></span>
+            <label
+              ><input
+                type="checkbox"
+                data-simply-field="allowBrowse"
+                data-simply-command="allowBrowse"
+                data-simply-value=":value.id"
+              />
+              Allow resource selection</label
+            >
+            <button
+              class="ds-button"
+              data-simply-command="restoreInstance"
               data-simply-value=":value.id"
-            />
-            Allow resource selection</label
-          >
-          <button
-            class="ds-button"
-            data-simply-command="restoreInstance"
-            data-simply-value=":value.id"
-          >
-            Open / focus
-          </button>
-          <button
-            class="ds-button"
-            data-simply-command="closeInstance"
-            data-simply-value=":value.id"
-          >
-            Close / remove
-          </button>
-        </li></template
-      >
-    </ul>
+            >
+              Open / focus
+            </button>
+            <button
+              class="ds-button"
+              data-simply-command="closeInstance"
+              data-simply-value=":value.id"
+            >
+              Close / remove
+            </button>
+          </li></template
+        >
+      </ul>
+    </details>
   </section>
 </div>

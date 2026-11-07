@@ -1,24 +1,65 @@
 <div style="display: contents">
   <section class="saved-apps">
     <h2>Your shortcuts</h2>
-    <form class="form-grid app-toolbar" data-simply-command="add">
-      <label>Name<input name="name" required /></label
-      ><label>Application URL<input name="url" type="url" required /></label
-      ><label
-        >Launch mode<select name="launchMode">
-          <option value="">Follow application</option>
-          <option value="fragment">URL fragment (#)</option>
-          <option value="query">URL query (?)</option>
-        </select></label
-      ><label
-        ><input type="checkbox" name="anonymous" /> Launch anonymously (omit
-        WebID)</label
-      ><button class="ds-button ds-button-primary">Add shortcut</button>
-    </form>
-    <p class="muted">
-      Anonymous is saved per link. Omitting WebID does not sign you out of the
-      receiving app.
-    </p>
+    <button
+      type="button"
+      class="ds-button ds-button-primary"
+      data-simply-command="muzeSolidLauncherAddDialog"
+    >
+      Add shortcut
+    </button>
+    <dialog
+      data-simply-behavior="muzeSolidDesignDialog"
+      class="ds-dialog muze-solid-design-dialog muze-solid-launcher-add-dialog"
+    >
+      <form data-simply-command="add">
+        <header class="muze-solid-design-dialog-header">
+          <h2>Add shortcut</h2>
+          <button
+            type="button"
+            class="ds-button muze-solid-design-dialog-close"
+            data-simply-command="muzeSolidDesignCloseDialog"
+            aria-label="Close add shortcut dialog"
+          >
+            <svg class="ds-icon ds-icon-feather" aria-hidden="true">
+              <use href="../assets/icons.svg#x"></use>
+            </svg>
+          </button>
+        </header>
+        <div class="muze-solid-design-dialog-content">
+          <label>Name<input name="name" required /></label>
+          <label>Application URL<input name="url" type="url" required /></label>
+          <details>
+            <summary>Launch options</summary>
+            <label
+              >Launch mode<select name="launchMode">
+                <option value="">Follow application</option>
+                <option value="fragment">URL fragment (#)</option>
+                <option value="query">URL query (?)</option>
+              </select></label
+            >
+            <label
+              ><input type="checkbox" name="anonymous" /> Launch anonymously
+              (omit WebID)</label
+            >
+            <p class="muted">
+              Anonymous applies to this shortcut. It does not sign you out of
+              the receiving app.
+            </p>
+          </details>
+        </div>
+        <footer class="muze-solid-design-dialog-footer">
+          <button class="ds-button ds-button-primary">Add shortcut</button>
+          <button
+            type="button"
+            class="ds-button"
+            data-simply-command="muzeSolidDesignCloseDialog"
+          >
+            Cancel
+          </button>
+        </footer>
+      </form>
+    </dialog>
     <div class="app-toolbar">
       <button class="ds-button" data-simply-command="sync">
         Sync with Solid
@@ -35,37 +76,41 @@
             ><span
               data-simply-field="label"
               data-simply-transform="escape_html"
-            ></span></a
-          ><label
-            >Launch mode<select
-              data-simply-field="mode"
-              data-simply-command="setLaunchMode"
+            ></span
+          ></a>
+          <details class="muze-solid-launcher-shortcut-settings">
+            <summary>Shortcut settings</summary>
+            <label
+              >Launch mode<select
+                data-simply-field="mode"
+                data-simply-command="setLaunchMode"
+                data-simply-value=":value.id"
+              >
+                <option value="">Follow application</option>
+                <option value="fragment">URL fragment (#)</option>
+                <option value="query">URL query (?)</option>
+              </select></label
+            ><label
+              ><input
+                type="checkbox"
+                data-simply-field="anonymous"
+                data-simply-command="setAnonymous"
+                data-simply-value=":value.id"
+              />
+              Launch anonymously (omit WebID)</label
+            ><button
+              class="ds-button"
+              data-simply-command="remove"
               data-simply-value=":value.id"
             >
-              <option value="">Follow application</option>
-              <option value="fragment">URL fragment (#)</option>
-              <option value="query">URL query (?)</option>
-            </select></label
-          ><label
-            ><input
-              type="checkbox"
-              data-simply-field="anonymous"
-              data-simply-command="setAnonymous"
-              data-simply-value=":value.id"
-            />
-            Launch anonymously (omit WebID)</label
-          ><button
-            class="ds-button"
-            data-simply-command="remove"
-            data-simply-value=":value.id"
-          >
-            Remove shortcut
-          </button>
-          <p
-            class="muted"
-            data-simply-field="modeNote"
-            data-simply-transform="escape_html"
-          ></p>
+              Remove shortcut
+            </button>
+            <p
+              class="muted"
+              data-simply-field="modeNote"
+              data-simply-transform="escape_html"
+            ></p>
+          </details>
           <p
             class="muted"
             role="status"

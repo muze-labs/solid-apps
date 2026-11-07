@@ -23,16 +23,19 @@
         data-simply-field="profile.title"
         data-simply-transform="escape_html"
       ></h2>
-      <p
-        class="resource-url"
-        data-simply-field="profile.id"
-        data-simply-transform="escape_html"
-      ></p>
-      <p
-        class="muted"
-        data-simply-field="profile.sourceLabel"
-        data-simply-transform="escape_html"
-      ></p>
+      <details class="muze-solid-profile-source">
+        <summary>Profile source</summary>
+        <p
+          class="resource-url"
+          data-simply-field="profile.id"
+          data-simply-transform="escape_html"
+        ></p>
+        <p
+          class="muted"
+          data-simply-field="profile.sourceLabel"
+          data-simply-transform="escape_html"
+        ></p>
+      </details>
       <dl data-simply-list="profile.details">
         <template
           ><div>
@@ -52,13 +55,16 @@
         data-simply-transform="escape_html"
       ></p>
       <button
-        class="ds-button"
+        class="ds-button ds-button-primary muze-solid-profile-edit"
         data-simply-command="editProfile"
         hidden
         data-simply-field="profile.editVisibility"
         data-simply-transform="attributes"
         data-simply-attributes="hidden"
       >
+        <svg class="ds-icon ds-icon-feather" aria-hidden="true">
+          <use href="../assets/icons.svg#edit"></use>
+        </svg>
         Edit profile
       </button>
     </section>
@@ -70,65 +76,67 @@
       data-simply-command="saveProfile"
     >
       <h2>Edit profile</h2>
-      <p>
-        Leave unknown details empty. Use one value per line for multiple emails,
-        phone numbers or links.
-      </p>
-      <label
-        >Name<textarea
-          name="name"
-          data-simply-field="profile.name"
-          data-simply-command="profileChanged"
-          data-simply-immediate="true"
-          rows="1"
-        ></textarea></label
-      ><label
-        >Email addresses<textarea
-          name="email"
-          data-simply-field="profile.email"
-          data-simply-command="profileChanged"
-          data-simply-immediate="true"
-          rows="1"
-        ></textarea></label
-      ><label
-        >Phone numbers<textarea
-          name="phone"
-          data-simply-field="profile.phone"
-          data-simply-command="profileChanged"
-          data-simply-immediate="true"
-          rows="1"
-        ></textarea></label
-      ><label
-        >Websites<textarea
-          name="website"
-          data-simply-field="profile.website"
-          data-simply-command="profileChanged"
-          data-simply-immediate="true"
-          rows="1"
-        ></textarea></label
-      ><label
-        >WebID / public profile URL<textarea
-          name="webId"
-          data-simply-field="profile.webId"
-          data-simply-command="profileChanged"
-          data-simply-immediate="true"
-          rows="1"
-        ></textarea></label
-      ><label
-        >Notes<textarea
-          name="notes"
-          data-simply-field="profile.notes"
-          data-simply-command="profileChanged"
-          data-simply-immediate="true"
-          rows="4"
-        ></textarea>
-      </label>
-      <p
-        role="status"
-        data-simply-field="profile.error"
-        data-simply-transform="escape_html"
-      ></p>
-      <div class="actions">
+      <div class="muze-solid-profile-body">
+        <p>
+          Leave unknown details empty. Use one value per line for multiple
+          emails, phone numbers or links.
+        </p>
+        <label
+          >Name<textarea
+            name="name"
+            data-simply-field="profile.name"
+            data-simply-command="profileChanged"
+            data-simply-immediate="true"
+            rows="1"
+          ></textarea></label
+        ><label
+          >Email addresses<textarea
+            name="email"
+            data-simply-field="profile.email"
+            data-simply-command="profileChanged"
+            data-simply-immediate="true"
+            rows="1"
+          ></textarea></label
+        ><label
+          >Phone numbers<textarea
+            name="phone"
+            data-simply-field="profile.phone"
+            data-simply-command="profileChanged"
+            data-simply-immediate="true"
+            rows="1"
+          ></textarea></label
+        ><label
+          >Websites<textarea
+            name="website"
+            data-simply-field="profile.website"
+            data-simply-command="profileChanged"
+            data-simply-immediate="true"
+            rows="1"
+          ></textarea></label
+        ><label
+          >WebID / public profile URL<textarea
+            name="webId"
+            data-simply-field="profile.webId"
+            data-simply-command="profileChanged"
+            data-simply-immediate="true"
+            rows="1"
+          ></textarea></label
+        ><label
+          >Notes<textarea
+            name="notes"
+            data-simply-field="profile.notes"
+            data-simply-command="profileChanged"
+            data-simply-immediate="true"
+            rows="4"
+          ></textarea>
+        </label>
+        <p
+          role="status"
+          data-simply-field="profile.error"
+          data-simply-transform="escape_html"
+        ></p>
+      </div>
+      <div class="actions muze-solid-design-dialog-footer">
         <button
           class="ds-button ds-button-primary"
           data-simply-field="profile.buttons"

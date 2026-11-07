@@ -29,6 +29,17 @@ remains supported.
 
 The long-term direction is small, independently useful applications operating on user-controlled Solid data, with reusable behavior and UI connected through URI-identified capabilities. This is related to Weblets but **does not require** embedded Weblets, iframe UI composition, or iframe layout management. Launcher does manage its opened top-level apps.
 
+## UI-cycle revision, 2026-11-07
+
+CYC-20261107-QG24H-49 adds optional embedded capability presentation and the
+[profile-editing contract](solid-profile-editing-capability.md), at the
+maintainer's explicit direction. This revises the earlier own-window-only scope.
+The same private-port protocol runs through Launcher; transient task providers
+are scoped to the caller and omitted from workspace persistence/restoration.
+Normal top-level app routing remains supported. The maintainer accepts this
+cycle on 2026-11-07 (ACC66). Registry and recipient-picker phases remain future
+work; UI-cycle acceptance does not claim those phases are complete.
+
 ## 2. Principles and boundaries
 
 1. **URIs identify semantics.** Capabilities, applications, resources, and vocabulary terms use stable URIs. Data exchanged across application boundaries has explicit linked-data meaning.
@@ -38,7 +49,7 @@ The long-term direction is small, independently useful applications operating on
 5. **The broker transports and connects; it does not interpret domain semantics.** It routes capability requests and responses, manages live connections and pending requests, and enforces its connection policy. It does not browse files, select contacts, or access pod data on behalf of applications.
 6. **Self-hostable and replaceable.** Launcher is a static browser application. No network broker or mandatory Muze-hosted service is required; the transport stays behind a small renderer-independent interface.
 7. **No implicit authority.** A WebID or resource URI in a launch fragment is context, not proof of identity or a grant of access. Capability registration is not authorization to read or write Solid resources.
-8. **Keep UI with the provider.** For v1, the provider presents its own window. Embedded presentation and layout negotiation are later concerns.
+8. **Keep UI with the provider.** Providers own their interactions and data access. The maintainer revises the embedding deferral in CYC49: a shared dialog can host a provider iframe, with a tab fallback carrying the same capability call. General layout negotiation remains deferred.
 9. **Start with actual needs.** Minimize vocabulary, protocol, components and configuration until the two pilot capabilities demonstrate a need for more.
 
 ## 3. Architecture

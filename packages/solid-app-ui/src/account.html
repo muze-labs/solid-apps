@@ -1,15 +1,39 @@
+<span
+  class="muze-solid-ui-embedded"
+  hidden
+  data-simply-field="muzeSolidUiEmbedded"
+  data-simply-transform="attributes"
+  data-simply-attributes="hidden"
+></span>
 <header class="suite-header ds-panels-heading">
   <h1 class="ds-panels-title">{{title}}</h1>
-  <div class="account ds-dropdown">
-    <span
+  <div
+    class="account ds-dropdown muze-solid-design-dropdown"
+    data-simply-shortcuts="muzeSolidDesignDropdown"
+    hidden
+    data-simply-field="muzeSolidUiMenuVisibility"
+    data-simply-transform="attributes"
+    data-simply-attributes="hidden"
+  >
+    <button
+      type="button"
+      data-simply-command="muzeSolidUiOwnProfile"
       class="account-name"
-      data-simply-field="accountName"
-      data-simply-transform="escape_html"
-    ></span>
+      title="View and edit your profile"
+      aria-haspopup="dialog"
+      data-simply-field="muzeSolidUiProfileButton"
+      data-simply-transform="attributes"
+      data-simply-attributes="aria-label"
+    >
+      <span
+        data-simply-field="accountName"
+        data-simply-transform="escape_html"
+      ></span>
+    </button>
     <button
       type="button"
       class="ds-button ds-button-naked account-button"
-      popovertarget="account-menu"
+      popovertarget="muze-solid-ui-account-menu"
       aria-label="Account and preferences"
       title="Account and preferences"
     >
@@ -18,7 +42,7 @@
       </svg>
     </button>
     <nav
-      id="account-menu"
+      id="muze-solid-ui-account-menu"
       class="ds-dropdown-nav ds-dropdown-right"
       popover="auto"
       aria-label="Account"
@@ -29,7 +53,6 @@
             type="button"
             class="ds-button ds-button-naked ds-dropdown-link"
             data-simply-command="connectDialog"
-            autofocus
           >
             WebID / connection
           </button>
@@ -46,26 +69,66 @@
       </ul>
     </nav>
   </div>
+  <button
+    type="button"
+    class="ds-button muze-solid-ui-task-connect"
+    data-simply-command="connectDialog"
+    hidden
+    data-simply-field="muzeSolidUiTaskConnectVisibility"
+    data-simply-transform="attributes"
+    data-simply-attributes="hidden"
+  >
+    WebID / connection
+  </button>
   <p
     class="suite-status"
     role="status"
     data-simply-field="message"
     data-simply-transform="escape_html"
   ></p>
-  <dialog class="ds-dialog connect-dialog">
+  <dialog
+    data-simply-behavior="muzeSolidDesignDialog"
+    class="ds-dialog connect-dialog muze-solid-design-dialog"
+  >
     <form data-simply-command="connect">
-      <h2>WebID / connection</h2>
-      <label
-        >WebID<input
-          type="url"
-          name="webId"
-          data-simply-field="webId"
-          required
-          placeholder="https://example.org/profile/card#me"
-          autocomplete="url"
-      /></label>
-      <p>Your profile supplies your storage and preferences locations.</p>
-      <div class="actions">
+      <header class="muze-solid-design-dialog-header">
+        <h2>WebID / connection</h2>
+        <button
+          type="button"
+          class="ds-button muze-solid-design-dialog-close"
+          data-simply-command="closeConnect"
+          aria-label="Close connection dialog"
+        >
+          <svg class="ds-icon ds-icon-feather" aria-hidden="true">
+            <use href="../assets/icons.svg#x"></use>
+          </svg>
+        </button>
+      </header>
+      <div class="muze-solid-design-dialog-content">
+        <label
+          >WebID<input
+            type="url"
+            name="webId"
+            data-simply-field="webId"
+            required
+            placeholder="https://example.org/profile/card#me"
+            autocomplete="url"
+        /></label>
+        <p>Your profile supplies your storage and preferences locations.</p>
+        <section
+          class="logout-section"
+          hidden
+          data-simply-field="logoutVisibility"
+          data-simply-transform="attributes"
+          data-simply-attributes="hidden"
+        >
+          <p>
+            Log out of Solid Apps on this browser. Your local contacts and
+            shortcuts stay on this device.
+          </p>
+        </section>
+      </div>
+      <footer class="muze-solid-design-dialog-footer">
         <button
           class="ds-button ds-button-primary"
           data-simply-field="connectButton"
@@ -81,22 +144,18 @@
         >
           Cancel
         </button>
-      </div>
+        <button
+          type="button"
+          class="ds-button"
+          data-simply-command="logout"
+          hidden
+          data-simply-field="logoutVisibility"
+          data-simply-transform="attributes"
+          data-simply-attributes="hidden"
+        >
+          Log out
+        </button>
+      </footer>
     </form>
-    <section
-      class="logout-section"
-      hidden
-      data-simply-field="logoutVisibility"
-      data-simply-transform="attributes"
-      data-simply-attributes="hidden"
-    >
-      <p>
-        Log out of Solid Apps on this browser. Your local contacts and shortcuts
-        stay on this device.
-      </p>
-      <button type="button" class="ds-button" data-simply-command="logout">
-        Log out
-      </button>
-    </section>
   </dialog>
 </header>

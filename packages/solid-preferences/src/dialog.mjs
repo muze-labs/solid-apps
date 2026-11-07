@@ -6,6 +6,10 @@ import {
   applyPreferences
 } from './index.mjs';
 import { exposeDefinition } from '@muze-labs/solid-app-data/definition.mjs';
+import {
+  muzeSolidDesignDialog,
+  muzeSolidDesignToast
+} from '@muze-labs/solid-design';
 import { preferencesForm } from './features.mjs';
 import sources from './features.mjs?entries';
 
@@ -19,8 +23,18 @@ export function preferencesDialog(
   };
   const definition = {
     container: dialog,
-    components: { preferencesForm: component },
-    data: { ...defaults, message: '', source: '', buttons: { disabled: null } },
+    components: {
+      muzeSolidDesignDialog,
+      muzeSolidDesignToast,
+      preferencesForm: component
+    },
+    data: {
+      ...defaults,
+      message: '',
+      source: '',
+      buttons: { disabled: null },
+      muzeSolidDesignNotice: { text: '', visibility: { hidden: '' } }
+    },
     api: {
       defaults,
       loadPreferences,

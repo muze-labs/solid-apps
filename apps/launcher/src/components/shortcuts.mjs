@@ -7,6 +7,11 @@ export const shortcuts = {
     'launcher-shortcuts': sourceLauncherShortcuts
   },
   commands: {
+    muzeSolidLauncherAddDialog() {
+      return this.actions.muzeSolidDesignOpenDialog(
+        this.container.querySelector('.muze-solid-launcher-add-dialog')
+      );
+    },
     setAnonymous(element, id) {
       const value = element.checked;
       return this.runtime.host.run(() =>
@@ -44,6 +49,7 @@ export const shortcuts = {
       return this.runtime.host.run(async () => {
         await this.actions.addShortcut(values);
         form.reset();
+        await this.actions.muzeSolidDesignCloseDialog(form.closest('dialog'));
       });
     },
     remove(_element, id) {
@@ -82,7 +88,7 @@ export const shortcuts = {
       this.runtime.host.run(async () => {
         await this.runtime.store.collection.delete(id);
         this.actions.render();
-        this.runtime.host.message('Shortcut marked deleted.');
+        this.runtime.host.notify('Shortcut marked deleted.');
       });
     },
     handleSync() {
@@ -93,7 +99,7 @@ export const shortcuts = {
             this.runtime.host.resource('launcher')
           );
           this.actions.render();
-          this.runtime.host.message('Shortcuts synchronized with Solid.');
+          this.runtime.host.notify('Shortcuts synchronized with Solid.');
         },
         { network: true }
       );
@@ -103,14 +109,14 @@ export const shortcuts = {
       this.api.applyAnonymousLaunch(subject, value);
       await this.runtime.store.collection.save(subject);
       this.actions.render();
-      this.runtime.host.message('Launch identity saved on this device.');
+      this.runtime.host.notify('Launch identity saved on this device.');
     },
     async setShortcutMode(id, value) {
       const subject = this.runtime.store.collection.get(id);
       this.api.applyLaunchOverride(subject, value);
       await this.runtime.store.collection.save(subject);
       this.actions.render();
-      this.runtime.host.message('Launch mode saved on this device.');
+      this.runtime.host.notify('Launch mode saved on this device.');
     },
     async addShortcut({ url, name, mode, anonymous }) {
       url = this.api.httpUrl(url);
@@ -134,7 +140,7 @@ export const shortcuts = {
         await this.runtime.store.collection.save(subject);
       }
       this.actions.render();
-      this.runtime.host.message('Shortcut saved on this device.');
+      this.runtime.host.notify('Shortcut saved on this device.');
     },
     shortcutRow(node) {
       const url = this.api.idOf(
@@ -152,7 +158,8 @@ export const shortcuts = {
           node,
           this.runtime.host.session?.webId
         );
-      } catch (error) {
+      }
+      catch (error) {
         problem = error.message;
       }
       let modeNote = '';
@@ -163,7 +170,8 @@ export const shortcuts = {
           modeNote =
             'Query mode sends only a specified resource URL to the app’s server.';
         }
-      } else if (settings.location === 'fragment') {
+      }
+      else if (settings.location === 'fragment') {
         modeNote = 'Uses URL fragment (#).';
       }
       const view = {

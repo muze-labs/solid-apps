@@ -1,0 +1,13 @@
+{
+  "name": "@muze-labs/solid-design",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/features.mjs",
+    "./*": "./src/*"
+  },
+  "dependencies": {
+    "@muze-nl/theds": "^0.2.7"
+  }
+}

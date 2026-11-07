@@ -1,15 +1,44 @@
 export const account = {
   commands: {
+    muzeSolidUiOwnProfile() {
+      return this.actions.run(async () => {
+        const session = this.actions.requireSession();
+        const provider = this.api.launchUrl(
+          new URL('../profile/', location.href).href,
+          {
+            webId: session.webId,
+            resource: session.webId
+          }
+        );
+        const result = await this.actions.muzeSolidUiInvokeCapability(
+          this.api.editProfileCapability,
+          provider,
+          { '@id': session.webId },
+          'Your profile'
+        );
+        if (result?.['@id'] !== session.webId) {
+          throw new Error(
+            'solid-app-ui: The provider returned a different profile.'
+          );
+        }
+        const document = await session.perform(() =>
+          this.api.loadDocument(session.client, session.webId)
+        );
+        session.profile = document.graph.get(session.webId);
+        this.actions.muzeSolidUiShowAccount(session);
+        this.actions.notify('Profile saved to Solid.');
+      });
+    },
     preferences() {
       this.runtime.menu.hidePopover();
       this.runtime.preferences.show();
     },
     connectDialog() {
       this.runtime.menu.hidePopover();
-      this.runtime.dialog.showModal();
+      return this.actions.muzeSolidDesignOpenDialog(this.runtime.dialog);
     },
     closeConnect() {
-      this.runtime.dialog.close();
+      return this.actions.muzeSolidDesignCloseDialog(this.runtime.dialog);
     },
     logout() {
       return this.actions.run(() => {
@@ -27,7 +56,7 @@ export const account = {
       );
       try {
         if (await this.actions.connectAccount(webId, popup)) {
-          this.runtime.dialog.close();
+          await this.actions.muzeSolidDesignCloseDialog(this.runtime.dialog);
         }
       }
       finally {
@@ -36,6 +65,13 @@ export const account = {
     }
   },
   actions: {
+    muzeSolidUiShowAccount(session) {
+      this.data.accountName =
+        this.api.readProfile(session.profile).name.trim() || 'Connected';
+      this.data.muzeSolidUiProfileButton = {
+        'aria-label': 'View and edit profile for ' + this.data.accountName
+      };
+    },
     async connectAccount(webId, popup) {
       this.data.connectButton = { disabled: '' };
       this.data.message = 'Reading profile…';
@@ -49,8 +85,7 @@ export const account = {
         }
         catch {}
         this.runtime.preferences.reset();
-        this.data.accountName =
-          this.api.readProfile(session.profile).name.trim() || 'Connected';
+        this.actions.muzeSolidUiShowAccount(session);
         let preferenceError = '';
         await session.perform(async () => {
           try {
@@ -61,7 +96,8 @@ export const account = {
           }
           await this.runtime.host.onConnect?.(session);
         });
-        this.data.message = preferenceError || 'Connected to Solid.';
+        this.data.message = preferenceError;
+        this.actions.notify('Connected to Solid.');
         return true;
       }
       catch (error) {
@@ -82,8 +118,7 @@ export const account = {
       this.runtime.session = session;
       this.data.webId = session.webId;
       this.data.logoutVisibility = { hidden: null };
-      this.data.accountName =
-        this.api.readProfile(session.profile).name.trim() || 'Connected';
+      this.actions.muzeSolidUiShowAccount(session);
       await session.perform(
         async () => {
           try {

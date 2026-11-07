@@ -1,7 +1,7 @@
 export const preferencesForm = {
   commands: {
     close() {
-      this.container.close();
+      return this.actions.muzeSolidDesignCloseDialog(this.container);
     },
     save(form) {
       const keys = Object.keys(this.api.defaults).filter((key) =>
@@ -32,7 +32,8 @@ export const preferencesForm = {
         );
         this.api.applyPreferences(this.runtime.loaded.settings);
         this.api.onChange(this.runtime.loaded.settings);
-        this.data.message = 'Preferences saved to your Pod.';
+        this.data.message = '';
+        this.actions.muzeSolidDesignNotify('Preferences saved to your Pod.');
       }
       catch (error) {
         this.data.message = error.message || String(error);
@@ -55,7 +56,7 @@ export const preferencesForm = {
       return loaded.settings;
     },
     show() {
-      this.container.showModal();
+      this.actions.muzeSolidDesignOpenDialog(this.container);
       if (!this.runtime.loaded) {
         this.data.message =
           'Connect to Solid to load the preferences file linked from your profile.';
