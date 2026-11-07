@@ -4,7 +4,47 @@ Current disposition: CYC49 is Accepted on 2026-11-07. ACC66 records the
 maintainer's explicit acceptance and instruction to commit and merge the integrated
 UI/capability result. The confirmed scope and implementation are retained in
 SRC50/DES51/IMP52; final verification is EVD65. The proposal and older assessments
-below are historical planning. A new cycle has not been selected.
+below are historical planning. The maintainer selects session renewal/recovery;
+CYC-20261107-QG24H-67 is Active on its matching branch. The refresh-first
+proposal is explicitly confirmed; hidden-iframe authorization remains deferred.
+
+## Candidates after CYC49 acceptance, 2026-11-07
+
+The comparison below preceded selection. The maintainer subsequently selected
+session renewal/recovery and confirmed the refresh-first design (SRC68/DES69).
+Accepted main at cycle creation is 38e3b7; CYC67 remains pending human acceptance.
+The pending roadmap addition explicitly retains individual app and Preferences
+UI work after the shared foundation. Preserve that addition; it does not select
+an implementation goal. CYC49's acceptance and final evidence are ACC66/EVD65.
+
+### Candidate comparison
+
+| Candidate | Useful cycle outcome | Evidence and boundary |
+| --- | --- | --- |
+| Session renewal and recovery (recommended) | Reuse valid authorization, obtain refresh authorization with consent, renew silently where possible, and provide contextual reauthorization preserving drafts/pending saves. | Live expired-token/no-refresh case reproduced in Firefox; reconnect worked (EVD57). Installed Metro scope/consent integration gaps remain. May require an upstream published library fix. Hidden-iframe silent authorization is optional and provider/browser dependent. |
+| Preferences UI | Improve common/app-specific setting grouping, labels, explanations and save/recovery flows on phones and desktop. | Explicit new roadmap requirement; shared dialog motion does not complete the design of settings inside it. Keep native RDF partial-write preservation. |
+| One app's task UI | Select Launcher, Contacts, Files or Profile and improve its actual workflows, layout, toolbar/forms and feedback. | Explicit remaining app-by-app UI work. Choose concrete screens/flows before implementation; no new evidence says every control should be removed. |
+| Account ownership and logout | Characterize and correct account/local-data boundaries and the requested distinct Launcher/child logout lifecycle. | Shared remembered WebID/logout listener and local collection concerns remain; no wrong-account write has been reproduced. Strong correctness work before automatic sync. |
+| Preferred capability-provider registry | Persist provider choice through linked Solid preferences and resolve/start the selected provider. | Governing broker Phase 2 remains incomplete. CYC49's scoped built-in providers do not implement a Pod-backed registry. Preserve provider authority and native RDF; recipient selection remains separate. |
+| Named workspaces | Create/select/switch distinct workspaces and restore each app set and pending state without mixing contents. | Roadmap explicitly requests it; current accepted persistence checkpoints one default workspace. Requires deliberate switching/save/recovery design. |
+
+### Recommendation and ordering rationale
+
+Recommend session renewal/recovery because it addresses a directly observed
+ordinary-use failure that affects every app and the newly accepted capability
+presentation. Keep the goal focused on renewable authorization and recoverable
+interaction; do not assume an ID token proves usable resource access, promise
+that requesting a refresh scope guarantees issuance, or transfer credentials
+through capability messages. Existing anonymous access and authority checks stay.
+
+For a product-design cycle instead, Preferences or one selected app is a coherent
+next scope. Account/lifecycle correctness is the stronger preventative alternative;
+resolve relevant ownership/recovery questions before automatic sync/PWA rollout.
+The provider registry is the next broker-focused alternative, rather than treating
+UI-cycle embedding as completion of the broker roadmap. Stage-two virtual-company
+collaboration remains after current suite work. Runtime composition/live IDE and
+new app integration remain separately planned; this assessment does not select
+or pre-accept any of them.
 
 ## Reassessment after CYC37 acceptance, 2026-11-07
 
