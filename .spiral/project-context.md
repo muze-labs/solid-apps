@@ -791,3 +791,18 @@ programming tricks. AGENTS.md, the moldable design and suite roadmap now record
 this as an app-authoring requirement today. Prefer descriptive names and clear
 steps/effects; use existing library APIs without adding unnecessary indirection.
 This documentation update does not start a refactor or new implementation cycle.
+
+
+## Second-stage direction: virtual company, 2026-11-07
+
+The maintainer requests a second roadmap stage after the current work, centered
+on a "virtual company": Solid apps that help people come together and form a
+temporary collaboration to get work done. The explicitly non-exhaustive
+capability list includes project management, CRM, documentation / knowledge base,
+forms, chat and collaboration. The maintainer clarifies collaboration as live
+propagation of shared-data changes between participants, with the corresponding
+views updating, rather than collaborative text editing. The suite roadmap
+records this outcome and stage order without selecting a delivery mechanism,
+app boundaries, architecture or dates. Multi-user collaboration belongs to the
+second stage; current same-user sync/account consistency work remains in scope.
+No implementation cycle is selected by this documentation-only update.

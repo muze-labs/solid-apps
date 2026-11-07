@@ -1,12 +1,14 @@
 # Solid Apps roadmap
 
-Status: maintainer-requested direction, recorded 2026-11-01. Implementation is
-deferred to future cycles; this update selects no next cycle or delivery order.
-All conversation and project documentation should use English. The additions
-below are grouped by subject, not priority. Earlier refinements come from
+Status: maintainer-requested direction, recorded 2026-11-01, with subsequent
+refinements below. Work is selected through future implementation cycles; this
+update selects no next cycle. The maintainer places a second, virtual-company
+stage after the current suite work. Items within each stage remain grouped by
+subject, not priority. All conversation and project documentation should use
+English. Earlier refinements come from
 [SRC31](../.spiral/sources/SRC-20261101-QG24H-31.md). The moldable-app additions
 follow the maintainer's 2026-11-07 request and the linked design; no new
-implementation cycle or delivery order is selected.
+implementation cycle or delivery order within either stage is selected.
 
 This records suite-wide direction alongside the
 [capability-broker roadmap](solid-capability-broker-roadmap.md), which continues
@@ -393,12 +395,53 @@ updates that preserve pending local changes. Select the exact implementation
 and supported-browser checks in the relevant cycle; PWA support is not claimed
 to exist merely because the apps are browser applications.
 
-## Collaboration later
+## Second stage: virtual company
 
-Collaborative editing and multi-user live sessions are outside current scope.
-Revisit them later with their own requirements and acceptance criteria. This
-deferral does not postpone automatic synchronization of one user's data,
-workspace portability, or consistent account information across their apps.
+Added at the maintainer's request on 2026-11-07. After the current suite work,
+center a second stage on a "virtual company": a set of Solid apps that makes it
+easy for people to come together, form a temporary collaboration and get work
+done. The shared purpose is supporting people working together; the concrete
+workflows and app boundaries will be developed when planning this stage.
+
+The initial capability list includes:
+
+- **Project management.**
+- **CRM (customer relationship management).**
+- **Documentation / knowledge base.**
+- **Forms.**
+- **Chat.**
+- **Live collaboration through data updates.** Changes to shared data made by
+  one participant propagate to other participants' open apps, and the relevant
+  views update without requiring a manual reload.
+
+This list is open and explicitly not exhaustive. Detailed workflows and feature
+sets remain to be defined; these capabilities do not prescribe separate apps
+or particular products. Record further capabilities as the maintainer develops
+the idea. This establishes stage order without selecting an implementation
+cycle, delivery date or technical architecture.
+
+Carry forward the suite's Solid interoperability, native RDF preservation and
+moldable design requirements, including readable code that people without a
+professional programming background can understand and alter.
+
+### Collaboration through live data and views
+
+The maintainer explicitly defines collaboration here as live updates of shared
+data and the views that display it. For example, when one participant changes
+a project item, another participant viewing that shared data sees the change
+in their open app. Collaborative text editing, such as simultaneous keystrokes
+or shared cursors in an editor, is outside this requirement.
+
+Plan the data-change delivery mechanism, access boundaries and handling of local
+unsaved edits, concurrent changes and reconnection when selecting implementation
+work. Keep native RDF authoritative and use SimplyFlow to update the views.
+Future verification should use two participants with access to shared data,
+change it in one app and observe the relevant view update in the other without
+a manual reload, while preserving pending local edits.
+
+This multi-user capability belongs to the second stage. Automatic synchronization
+of one user's data, workspace portability and consistent account information
+across their apps remain part of the current suite direction.
 
 ## Simple decentralized app store
 
