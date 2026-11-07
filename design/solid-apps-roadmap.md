@@ -121,16 +121,16 @@ The maintainer supplies the [moldability and readability review](reviews/Solid-W
 for this roadmap. Retain it as review evidence, dated 2026-11-07 against commit
 `71d2737d5e7203188f503b50d184d606556f2c8f`. It predates accepted Preferences
 recovery (CYC77); its reported 107 tests and unavailable Chrome describe that
-review environment, not the current suite's verification results. Spot checks
-at current main `473dda5ee37811ec232db575009f55c3f5799819` still find captured
+review environment, not the current suite's verification results. Before CYC82, spot checks
+at then-current main `473dda5ee37811ec232db575009f55c3f5799819` still find captured
 profile/host actions, direct lifecycle listener registration, separately copied
 shared CSS and nested workspace status decisions. The review's action-proxy
-probe is reported evidence; live replacement across the suite still needs
-browser verification.
+probe was reported evidence; CYC82 subsequently adds the running-instance browser
+verification for action dispatch described below.
 
 CYC-20261107-QG24H-82 is **Accepted** (ACC86): relevant design clarification
 and dependable action dispatch across existing callers are implemented and
-verified (EVD85). Integration has not yet been requested. CSS migration,
+verified (EVD85). The maintainer has requested commit, merge and push. CSS migration,
 lifecycle listener ownership and the wider IDE remain future work; current-action
 dispatch alone does not complete those separate recommendations.
 

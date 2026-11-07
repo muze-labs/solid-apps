@@ -1,12 +1,58 @@
 # Roadmap and next-cycle assessment
 
 Current disposition: **CYC-20261107-QG24H-82 is Accepted** (ACC86).
-The maintainer answers "accepted" after the integrated outcome, tests and review
-steps are presented. DES83/IMP84/EVD85 retain the evaluated working tree on its
-current-action-dispatch branch from accepted main 473dda5. No commit, merge,
-push or publication is requested; no next cycle is selected. CYC77 remains
-Accepted (ACC81). Earlier comparisons below are historical planning and their
-pending wording is superseded by the cycle selection and acceptance.
+The maintainer requests commit, normal direct merge to main and push, followed by
+a next-cycle suggestion. IMP84/EVD85 retain the exact tested implementation and
+evidence. No next cycle is selected. Earlier comparisons below are historical.
+
+## Recommendation after current-action cycle acceptance
+
+**Proposed next goal: make app-owned visual styles discoverable in named feature
+datasets, with genuinely shared styling in named shared components, preserving
+the current interface.** This continues stage-one moldability and the review's
+next item after design clarification/action dispatch, while deliberately deferring
+further broker progression. It adds no app task or offline data dependency.
+
+The current shared solid-app-ui stylesheet is still 744 lines, mixes Contacts,
+Profile, Workbench and common rules, and is copied directly into apps.css by the
+build. Existing design components already expose named styles. Thus behavior is
+now reachable through current-action connections while a feature's appearance
+still requires finding a separate shared file. Do not repeat the already proven
+feature-structure pilot; migrate coherent ownership across the suite once the
+remaining API/cascade constraints are settled.
+
+Start by inspecting the supported SimplyFlow style application/removal contract
+and representative existing-instance visual override behavior. Its installed app
+source installs styles at construction; that alone does not establish live style
+replacement/removal. Do not promise a full runtime styling engine or add app-owned
+content rendering. If a required runtime operation needs a new lower-library API,
+resolve that scope/release dependency with the maintainer rather than silently
+build a second runtime. Runtime template/include composition and the IDE remain
+separate future work.
+
+Partition shared foundation/feature rules, retain authored CSS source in the
+named entries, preserve cascade/order and remove migrated duplicate delivery.
+Check phone/desktop layout, keyboard/focus, dialogs and embedded/reused components,
+plus unknown RDF/draft regression flows. Do not combine the ownership migration
+with a new form design or a mass prefix rename. Short swb names apply to new
+entries; broad existing-prefix changes remain separately planned.
+
+Download is a concrete constraint: EVD85 reports readable Workbench 196147 gzip
+bytes, about 3.8 KB under the enforced 200000-byte ceiling. The standalone shared
+CSS is 15033 bytes / 3442 gzip bytes in a disposable measurement; that is not a
+prediction of incremental JS compression. Check actual bundle/first-use costs
+before committing to a delivery strategy. Split by real feature usage, avoid
+copying the same CSS into both the script graph and apps.css, and retain the
+complete-graph ceiling rather than hide cost behind lazy loading.
+
+The strongest alternative is **automatic shared Preferences updates** after the
+accepted reliable save path. First settle same-/cross-origin app scope,
+account/preferences identity, reconnection and retained dirty form choices.
+**Account/local-data ownership and logout** remains the correctness priority
+before multiple workspaces, multi-account operation or background sync. Forms/UI
+work and preferred-provider registry remain valid roadmap alternatives; stage-two
+virtual-company collaboration stays later. No new goal, branch or implementation
+is authorized by this recommendation.
 
 ## Reassessment after CYC77 acceptance and moldability review
 

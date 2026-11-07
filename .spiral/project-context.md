@@ -1012,3 +1012,16 @@ statements are superseded. No claim is made that particular manual review steps
 were performed, and no commit, merge, push, publication or next cycle is requested.
 The recorded IDE/CSS/lifecycle ownership/model/template/persistence follow-ups and
 shared Preferences propagation remain future work.
+
+
+## Current-action cycle delivery authorized
+
+After accepting CYC82, the maintainer explicitly requests commit, merge and push,
+then a next-cycle suggestion. ACC86 links implementation
+280632b2019b255acab46f0f0f06d605a479e7d8 and evidence
+fdff81b5dd6aa19d11b8812c69dd89c9219327b9. Normal direct main integration and push
+are now authorized, superseding acceptance-only restrictions. No publication,
+history rewrite or new implementation cycle is selected. The proposed next step
+is component-owned styles following the review, subject to style-update API and
+bundle-cost investigation; shared Preferences propagation remains the immediate
+user-facing alternative. See the next-cycle assessment for scope and limits.
