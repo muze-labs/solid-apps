@@ -7,4 +7,10 @@ project:EVD-20261107-QG24H-71 a sd:Evidence ;
     sd:status sd:Active ;
     sd:derivedFrom [ a sd:ArtifactReference ;
         sd:artifact project:DES-20261107-QG24H-69 ;
-        sd:gitCommit "f25f21cf9ec9517a3e8f3addf730e1e3a9e80d0e" ] .
+        sd:gitCommit "f25f21cf9ec9517a3e8f3addf730e1e3a9e80d0e" ] ;
+    sd:verifies [ a sd:ArtifactReference ;
+        sd:artifact project:IMP-20261107-QG24H-70 ;
+        sd:gitCommit "be9c1261a7e49177512e84bc9e6d5e019ee1fbb3" ] ;
+    sd:transforms [ a sd:ArtifactReference ;
+        sd:artifact project:EVD-20261107-QG24H-71 ;
+        sd:gitCommit "be9c1261a7e49177512e84bc9e6d5e019ee1fbb3" ] .

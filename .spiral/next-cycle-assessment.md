@@ -5,14 +5,15 @@ maintainer's explicit acceptance and instruction to commit and merge the integra
 UI/capability result. The confirmed scope and implementation are retained in
 SRC50/DES51/IMP52; final verification is EVD65. The proposal and older assessments
 below are historical planning. The maintainer selects session renewal/recovery;
-CYC-20261107-QG24H-67 is Active on its matching branch. The refresh-first
-proposal is explicitly confirmed; hidden-iframe authorization remains deferred.
+CYC-20261107-QG24H-67 is now Accepted (ACC72), including the confirmed
+refresh-first implementation and shared toast motion. Commit/merge/push are
+explicitly authorized. Hidden-iframe authorization remains deferred.
 
 ## Candidates after CYC49 acceptance, 2026-11-07
 
 The comparison below preceded selection. The maintainer subsequently selected
 session renewal/recovery and confirmed the refresh-first design (SRC68/DES69).
-Accepted main at cycle creation is 38e3b7; CYC67 remains pending human acceptance.
+Accepted main at cycle creation is 38e3b7; ACC72 subsequently accepts CYC67.
 The pending roadmap addition explicitly retains individual app and Preferences
 UI work after the shared foundation. Preserve that addition; it does not select
 an implementation goal. CYC49's acceptance and final evidence are ACC66/EVD65.

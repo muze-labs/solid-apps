@@ -264,12 +264,13 @@ challenging a known protected origin without breaking anonymous/public access.
 
 ### Expired authorization and sign-in recovery
 
-Current cycle: [CYC67](../.spiral/cycles/CYC-20261107-QG24H-67.md) implements
-refresh-first renewal and explicit recovery on its isolated branch, pending
-human evaluation/acceptance. The confirmed scope defers hidden-iframe sign-in.
+Accepted [CYC67](../.spiral/cycles/CYC-20261107-QG24H-67.md) implements
+refresh-first renewal and explicit recovery. ACC72 records the maintainer's
+acceptance and commit/merge/push instruction. Hidden-iframe sign-in is deferred.
 [DES69](../.spiral/designs/DES-20261107-QG24H-69.md) records the Metro boundary;
 [EVD71](../.spiral/evidence/EVD-20261107-QG24H-71.md) records verification and
-live-provider limits. This does not mark the work accepted or integrated.
+live-provider limits. The later reported Preferences repeated-save ETag problem
+below remains future work; cycle acceptance does not establish that it is fixed.
 
 Added at the maintainer's request on 2026-11-07 after live Profile capability
 feedback. Same-origin tabs and dialogs already share Metro's token/key stores.
