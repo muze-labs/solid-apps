@@ -1,10 +1,10 @@
 # Roadmap and next-cycle assessment
 
-Current disposition: the maintainer selects and refines the UI goal, then
-confirms capability-based profile editing and dialog/iframe presentation with
-tab continuation. Active CYC49 on its matching branch now governs execution;
-SRC50/DES51 retain the agreed scope. The proposal and older assessments below
-are historical planning, not a still-pending goal-confirmation gate.
+Current disposition: CYC49 is Accepted on 2026-11-07. ACC66 records the
+maintainer's explicit acceptance and instruction to commit and merge the integrated
+UI/capability result. The confirmed scope and implementation are retained in
+SRC50/DES51/IMP52; final verification is EVD65. The proposal and older assessments
+below are historical planning. A new cycle has not been selected.
 
 ## Reassessment after CYC37 acceptance, 2026-11-07
 

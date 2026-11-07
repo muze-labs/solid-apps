@@ -827,3 +827,21 @@ registry, recipient capability, stage-two collaboration, auth-policy rewrite or
 live IDE is included. Runtime composition remains separately deferred. IMP52/EVD53
 will retain final implementation/evaluation; human acceptance remains pending.
 No commit, merge or push is authorized by this implementation instruction.
+
+
+## UI/capability cycle acceptance, 2026-11-07
+
+The maintainer accepts the integrated CYC49 result: "Very happy with that. Mark
+it accepted, commit and merge it to main! :)" ACC66 records this acceptance and
+exact implementation/evidence references. CYC49 is now Accepted, superseding the
+Active/pending state above. The request authorizes a direct local main merge for
+this cycle instead of the normal PR route. No push or package publication is
+requested. EVD65 retains the final checks and earlier failures/limits.
+
+The accepted result includes provider-owned Profile/Files dialog tasks and tab
+continuation, shared design components, accessible menus/toasts, stable loading,
+provider readiness and 300ms content/dialog transitions with reduced motion.
+Native RDF, conditional writes and guarded draft/save close behavior remain.
+Session-renewal authorization and its recovery UI are retained future roadmap
+work, as are named workspaces, registry/recipient work, automatic sync/PWA,
+runtime composition/live IDE and stage-two collaboration.

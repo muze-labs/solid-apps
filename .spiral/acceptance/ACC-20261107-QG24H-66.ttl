@@ -1,0 +1,34 @@
+@prefix sd: <https://muze.nl/ns/spiral-developer#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix project: <urn:muze-labs:solid-apps:spiral:> .
+project:ACC-20261107-QG24H-66 a sd:AcceptanceEvidence ;
+    dcterms:identifier "ACC-20261107-QG24H-66" ;
+    sd:repositoryPath ".spiral/acceptance/ACC-20261107-QG24H-66.md" ;
+    sd:status sd:Active ;
+    sd:accepts [ a sd:ArtifactReference ;
+        sd:artifact project:CYC-20261107-QG24H-49 ;
+        sd:gitCommit "ce7e52d507994a115775162be6e61130438e686d" ],
+    [ a sd:ArtifactReference ;
+        sd:artifact project:IMP-20261107-QG24H-52 ;
+        sd:gitCommit "ce7e52d507994a115775162be6e61130438e686d" ] ;
+    sd:derivedFrom [ a sd:ArtifactReference ;
+        sd:artifact project:EVD-20261107-QG24H-53 ;
+        sd:gitCommit "ce7e52d507994a115775162be6e61130438e686d" ],
+    [ a sd:ArtifactReference ;
+        sd:artifact project:EVD-20261107-QG24H-55 ;
+        sd:gitCommit "ce7e52d507994a115775162be6e61130438e686d" ],
+    [ a sd:ArtifactReference ;
+        sd:artifact project:EVD-20261107-QG24H-57 ;
+        sd:gitCommit "ce7e52d507994a115775162be6e61130438e686d" ],
+    [ a sd:ArtifactReference ;
+        sd:artifact project:EVD-20261107-QG24H-59 ;
+        sd:gitCommit "ce7e52d507994a115775162be6e61130438e686d" ],
+    [ a sd:ArtifactReference ;
+        sd:artifact project:EVD-20261107-QG24H-61 ;
+        sd:gitCommit "ce7e52d507994a115775162be6e61130438e686d" ],
+    [ a sd:ArtifactReference ;
+        sd:artifact project:EVD-20261107-QG24H-63 ;
+        sd:gitCommit "ce7e52d507994a115775162be6e61130438e686d" ],
+    [ a sd:ArtifactReference ;
+        sd:artifact project:EVD-20261107-QG24H-65 ;
+        sd:gitCommit "ce7e52d507994a115775162be6e61130438e686d" ] .

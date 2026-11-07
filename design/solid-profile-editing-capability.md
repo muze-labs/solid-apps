@@ -70,7 +70,7 @@ general layout negotiation and automatic credential sharing remain out of scope.
 contract. Existing top-level Files routing is retained and tested separately.
 
 
-## Loading presentation (active CYC49 refinement)
+## Loading presentation (accepted CYC49 refinement)
 
 Transport readiness and visible content readiness are separate. A task provider
 can construct ManagedApp with `waitForPresentation: true`. Its initial
@@ -92,7 +92,7 @@ five-second grace period after attachment, then the host reveals it even if the
 signal was omitted. This is a presentation deadline, not a request timeout.
 Without successful attachment, native load alone is insufficient; the existing
 framing/startup failure and tab-continuation path remains. Delayed signals from
-another task cannot reveal a later invocation. Acceptance remains pending.
+another task cannot reveal a later invocation. CYC49 is accepted on 2026-11-07; ACC66 records the boundary.
 
 
 The ready reveal crossfades the loading indicator out and the provider content

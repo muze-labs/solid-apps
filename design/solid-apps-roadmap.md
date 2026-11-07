@@ -229,7 +229,7 @@ budget. Plan IDE loading and measure its cost explicitly when implementing it.
   separate-editor preference: request the Profile provider through a capability,
   normally hosted in an iframe dialog in the current app, with a tab fallback
   continuing the request when embedding is unavailable. Reuse the provider's
-  editor and preserve unsaved work. CYC49 implements this for evaluation; the
+  editor and preserve unsaved work. CYC49 is accepted on 2026-11-07; the
   [capability contract](solid-profile-editing-capability.md) records the boundary.
   General app navigation remains in Launcher.
 - After the user changes their name, update the displayed name immediately in

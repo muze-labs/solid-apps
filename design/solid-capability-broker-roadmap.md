@@ -36,8 +36,9 @@ CYC-20261107-QG24H-49 adds optional embedded capability presentation and the
 maintainer's explicit direction. This revises the earlier own-window-only scope.
 The same private-port protocol runs through Launcher; transient task providers
 are scoped to the caller and omitted from workspace persistence/restoration.
-Normal top-level app routing remains supported. This is active-cycle work for
-evaluation, not a claim of completed registry or recipient-picker phases.
+Normal top-level app routing remains supported. The maintainer accepts this
+cycle on 2026-11-07 (ACC66). Registry and recipient-picker phases remain future
+work; UI-cycle acceptance does not claim those phases are complete.
 
 ## 2. Principles and boundaries
 
