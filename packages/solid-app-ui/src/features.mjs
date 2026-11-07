@@ -11,3 +11,5 @@ export {
   muzeSolidDesignDropdown,
   muzeSolidDesignListDetails
 } from '../../solid-design/src/features.mjs';
+
+export { sessionRecovery } from './components/session-recovery.mjs';

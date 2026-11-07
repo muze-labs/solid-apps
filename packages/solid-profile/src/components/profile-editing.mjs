@@ -64,12 +64,15 @@ export const profileEditing = {
         return;
       }
       this.runtime.profile.saving = true;
+      this.data.profile.error = '';
       this.data.profile.buttons = { disabled: '' };
       try {
         await options.onSave(edits);
       }
       catch (error) {
-        this.data.profile.error = error.message || String(error);
+        if (error.code !== 'cancelled') {
+          this.data.profile.error = error.message || String(error);
+        }
       }
       finally {
         this.runtime.profile.saving = false;

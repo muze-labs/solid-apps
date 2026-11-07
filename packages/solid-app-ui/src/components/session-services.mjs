@@ -14,7 +14,7 @@ export const sessionServices = {
           : operation());
       }
       catch (error) {
-        if (error.code === 'cancelled') {
+        if (['cancelled', 'sign_in_required'].includes(error.code)) {
           return undefined;
         }
         this.data.message = error.message || String(error);

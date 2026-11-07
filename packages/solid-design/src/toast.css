@@ -15,6 +15,25 @@
   padding: var(--ds-space-d2);
   border-inline-start: 4px solid var(--ds-primary);
   pointer-events: auto;
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms ease, transform 300ms ease;
+}
+@starting-style {
+  .muze-solid-design-toast {
+    opacity: 0;
+    transform: translateY(calc(100% + 1rem));
+  }
+}
+.muze-solid-design-toast[data-muze-solid-design-toast-closing] {
+  opacity: 0;
+  transform: translateY(calc(100% + 1rem));
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .muze-solid-design-toast {
+    transition: none;
+  }
 }
 .muze-solid-design-toast p {
   flex: 1;

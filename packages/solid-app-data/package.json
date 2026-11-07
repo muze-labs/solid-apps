@@ -18,6 +18,7 @@
     "@muze-labs/oldm-turtle": "^0.4.3",
     "@muze-nl/metro-oidc": "^0.9.4",
     "@muze-nl/metro-oauth2": "^0.9.3",
-    "@muze-nl/jaqt": "^0.10.7"
+    "@muze-nl/jaqt": "^0.10.7",
+    "@muze-nl/metro-core": "^0.9.2"
   }
 }

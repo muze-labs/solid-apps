@@ -4,4 +4,10 @@
 project:DES-20261107-QG24H-69 a sd:Design ;
     dcterms:identifier "DES-20261107-QG24H-69" ;
     sd:repositoryPath ".spiral/designs/DES-20261107-QG24H-69.md" ;
-    sd:status sd:Active .
+    sd:status sd:Active ;
+    sd:derivedFrom [ a sd:ArtifactReference ;
+        sd:artifact project:SRC-20261107-QG24H-68 ;
+        sd:gitCommit "f25f21cf9ec9517a3e8f3addf730e1e3a9e80d0e" ] ;
+    sd:transforms [ a sd:ArtifactReference ;
+        sd:artifact project:DES-20261107-QG24H-69 ;
+        sd:gitCommit "f25f21cf9ec9517a3e8f3addf730e1e3a9e80d0e" ] .

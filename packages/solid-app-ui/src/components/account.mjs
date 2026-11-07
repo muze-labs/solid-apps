@@ -76,7 +76,12 @@ export const account = {
       this.data.connectButton = { disabled: '' };
       this.data.message = 'Reading profile…';
       try {
-        const session = await this.api.connectSession(webId, popup);
+        const session = await this.api.connectSession(webId, popup, {
+          onAuthenticationRequired:
+            this.actions.muzeSolidUiAuthenticationRequired,
+          onAuthenticationRestored:
+            this.actions.muzeSolidUiAuthenticationRestored
+        });
         this.runtime.session = session;
         this.data.webId = session.webId;
         this.data.logoutVisibility = { hidden: null };
@@ -92,7 +97,8 @@ export const account = {
             await this.runtime.preferences.load(session);
           }
           catch (error) {
-            preferenceError = error.message;
+            preferenceError =
+              error.code === 'sign_in_required' ? '' : error.message;
           }
           await this.runtime.host.onConnect?.(session);
         });
@@ -113,7 +119,10 @@ export const account = {
         return;
       }
       const session = await this.api.connectSession(webId, null, {
-        interactive: false
+        interactive: false,
+        onAuthenticationRequired:
+          this.actions.muzeSolidUiAuthenticationRequired,
+        onAuthenticationRestored: this.actions.muzeSolidUiAuthenticationRestored
       });
       this.runtime.session = session;
       this.data.webId = session.webId;
@@ -125,7 +134,9 @@ export const account = {
             await this.runtime.preferences.load(session);
           }
           catch (error) {
-            this.data.message = error.message;
+            if (error.code !== 'sign_in_required') {
+              this.data.message = error.message;
+            }
           }
           await this.runtime.host.onConnect?.(session);
         },
@@ -136,6 +147,10 @@ export const account = {
       if (event.key === 'solid-apps.webId' && event.newValue === null) {
         this.runtime.session?.logout();
         window.location.reload();
+        return;
+      }
+      if (this.runtime.session?.hasUsableAccessToken) {
+        this.actions.muzeSolidUiSharedAuthorization();
       }
     }
   }
