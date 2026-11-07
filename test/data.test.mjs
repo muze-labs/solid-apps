@@ -15,6 +15,8 @@ import {
   loadPreferences,
   savePreferences
 } from '../packages/solid-preferences/src/index.mjs';
+import { StateGraph, termText }
+  from '../packages/solid-app-data/src/state-rdf.mjs';
 import {
   markResourceDeleted,
   linkState
@@ -109,6 +111,44 @@ test('preferences use the linked URL, retain unknown RDF, and send conditional w
     String(valueAt(g.get(url + '#solid-apps'), 'https://example.org/unknown')),
     'also keep'
   );
+});
+test('partial preferences preserve omitted app settings and RDF terms', async () => {
+  const turtle = '<#solid-apps> ' +
+    '<' + prefixes.apps + 'contactsResource> <https://pod.example/contacts>; ' +
+    '<' + prefixes.apps + 'filesRoot> <https://pod.example/files/>, ' +
+    '<https://pod.example/archive/>; ' +
+    '<' + prefixes.apps + 'launcherResource> "kept"@nl; ' +
+    '<https://example.org/unknown> <#detail>. ' +
+    '<#detail> <https://example.org/count> "007"^^' +
+    '<http://www.w3.org/2001/XMLSchema#integer>.';
+  let written;
+  const session = { client: {
+    async put(_url, options) {
+      if (options.headers['If-None-Match']) {
+        assert.equal(options.headers['If-None-Match'], '*');
+      }
+      else {
+        assert.equal(options.headers['If-Match'], '"v1"');
+      }
+      written = options.body;
+      return new Response(null, { status: 204, headers: { ETag: '"v2"' } });
+    }
+  } };
+  const document = { url, graph: graph(turtle), missing: false, etag: '"v1"' };
+  const triples = text => new StateGraph(text, url).quads.map(quad =>
+    [quad.subject, quad.predicate, quad.object].map(termText).join(' ')).sort();
+  await savePreferences(session, document, { theme: 'dark' });
+  const withoutTheme = graph(written);
+  withoutTheme.delete(url + '#solid-apps', prefixes.apps + 'theme');
+  assert.deepEqual(triples(await withoutTheme.write()), triples(turtle));
+  await savePreferences(session, document, { contactsResource: '' });
+  const withoutContacts = graph(turtle);
+  withoutContacts.delete(url + '#solid-apps', prefixes.apps + 'contactsResource');
+  assert.deepEqual(triples(written), triples(await withoutContacts.write()));
+  await savePreferences(session, {
+    url, graph: graph(''), missing: true, etag: null
+  }, { filesRoot: 'https://pod.example/files/' });
+  assert.equal(new StateGraph(written, url).quads.length, 1);
 });
 test('unsupported app launch preferences fail without altering RDF or writing', async () => {
   const client = { put: async () => assert.fail('Must not write') };

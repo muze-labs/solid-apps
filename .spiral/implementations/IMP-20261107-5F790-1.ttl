@@ -1,0 +1,20 @@
+@prefix sd: <https://muze.nl/ns/spiral-developer#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix project: <urn:muze-labs:solid-apps:spiral:> .
+project:IMP-20261107-5F790-1 a sd:Implementation ;
+    dcterms:identifier "IMP-20261107-5F790-1" ;
+    sd:repositoryPath ".spiral/implementations/IMP-20261107-5F790-1.md" ;
+    sd:status sd:Active ;
+    sd:provenanceConfidence sd:Evidenced ;
+    sd:implementationLocation "packages/solid-preferences/src/dialog.html",
+        "packages/solid-preferences/src/dialog.mjs",
+        "packages/solid-preferences/src/index.mjs",
+        "apps/contacts/src/preferences.html",
+        "apps/launcher/src/preferences.html",
+        "apps/files/src/preferences.html",
+        "scripts/build.mjs" ;
+    sd:constrainedBy [
+        a sd:ArtifactReference ;
+        sd:artifact project:SRC-20261107-QG24H-35 ;
+        sd:gitCommit "0b74c3cb19e751d3f42911316d9b4445bf7fbd6a"
+    ] .

@@ -100,7 +100,11 @@ for connection and permission steps. Selection returns a URL into Launcher's
 resource field; cancellation preserves its previous value. Both apps keep their
 own Solid sessions.
 
-Every app opens the same preferences dialog. It loads the URL linked by
+Every app offers common preferences plus its own storage settings: Contacts has
+its address-book resource, Launcher has shortcut and workspace resources, and
+Files has its root container. Profile currently has only common settings.
+Saving leaves other apps' storage settings and unrelated RDF unchanged.
+The dialog loads the URL linked by
 `pim:preferencesFile` on the connected WebID; it never guesses a preferences path.
 An absent resource may be created at that linked URL. If the profile has no link,
 the dialog explains the missing prerequisite; profile-link creation is not part

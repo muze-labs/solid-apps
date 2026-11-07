@@ -91,7 +91,10 @@ resources.set(base + '/profile', {
   etag: '"1"'
 });
 resources.set(base + '/prefs', {
-  body: '<#other> <https://example.org/setting> "untouched".',
+  body: '<#other> <https://example.org/setting> "untouched". ' +
+    '<#solid-apps> <https://vocab.muze.nl/solid-apps#launcherResource> <' +
+    base + '/launcher.ttl>; <https://vocab.muze.nl/solid-apps#filesRoot> <' +
+    base + '/storage/>.',
   type: 'text/turtle',
   etag: '"1"'
 });
@@ -208,6 +211,17 @@ try {
       await loaded;
     }
     await page.ready();
+    const name = path.split('/')[0];
+    const storageFields = {
+      contacts: ['contactsResource'],
+      launcher: ['launcherResource', 'workspaceResource'],
+      files: ['filesRoot'],
+      profile: []
+    };
+    assert.deepEqual(await evaluate(
+      'return [...document.querySelectorAll(' +
+      '\'.preferences-dialog input[type="url"]\')].map(input=>input.name);'
+    ), storageFields[name]);
     assert.equal(
       await evaluate('return document.querySelector("h1").textContent;'),
       path.split('/')[0][0].toUpperCase() + path.split('/')[0].slice(1)
@@ -538,15 +552,16 @@ try {
   await wait('document.querySelector(".preferences-dialog [name=theme]")');
   await submit('.preferences-dialog form', {
     theme: 'dark',
+    textScale: '110',
     language: 'nl',
-    contactsResource: base + '/contacts.ttl',
-    launcherResource: base + '/launcher.ttl',
-    filesRoot: base + '/storage/'
+    contactsResource: base + '/contacts.ttl'
   });
   await wait(
     'document.querySelector(".preferences-dialog [role=status]").textContent.includes("saved")'
   );
   assert.match(String(resources.get(base + '/prefs').body), /untouched/);
+  assert.match(String(resources.get(base + '/prefs').body), /launcher\.ttl/);
+  assert.match(String(resources.get(base + '/prefs').body), /storage\//);
   await evaluate(
     'document.querySelector(".preferences-dialog [data-simply-command=close]").click();document.querySelector("[data-simply-command=sync]").click();'
   );
@@ -561,6 +576,8 @@ try {
   await wait(
     'window.solidProfile?.host.session && document.body.classList.contains("ds-darkmode")'
   );
+  assert.equal(await evaluate(
+    'return document.documentElement.style.fontSize;'), '110%');
   assert.equal(await evaluate('return document.documentElement.lang;'), 'nl');
   await wait(
     'document.querySelector(".account-name").textContent==="Remote Person"'
@@ -978,6 +995,12 @@ try {
       'return document.documentElement.scrollWidth<=document.documentElement.clientWidth;'
     )
   );
+  assert(await evaluate('const dialog=document.querySelector(' +
+    '".preferences-dialog");return dialog.scrollWidth<=dialog.clientWidth;'));
+  await evaluate('document.querySelector(' +
+    '".preferences-dialog [name=contactsResource]")' +
+    '.scrollIntoView({block:"center"});');
+  await capture('preferences-storage-mobile');
   await click('.preferences-dialog [data-simply-command=close]');
   await wait('!document.querySelector(".preferences-dialog").open');
   await capture('contacts-mobile');

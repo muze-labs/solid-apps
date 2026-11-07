@@ -66,10 +66,17 @@ for (const name of ['launcher', 'contacts', 'files', 'profile']) {
   const content = (
     await readFile(path.join(root, `apps/${name}/src/index.html`), 'utf8')
   ).replace('{{profile}}', profile);
+  let appPreferences = '';
+  if (name !== 'profile') {
+    appPreferences = await readFile(
+      path.join(root, `apps/${name}/src/preferences.html`), 'utf8'
+    );
+  }
   let body = shell
     .replace('{{title}}', title)
     .replace('{{content}}', content)
-    .replace('{{preferences}}', preferences);
+    .replace('{{preferences}}',
+      preferences.replace('{{appPreferences}}', appPreferences));
   await mkdir(path.join(root, `www/${name}`), { recursive: true });
   await writeFile(
     path.join(root, `www/${name}/index.html`),
