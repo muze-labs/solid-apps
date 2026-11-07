@@ -5,77 +5,51 @@ import {
   savePreferences,
   applyPreferences
 } from './index.mjs';
-export function preferencesDialog(dialog, { getSession, onChange }) {
-  let loaded = null;
-  const view = app({
+import { exposeDefinition } from '@muze-labs/solid-app-data/definition.mjs';
+import { preferencesForm } from './features.mjs';
+import sources from './features.mjs?entries';
+
+export function preferencesDialog(
+  dialog,
+  { getSession, onChange, overrides = {}, template }
+) {
+  const component = {
+    ...preferencesForm,
+    templates: template ? { 'suite-preferences': template } : {}
+  };
+  const definition = {
     container: dialog,
+    components: { preferencesForm: component },
     data: { ...defaults, message: '', source: '', buttons: { disabled: null } },
-    commands: {
-      close() {
-        dialog.close();
-      },
-      async save(form) {
-        const session = getSession();
-        if (!session || !loaded) {
-          view.data.message =
-            'Connect to Solid and load your preferences before saving.';
-          return;
-        }
-        const keys = Object.keys(defaults).filter(key =>
-          form.elements.namedItem(key));
-        const settings = Object.fromEntries(
-          keys.map((key) => [
-            key,
-            form.elements.namedItem(key).value.trim()
-          ])
-        );
-        view.data.buttons = { disabled: '' };
-        try {
-          loaded = await session.perform(() =>
-            savePreferences(session, loaded.document, settings)
-          );
-          applyPreferences(loaded.settings);
-          onChange(loaded.settings);
-          view.data.message = 'Preferences saved to your Pod.';
-        }
-        catch (error) {
-          view.data.message = error.message || String(error);
-        }
-        finally {
-          view.data.buttons = { disabled: null };
+    api: {
+      defaults,
+      loadPreferences,
+      savePreferences,
+      applyPreferences,
+      getSession,
+      onChange
+    },
+    runtime: { loaded: null },
+    ...overrides
+  };
+  const view = app(definition);
+  exposeDefinition(view, definition, {
+    ...sources,
+    preferencesForm: {
+      ...sources.preferencesForm,
+      templates: {
+        'suite-preferences': {
+          origin: 'packages/solid-preferences/src/form.html',
+          includes: 'the current app preferences.html'
         }
       }
     }
   });
   return {
-    async load(session) {
-      loaded = null;
-      Object.assign(view.data, defaults, { message: '', source: '' });
-      loaded = await loadPreferences(session);
-      Object.assign(view.data, loaded.settings, {
-        source: loaded.document.url,
-        message: ''
-      });
-      applyPreferences(loaded.settings);
-      onChange(loaded.settings);
-      return loaded.settings;
-    },
-    show() {
-      dialog.showModal();
-      if (!loaded) {
-        view.data.message =
-          'Connect to Solid to load the preferences file linked from your profile.';
-      }
-    },
-    reset() {
-      loaded = null;
-      Object.assign(view.data, defaults, { source: '', message: '' });
-      applyPreferences(defaults);
-      onChange({ ...defaults });
-    },
-    destroy() {
-      view.destroy();
-      dialog.close();
-    }
+    app: view,
+    load: view.actions.load,
+    show: view.actions.show,
+    reset: view.actions.reset,
+    destroy: view.destroy.bind(view)
   };
 }

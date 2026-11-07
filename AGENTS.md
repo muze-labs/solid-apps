@@ -59,6 +59,13 @@ belong in the model configuration and editable feature entries. Commands and
 actions update model options; SimplyFlow binds the resulting view. Keep the
 source data and native RDF authoritative; a list model is only a UI projection.
 
+Use jaqt for app-owned selection, sorting and filtering of arrays of objects
+where it simplifies the code. Combine jaqt queries with SimplyFlow model effects
+when useful: the model owns reactive options and the bound view, and jaqt
+expresses the query within that pipeline. Do not maintain a second equivalent
+pipeline beside the model. Use the installed public APIs and preserve source
+objects, native RDF identity and unrelated data.
+
 Native operations which are not content rendering remain direct: dialog/popover lifecycle,
 focus, form reset/file selection, download activation, and document-wide language,
 theme and text-size settings. Add exceptions only for a concrete browser need.

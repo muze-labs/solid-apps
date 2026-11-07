@@ -28,3 +28,10 @@ view.show(subject, {
 `show(null)` clears the selection; `destroy()` removes bindings. The caller owns
 selection and storage; the component owns editing drafts and save state. Save
 errors remain visible and preserve the draft. Rendered values are plain text.
+
+Contact-value projections follow supported `vcard:value` and `vcard:hasValue`
+terms on blank or named nodes already present in the graph. Multiple values are
+shown on separate lines. Unresolved email/telephone resource references and
+cycles contribute no address text; their RDF remains intact. These structures
+are still protected from unsupported edits, including when another field is
+saved. The reader does not dereference additional documents to fill missing data.

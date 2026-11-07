@@ -55,6 +55,23 @@ Files and Profile, and from the first integration of Zett and Notebook. Make
 each app ready for the IDE as its features are developed; building the IDE is
 separate future work. This addition selects no implementation cycle.
 
+### Deferred: runtime template composition
+
+On 2026-11-07 the maintainer accepts build-time composition as sufficient for
+now and explicitly asks to revisit it later. Shared account and Preferences
+includes, app titles and app-specific Preferences insertion are expanded during
+the build. The running app retains the resulting templates, but cannot change
+those composition relationships or re-expand their source placeholders without
+a rebuild. This is a current moldability limitation.
+
+Investigate composing these views at runtime through named SimplyFlow templates
+and/or fields, so users can change their composition in the running app. These
+are candidate mechanisms, not a selected implementation. Keep SimplyFlow as the
+runtime renderer and assess how to retain useful View Source. Reconcile the
+current build-time composition rule when that future design is selected. This
+follow-up is deferred; it does not extend the current refactor or select a cycle.
+FBK-20261107-QG24H-46 retains the maintainer's decision.
+
 ### Current gaps
 
 The four current apps use SimplyFlow, but their entry points create separate

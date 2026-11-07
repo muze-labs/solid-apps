@@ -1,9 +1,15 @@
+import { checkFeatureSources } from './support/features.mjs';
 import { spawn } from 'node:child_process';
 import * as fs from 'node:fs/promises';
 import * as http from 'node:http';
 import * as path from 'node:path';
 import assert from 'node:assert/strict';
-import { startChrome, freePort, waitForExit, formatBrowserException } from './support/chrome.mjs';
+import {
+  startChrome,
+  freePort,
+  waitForExit,
+  formatBrowserException
+} from './support/chrome.mjs';
 
 // The app is exercised through HTTP against an isolated in-memory Pod, never a user's Pod.
 const resources = new Map();
@@ -86,15 +92,18 @@ await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
 base = `http://127.0.0.1:${server.address().port}`;
 const webId = base + '/profile#me';
 resources.set(base + '/profile', {
-  body: `@prefix pim: <http://www.w3.org/ns/pim/space#>. @prefix foaf: <http://xmlns.com/foaf/0.1/>. <#me> a foaf:Person; foaf:name "Remote Person"; pim:storage <${base}/storage/>; pim:preferencesFile <${base}/prefs>; <http://www.w3.org/ns/solid/terms#oidcIssuer> <${base}/issuer/>. <#other> foaf:name "Keep me".`,
+  body: `@prefix pim: <http://www.w3.org/ns/pim/space#>. @prefix foaf: <http://xmlns.com/foaf/0.1/>. <#me> a foaf:Person; foaf:name "Remote Person"; pim:storage <${base}/storage/>; pim:preferencesFile <${base}/prefs>; <http://www.w3.org/2006/vcard/ns#hasEmail> <#work-email>, <#unresolved-email>; <http://www.w3.org/ns/solid/terms#oidcIssuer> <${base}/issuer/>. <#work-email> <http://www.w3.org/2006/vcard/ns#value> <mailto:owner@example.org>; <https://example.org/emailMetadata> "keep email metadata". <#other> foaf:name "Keep me".`,
   type: 'text/turtle',
   etag: '"1"'
 });
 resources.set(base + '/prefs', {
-  body: '<#other> <https://example.org/setting> "untouched". ' +
+  body:
+    '<#other> <https://example.org/setting> "untouched". ' +
     '<#solid-apps> <https://vocab.muze.nl/solid-apps#launcherResource> <' +
-    base + '/launcher.ttl>; <https://vocab.muze.nl/solid-apps#filesRoot> <' +
-    base + '/storage/>.',
+    base +
+    '/launcher.ttl>; <https://vocab.muze.nl/solid-apps#filesRoot> <' +
+    base +
+    '/storage/>.',
   type: 'text/turtle',
   etag: '"1"'
 });
@@ -109,18 +118,27 @@ resources.set(base + '/storage/test.txt', {
   etag: '"1"'
 });
 resources.set(base + '/storage/forbidden/', {
-  body: 'Access denied', type: 'text/plain', etag: '"denied"', status: 403
+  body: 'Access denied',
+  type: 'text/plain',
+  etag: '"denied"',
+  status: 403
 });
 const launchDocument = base + '/people.ttl?view=all&value=a%2Bb';
 const launchResource = launchDocument + '#alice';
-const serverAppUrl = base + '/server-app?view=full&' +
-  new URLSearchParams({ resource: launchResource }) + '#landing';
+const serverAppUrl =
+  base +
+  '/server-app?view=full&' +
+  new URLSearchParams({ resource: launchResource }) +
+  '#landing';
 const describedAppId = base + '/launcher.ttl#server-app';
 resources.set(base + '/launcher.ttl', {
-  body: '@prefix schema: <https://schema.org/>. ' +
+  body:
+    '@prefix schema: <https://schema.org/>. ' +
     '@prefix apps: <https://vocab.muze.nl/solid-apps#>. ' +
     '<#server-app> a schema:SoftwareApplication; ' +
-    'schema:name "Declared server app"; schema:url <' + serverAppUrl + '>; ' +
+    'schema:name "Declared server app"; schema:url <' +
+    serverAppUrl +
+    '>; ' +
     'apps:launchParameterLocation "query"; ' +
     '<https://example.org/unknown> "preserve app metadata". ' +
     '<#unrelated> <https://example.org/unknown> "preserve other subject".',
@@ -128,7 +146,8 @@ resources.set(base + '/launcher.ttl', {
   etag: '"launcher-initial"'
 });
 resources.set(launchDocument, {
-  body: '<#alice> <http://xmlns.com/foaf/0.1/name> "Launch Alice". ' +
+  body:
+    '<#alice> <http://xmlns.com/foaf/0.1/name> "Launch Alice". ' +
     '<#bob> <http://xmlns.com/foaf/0.1/name> "Other subject". ' +
     '<#alice> <https://example.org/unknown> "preserve me".',
   type: 'text/turtle',
@@ -202,6 +221,7 @@ try {
         (await evaluate('return document.body.innerText;'))
     );
   }
+  const inspectedFeatures = new Set();
   async function visit(path) {
     const loaded = page.once('Page.loadEventFired');
     const navigation = await page.send('Page.navigate', {
@@ -212,20 +232,26 @@ try {
     }
     await page.ready();
     const name = path.split('/')[0];
-    const exportedApp = 'window.solid' +
-      name[0].toUpperCase() + name.slice(1);
+    const exportedApp = 'window.solid' + name[0].toUpperCase() + name.slice(1);
     await wait(exportedApp);
     await evaluate('await ' + exportedApp + '.host.ready;');
+    if (!inspectedFeatures.has(name)) {
+      await checkFeatureSources(page, name);
+      inspectedFeatures.add(name);
+    }
     const storageFields = {
       contacts: ['contactsResource'],
       launcher: ['launcherResource', 'workspaceResource'],
       files: ['filesRoot'],
       profile: []
     };
-    assert.deepEqual(await evaluate(
-      'return [...document.querySelectorAll(' +
-      '\'.preferences-dialog input[type="url"]\')].map(input=>input.name);'
-    ), storageFields[name]);
+    assert.deepEqual(
+      await evaluate(
+        'return [...document.querySelectorAll(' +
+          '\'.preferences-dialog input[type="url"]\')].map(input=>input.name);'
+      ),
+      storageFields[name]
+    );
     assert.equal(
       await evaluate('return document.querySelector("h1").textContent;'),
       path.split('/')[0][0].toUpperCase() + path.split('/')[0].slice(1)
@@ -301,35 +327,49 @@ try {
   async function openApp(selector, presentation = 'tab') {
     const launcherWindow = await page.send('Browser.getWindowForTarget');
     const before = await page.send('Target.getTargets');
-    const previous = new Set(before.targetInfos.map(target => target.targetId));
+    const previous = new Set(
+      before.targetInfos.map((target) => target.targetId)
+    );
     const opened = page.once('Page.windowOpen');
     await click(selector);
     const openedWindow = await opened;
     for (let attempt = 0; attempt < 100; attempt++) {
       const targets = await page.send('Target.getTargets');
-      const target = targets.targetInfos.find(candidate =>
-        candidate.type === 'page' && candidate.url === openedWindow.url &&
-        !previous.has(candidate.targetId)
+      const target = targets.targetInfos.find(
+        (candidate) =>
+          candidate.type === 'page' &&
+          candidate.url === openedWindow.url &&
+          !previous.has(candidate.targetId)
       );
       if (target) {
         const appWindow = await page.send('Browser.getWindowForTarget', {
           targetId: target.targetId
         });
         if (presentation === 'window') {
-          assert.notEqual(appWindow.windowId, launcherWindow.windowId,
+          assert.notEqual(
+            appWindow.windowId,
+            launcherWindow.windowId,
             'App should open in a separate browser window. ' +
-            JSON.stringify({ openedWindow, presentation: await evaluate(
-              'return window.solidLauncher?.workspace?.presentation;') }));
+              JSON.stringify({
+                openedWindow,
+                presentation: await evaluate(
+                  'return window.solidLauncher?.workspace?.presentation;'
+                )
+              })
+          );
         }
         else {
-          assert.equal(appWindow.windowId, launcherWindow.windowId,
-            'App should open in a new tab in the Launcher browser window.');
+          assert.equal(
+            appWindow.windowId,
+            launcherWindow.windowId,
+            'App should open in a new tab in the Launcher browser window.'
+          );
         }
         const appPage = await chrome.page(target.targetId);
         await appPage.ready();
         return { target, page: appPage };
       }
-      await new Promise(resolve => setTimeout(resolve, 30));
+      await new Promise((resolve) => setTimeout(resolve, 30));
     }
     throw new Error('browser-test: Launch did not create a fresh app target.');
   }
@@ -339,67 +379,91 @@ try {
   await visit('profile/#' + resourceFragment);
   await wait(
     'document.querySelector(".profile-card h2")?.textContent==="Launch Alice" && ' +
-    'document.querySelector(".profile-toolbar [name=url]").value===' +
+      'document.querySelector(".profile-toolbar [name=url]").value===' +
       JSON.stringify(launchResource)
   );
-  assert.equal(await evaluate('return window.solidProfile.host.session;'), null);
   assert.equal(
-    await evaluate('return document.querySelector(".profile-toolbar [name=url]").value;'),
+    await evaluate('return window.solidProfile.host.session;'),
+    null
+  );
+  assert.equal(
+    await evaluate(
+      'return document.querySelector(".profile-toolbar [name=url]").value;'
+    ),
     launchResource
   );
-  assert.equal(await evaluate(
-    'return document.querySelector("[data-simply-command=edit]").getClientRects().length;'
-  ), 0);
+  assert.equal(
+    await evaluate(
+      'return document.querySelector("[data-simply-command=editProfile]").getClientRects().length;'
+    ),
+    0
+  );
 
   const launchFragment = new URLSearchParams({
-    webid: webId, resource: launchResource
+    webid: webId,
+    resource: launchResource
   }).toString();
-  const historySetup = await page.send('Page.addScriptToEvaluateOnNewDocument', {
-    source: 'window.initialLaunchHistoryLength=history.length;' +
-      'history.replaceState({launchTest:"preserve-state"}, "");'
-  });
+  const historySetup = await page.send(
+    'Page.addScriptToEvaluateOnNewDocument',
+    {
+      source:
+        'window.initialLaunchHistoryLength=history.length;' +
+        'history.replaceState({launchTest:"preserve-state"}, "");'
+    }
+  );
   await visit('profile/?launch-case=fragment#foo%3Fbar?' + launchFragment);
   await wait(
     'window.solidProfile?.host.session && document.querySelector(".profile-card h2")?.textContent==="Launch Alice"'
   );
-  assert.equal(await evaluate('return location.href;'),
-    appBase + 'profile/?launch-case=fragment#foo%3Fbar');
+  assert.equal(
+    await evaluate('return location.href;'),
+    appBase + 'profile/?launch-case=fragment#foo%3Fbar'
+  );
   assert.deepEqual(await evaluate('return window.solidProfile.host.launch;'), {
-    webId, resource: launchResource
+    webId,
+    resource: launchResource
   });
   assert.deepEqual(await evaluate('return history.state;'), {
     launchTest: 'preserve-state'
   });
-  assert(await evaluate(
-    'return history.length===window.initialLaunchHistoryLength;'
-  ));
+  assert(
+    await evaluate('return history.length===window.initialLaunchHistoryLength;')
+  );
   await page.send('Page.removeScriptToEvaluateOnNewDocument', {
     identifier: historySetup.identifier
   });
   const beforeAnchor = calls.length;
-  assert(await evaluate(
-    'window.launchAnchorMarker=true;location.hash="ordinary%3Fanchor";' +
-      'await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));' +
-      'return window.launchAnchorMarker===true && ' +
-      'window.solidProfile.host.launch.resource===' + JSON.stringify(launchResource) + ';'
-  ));
+  assert(
+    await evaluate(
+      'window.launchAnchorMarker=true;location.hash="ordinary%3Fanchor";' +
+        'await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));' +
+        'return window.launchAnchorMarker===true && ' +
+        'window.solidProfile.host.launch.resource===' +
+        JSON.stringify(launchResource) +
+        ';'
+    )
+  );
   assert.equal(calls.length, beforeAnchor);
 
   await visit('profile/#' + launchFragment);
   await wait(
     'window.solidProfile?.host.session && document.querySelector(".profile-card h2")?.textContent==="Launch Alice"'
   );
-  assert.equal(await evaluate(
-    'return window.solidProfile.host.session.webId;'
-  ), webId);
-  assert.equal(await evaluate(
-    'return localStorage.getItem("solid-apps.webId");'
-  ), null);
+  assert.equal(
+    await evaluate('return window.solidProfile.host.session.webId;'),
+    webId
+  );
+  assert.equal(
+    await evaluate('return localStorage.getItem("solid-apps.webId");'),
+    null
+  );
 
   for (const fragment of [
     'resource=javascript%3Aalert(1)',
     'foo?resource=javascript%3Aalert(1)',
-    'resource=' + encodeURIComponent(launchResource) + '&resource=' +
+    'resource=' +
+      encodeURIComponent(launchResource) +
+      '&resource=' +
       encodeURIComponent(launchResource)
   ]) {
     const before = calls.length;
@@ -418,37 +482,54 @@ try {
     await visit('profile/#' + new URLSearchParams({ resource }));
     await wait(
       'document.querySelector(".suite-status").textContent.includes(' +
-        JSON.stringify(message) + ')'
+        JSON.stringify(message) +
+        ')'
     );
   }
 
   const otherWebId = base + '/other-profile#me';
-  await evaluate('localStorage.setItem("solid-apps.webId", ' +
-    JSON.stringify(otherWebId) + ');');
+  await evaluate(
+    'localStorage.setItem("solid-apps.webId", ' +
+      JSON.stringify(otherWebId) +
+      ');'
+  );
   const beforeMismatch = calls.length;
   await visit('profile/#' + launchFragment);
   await wait(
     'window.solidProfile && document.querySelector(".suite-status").textContent.includes("WebID / connection")'
   );
-  assert.match(await evaluate(
-    'return document.querySelector(".suite-status").textContent;'
-  ), /WebID \/ connection/);
+  assert.match(
+    await evaluate(
+      'return document.querySelector(".suite-status").textContent;'
+    ),
+    /WebID \/ connection/
+  );
   assert.equal(calls.length, beforeMismatch);
-  assert.equal(await evaluate(
-    'return localStorage.getItem("solid-apps.webId");'
-  ), otherWebId);
-  assert.equal(await evaluate('return window.solidProfile.host.session;'), null);
+  assert.equal(
+    await evaluate('return localStorage.getItem("solid-apps.webId");'),
+    otherWebId
+  );
+  assert.equal(
+    await evaluate('return window.solidProfile.host.session;'),
+    null
+  );
   await account('connectDialog');
-  assert.equal(await evaluate(
-    'return document.querySelector(".connect-dialog [name=webId]").value;'
-  ), webId);
+  assert.equal(
+    await evaluate(
+      'return document.querySelector(".connect-dialog [name=webId]").value;'
+    ),
+    webId
+  );
   await submit('.connect-dialog form', { webId });
   await wait(
-    'window.solidProfile.host.session?.webId===' + JSON.stringify(webId) +
+    'window.solidProfile.host.session?.webId===' +
+      JSON.stringify(webId) +
       ' && document.querySelector(".profile-card h2")?.textContent==="Launch Alice"'
   );
   await evaluate('localStorage.removeItem("solid-apps.webId");');
-  assert(!calls.some(call => call.method === 'PUT' || call.method === 'DELETE'));
+  assert(
+    !calls.some((call) => call.method === 'PUT' || call.method === 'DELETE')
+  );
 
   await visit('contacts/');
   await wait('window.solidContacts?.store');
@@ -487,27 +568,37 @@ try {
     'document.querySelector(".profile-card h2")?.textContent==="Sparse person"'
   );
   await evaluate(
-    'document.querySelector("[data-simply-command=edit]").click();'
+    'document.querySelector("[data-simply-command=editProfile]").click();'
   );
-  await evaluate('const input=document.querySelector(".profile-card [name=notes]");' +
-    'input.value="Unsaved workspace draft";' +
-    'input.dispatchEvent(new Event("input",{bubbles:true}));' +
-    'const managed=window.solidContacts.host.managed;' +
-    'const state=await managed.getState();' +
-    'document.querySelector(".profile-card [data-simply-command=cancel]").click();' +
-    'await managed.restoreState(state);');
-  await wait('!document.querySelector(".profile-card form").hidden && ' +
-    'document.querySelector(".profile-card [name=notes]").value===' +
-    '"Unsaved workspace draft"');
-  assert(!(await evaluate('return await window.solidContacts.store.service' +
-    '.workspace.graph("contacts").write();')).includes('Unsaved workspace draft'));
+  await evaluate(
+    'const input=document.querySelector(".profile-card [name=notes]");' +
+      'input.value="Unsaved workspace draft";' +
+      'input.dispatchEvent(new Event("input",{bubbles:true}));' +
+      'const managed=window.solidContacts.host.managed;' +
+      'const state=await managed.getState();' +
+      'document.querySelector(".profile-card [data-simply-command=cancelProfile]").click();' +
+      'await managed.restoreState(state);'
+  );
+  await wait(
+    '!document.querySelector(".profile-card form").hidden && ' +
+      'document.querySelector(".profile-card [name=notes]").value===' +
+      '"Unsaved workspace draft"'
+  );
+  assert(
+    !(
+      await evaluate(
+        'return await window.solidContacts.store.service' +
+          '.workspace.graph("contacts").write();'
+      )
+    ).includes('Unsaved workspace draft')
+  );
   await submit('.profile-card form', {
     name: 'Edited contact',
     email: 'first@example.org\nsecond@example.org'
   });
   await wait(
     'document.querySelector(".profile-card h2")?.textContent==="Edited contact" && ' +
-    'document.querySelector(".profile-card form").hidden'
+      'document.querySelector(".profile-card form").hidden'
   );
   assert.match(
     await evaluate(
@@ -582,8 +673,10 @@ try {
   await wait(
     'window.solidProfile?.host.session && document.body.classList.contains("ds-darkmode")'
   );
-  assert.equal(await evaluate(
-    'return document.documentElement.style.fontSize;'), '110%');
+  assert.equal(
+    await evaluate('return document.documentElement.style.fontSize;'),
+    '110%'
+  );
   assert.equal(await evaluate('return document.documentElement.lang;'), 'nl');
   await wait(
     'document.querySelector(".account-name").textContent==="Remote Person"'
@@ -595,13 +688,22 @@ try {
     'document.querySelector(".profile-card h2")?.textContent==="Remote Person"'
   );
   await evaluate(
-    'document.querySelector("[data-simply-command=edit]").click();'
+    'document.querySelector("[data-simply-command=editProfile]").click();'
   );
+  await wait(
+    'document.querySelector(".profile-card [name=email]").value==="owner@example.org"'
+  );
+  assert.doesNotMatch(await evaluate(
+    'return document.querySelector(".profile-details").textContent;'
+  ), /\[object Object\]|unresolved-email/);
   await submit('.profile-card form', { name: 'Changed remote profile' });
   await wait(
     'document.querySelector(".profile-card h2")?.textContent==="Changed remote profile"'
   );
   assert.match(String(resources.get(base + '/profile').body), /Keep me/);
+  assert.match(String(resources.get(base + '/profile').body), /unresolved-email/);
+  assert.match(String(resources.get(base + '/profile').body), /keep email metadata/);
+
   await capture('profile-desktop');
   await visit('launcher/');
   await wait(
@@ -637,11 +739,16 @@ try {
     'new URLSearchParams(new URL(document.querySelector(".app-grid a[href*=profile]").href).hash.slice(1)).get("webid")===' +
       JSON.stringify(webId)
   );
-  const savedLaunchUrl = appBase + 'profile/#foo?' + new URLSearchParams({
-    webid: otherWebId, resource: launchResource
-  });
+  const savedLaunchUrl =
+    appBase +
+    'profile/#foo?' +
+    new URLSearchParams({
+      webid: otherWebId,
+      resource: launchResource
+    });
   await submit('.saved-apps form', {
-    name: 'Profile launch example', url: savedLaunchUrl
+    name: 'Profile launch example',
+    url: savedLaunchUrl
   });
   await wait(
     '[...document.querySelectorAll(".saved-apps a")].some(a=>a.textContent==="Profile launch example")'
@@ -657,12 +764,15 @@ try {
   assert.equal(savedParameters.get('webid'), webId);
   assert.equal(savedParameters.get('resource'), launchResource);
 
-  const writesBeforeLaunch = calls.filter(call => call.method === 'PUT').length;
+  const writesBeforeLaunch = calls.filter(
+    (call) => call.method === 'PUT'
+  ).length;
   const preferencesBeforeLaunch = String(resources.get(base + '/prefs').body);
   const resourceBeforeLaunch = String(resources.get(launchDocument).body);
   await evaluate(
     'document.querySelector(".launch-profile [name=resource]").value=' +
-      JSON.stringify(launchResource) + ';'
+      JSON.stringify(launchResource) +
+      ';'
   );
   const launcherPage = page;
   const profileWindow = await openApp('.launch-profile button');
@@ -673,20 +783,37 @@ try {
   await wait(
     'window.solidProfile?.host.session && document.querySelector(".profile-card h2")?.textContent==="Launch Alice"'
   );
-  assert.equal(await evaluate('return window.solidProfile.host.session.webId;'),
-    webId);
-  assert.equal(await evaluate(
-    'return new URLSearchParams(location.hash.slice(1)).get("resource");'
-  ), launchResource);
-  assert.equal(calls.filter(call => call.method === 'PUT').length,
-    writesBeforeLaunch);
-  assert.equal(String(resources.get(base + '/prefs').body), preferencesBeforeLaunch);
-  assert.equal(String(resources.get(launchDocument).body), resourceBeforeLaunch);
+  assert.equal(
+    await evaluate('return window.solidProfile.host.session.webId;'),
+    webId
+  );
+  assert.equal(
+    await evaluate(
+      'return new URLSearchParams(location.hash.slice(1)).get("resource");'
+    ),
+    launchResource
+  );
+  assert.equal(
+    calls.filter((call) => call.method === 'PUT').length,
+    writesBeforeLaunch
+  );
+  assert.equal(
+    String(resources.get(base + '/prefs').body),
+    preferencesBeforeLaunch
+  );
+  assert.equal(
+    String(resources.get(launchDocument).body),
+    resourceBeforeLaunch
+  );
   assert.equal(await evaluate('return Boolean(window.opener);'), true);
-  assert.equal(await launcherPage.evaluate(() => location.pathname), '/launcher/');
-  assert.equal(await launcherPage.evaluate(() =>
-    window.solidLauncher.host.session.webId
-  ), webId);
+  assert.equal(
+    await launcherPage.evaluate(() => location.pathname),
+    '/launcher/'
+  );
+  assert.equal(
+    await launcherPage.evaluate(() => window.solidLauncher.host.session.webId),
+    webId
+  );
   await capture('profile-launched');
   page.close();
   await launcherPage.send('Target.closeTarget', {
@@ -696,92 +823,139 @@ try {
   page = launcherPage;
 
   await account('preferences');
-  assert.equal(await evaluate(
-    'return document.querySelector(".preferences-dialog [name=launchTarget]").value;'
-  ), 'tab');
+  assert.equal(
+    await evaluate(
+      'return document.querySelector(".preferences-dialog [name=launchTarget]").value;'
+    ),
+    'tab'
+  );
   await submit('.preferences-dialog form', { launchTarget: 'window' });
   await wait(
     'document.querySelector(".preferences-dialog [role=status]").textContent.includes("saved")'
   );
   await click('.preferences-dialog [data-simply-command=close]');
   await reload();
-  await wait('window.solidLauncher?.host.session && ' +
-    'window.solidLauncher.host.preferences.launchTarget==="window"');
+  await wait(
+    'window.solidLauncher?.host.session && ' +
+      'window.solidLauncher.host.preferences.launchTarget==="window"'
+  );
   const contactsWindow = await openApp('.app-grid a[href*=contacts]', 'window');
   contactsWindow.page.close();
   await page.send('Target.closeTarget', {
     targetId: contactsWindow.target.targetId
   });
   await account('preferences');
-  assert.equal(await evaluate(
-    'return document.querySelector(".preferences-dialog [name=launchTarget]").value;'
-  ), 'window');
+  assert.equal(
+    await evaluate(
+      'return document.querySelector(".preferences-dialog [name=launchTarget]").value;'
+    ),
+    'window'
+  );
   await submit('.preferences-dialog form', { launchTarget: 'tab' });
   await wait('window.solidLauncher.host.preferences.launchTarget==="tab"');
   await click('.preferences-dialog [data-simply-command=close]');
 
-  const declaredLink = '[...document.querySelectorAll(".saved-apps a")]' +
+  const declaredLink =
+    '[...document.querySelectorAll(".saved-apps a")]' +
     '.find(a=>a.textContent==="Declared server app")';
   await wait(declaredLink);
-  assert.equal(await evaluate('return ' + declaredLink +
-    '.closest("li").querySelector("select").value;'), '');
-  let declaredUrl = new URL(await evaluate('return ' + declaredLink + '.href;'));
+  assert.equal(
+    await evaluate(
+      'return ' + declaredLink + '.closest("li").querySelector("select").value;'
+    ),
+    ''
+  );
+  let declaredUrl = new URL(
+    await evaluate('return ' + declaredLink + '.href;')
+  );
   assert.equal(declaredUrl.searchParams.get('webid'), webId);
   assert.equal(declaredUrl.searchParams.get('resource'), launchResource);
   assert.equal(declaredUrl.hash, '#landing');
 
-  await evaluate('const select=' + declaredLink +
-    '.closest("li").querySelector("select");select.value="fragment";' +
-    'select.dispatchEvent(new Event("change",{bubbles:true}));');
+  await evaluate(
+    'const select=' +
+      declaredLink +
+      '.closest("li").querySelector("select");select.value="fragment";' +
+      'select.dispatchEvent(new Event("change",{bubbles:true}));'
+  );
   await wait('new URL(' + declaredLink + '.href).hash.includes("webid=")');
-  assert.equal(await evaluate(
-    'const node=window.solidLauncher.store.collection.get(' +
-      JSON.stringify(describedAppId) + ');return String(node[node.graph.propertyName(' +
-      JSON.stringify('https://vocab.muze.nl/solid-apps#launchParameterLocation') + ')]);'
-  ), 'query');
+  assert.equal(
+    await evaluate(
+      'const node=window.solidLauncher.store.collection.get(' +
+        JSON.stringify(describedAppId) +
+        ');return String(node[node.graph.propertyName(' +
+        JSON.stringify(
+          'https://vocab.muze.nl/solid-apps#launchParameterLocation'
+        ) +
+        ')]);'
+    ),
+    'query'
+  );
   await click('.saved-apps [data-simply-command=sync]');
   await wait(
     'document.querySelector(".suite-status").textContent.includes("Shortcuts synchronized")'
   );
   await visit('launcher/');
-  await wait('window.solidLauncher?.host.session && ' + declaredLink +
-    '?.closest("li").querySelector("select").value==="fragment"');
+  await wait(
+    'window.solidLauncher?.host.session && ' +
+      declaredLink +
+      '?.closest("li").querySelector("select").value==="fragment"'
+  );
   declaredUrl = new URL(await evaluate('return ' + declaredLink + '.href;'));
   assert.equal(declaredUrl.searchParams.has('webid'), false);
   assert.equal(declaredUrl.searchParams.has('resource'), false);
 
-  await evaluate('const select=' + declaredLink +
-    '.closest("li").querySelector("select");select.value="";' +
-    'select.dispatchEvent(new Event("change",{bubbles:true}));');
+  await evaluate(
+    'const select=' +
+      declaredLink +
+      '.closest("li").querySelector("select");select.value="";' +
+      'select.dispatchEvent(new Event("change",{bubbles:true}));'
+  );
   await wait('new URL(' + declaredLink + '.href).searchParams.has("webid")');
-  assert(await evaluate(
-    'const node=window.solidLauncher.store.collection.get(' +
-      JSON.stringify(describedAppId) + ');return node[node.graph.propertyName(' +
-      JSON.stringify('https://vocab.muze.nl/solid-apps#launchParameterLocationOverride') +
-      ')]===undefined;'
-  ));
+  assert(
+    await evaluate(
+      'const node=window.solidLauncher.store.collection.get(' +
+        JSON.stringify(describedAppId) +
+        ');return node[node.graph.propertyName(' +
+        JSON.stringify(
+          'https://vocab.muze.nl/solid-apps#launchParameterLocationOverride'
+        ) +
+        ')]===undefined;'
+    )
+  );
   await click('.saved-apps [data-simply-command=sync]');
   await wait(
     'document.querySelector(".suite-status").textContent.includes("Shortcuts synchronized")'
   );
-  assert.match(String(resources.get(base + '/launcher.ttl').body),
-    /preserve app metadata/);
-  assert.match(String(resources.get(base + '/launcher.ttl').body),
-    /preserve other subject/);
+  assert.match(
+    String(resources.get(base + '/launcher.ttl').body),
+    /preserve app metadata/
+  );
+  assert.match(
+    String(resources.get(base + '/launcher.ttl').body),
+    /preserve other subject/
+  );
   await visit('launcher/');
-  await wait('window.solidLauncher?.host.session && ' + declaredLink +
-    '?.closest("li").querySelector("select").value===""');
+  await wait(
+    'window.solidLauncher?.host.session && ' +
+      declaredLink +
+      '?.closest("li").querySelector("select").value===""'
+  );
   await wait('new URL(' + declaredLink + '.href).searchParams.has("webid")');
 
   await submit('.saved-apps form', {
-    name: 'User query app', url: serverAppUrl, launchMode: 'query'
+    name: 'User query app',
+    url: serverAppUrl,
+    launchMode: 'query'
   });
   await wait(
     '[...document.querySelectorAll(".saved-apps a")].some(a=>a.textContent==="User query app")'
   );
-  const userUrl = new URL(await evaluate(
-    'return [...document.querySelectorAll(".saved-apps a")].find(a=>a.textContent==="User query app").href;'
-  ));
+  const userUrl = new URL(
+    await evaluate(
+      'return [...document.querySelectorAll(".saved-apps a")].find(a=>a.textContent==="User query app").href;'
+    )
+  );
   assert.equal(userUrl.searchParams.get('webid'), webId);
   assert.equal(userUrl.searchParams.get('resource'), launchResource);
 
@@ -790,8 +964,8 @@ try {
   launchedPage = serverWindow.page;
   page = launchedPage;
   await wait('document.body.innerText.includes("Server-side app received")');
-  const received = calls.filter(call =>
-    new URL(call.url).pathname === '/server-app'
+  const received = calls.filter(
+    (call) => new URL(call.url).pathname === '/server-app'
   );
   assert.equal(received.length, 1);
   const requestUrl = new URL(received[0].url);
@@ -808,41 +982,69 @@ try {
   page = serverLauncher;
 
   await submit('.saved-apps form', {
-    name: 'Anonymous query app', url: serverAppUrl,
-    launchMode: 'query', anonymous: true
+    name: 'Anonymous query app',
+    url: serverAppUrl,
+    launchMode: 'query',
+    anonymous: true
   });
-  const anonymousLink = '[...document.querySelectorAll(".saved-apps a")]' +
+  const anonymousLink =
+    '[...document.querySelectorAll(".saved-apps a")]' +
     '.find(a=>a.textContent==="Anonymous query app")';
   await wait(anonymousLink + '?.closest("li").querySelector("input").checked');
-  assert.equal(new URL(await evaluate('return ' + anonymousLink + '.href;'))
-    .searchParams.has('webid'), false);
+  assert.equal(
+    new URL(
+      await evaluate('return ' + anonymousLink + '.href;')
+    ).searchParams.has('webid'),
+    false
+  );
 
-  await evaluate('const input=' + anonymousLink +
-    '.closest("li").querySelector("input");input.checked=false;' +
-    'input.dispatchEvent(new Event("change",{bubbles:true}));');
+  await evaluate(
+    'const input=' +
+      anonymousLink +
+      '.closest("li").querySelector("input");input.checked=false;' +
+      'input.dispatchEvent(new Event("change",{bubbles:true}));'
+  );
   await wait('new URL(' + anonymousLink + '.href).searchParams.has("webid")');
   await click('.saved-apps [data-simply-command=sync]');
   await wait(
     'document.querySelector(".suite-status").textContent.includes("Shortcuts synchronized")'
   );
   await visit('launcher/');
-  await wait('window.solidLauncher?.host.session && ' + anonymousLink +
-    ' && !' + anonymousLink + '.closest("li").querySelector("input").checked');
-  await evaluate('const input=' + anonymousLink +
-    '.closest("li").querySelector("input");input.checked=true;' +
-    'input.dispatchEvent(new Event("change",{bubbles:true}));');
-  await wait('!' + 'new URL(' + anonymousLink + '.href).searchParams.has("webid")');
+  await wait(
+    'window.solidLauncher?.host.session && ' +
+      anonymousLink +
+      ' && !' +
+      anonymousLink +
+      '.closest("li").querySelector("input").checked'
+  );
+  await evaluate(
+    'const input=' +
+      anonymousLink +
+      '.closest("li").querySelector("input");input.checked=true;' +
+      'input.dispatchEvent(new Event("change",{bubbles:true}));'
+  );
+  await wait(
+    '!' + 'new URL(' + anonymousLink + '.href).searchParams.has("webid")'
+  );
   await click('.saved-apps [data-simply-command=sync]');
   await wait(
     'document.querySelector(".suite-status").textContent.includes("Shortcuts synchronized")'
   );
   await visit('launcher/');
-  await wait('window.solidLauncher?.host.session && ' + anonymousLink +
-    '?.closest("li").querySelector("input").checked');
-  const identifiedLink = '[...document.querySelectorAll(".saved-apps a")]' +
+  await wait(
+    'window.solidLauncher?.host.session && ' +
+      anonymousLink +
+      '?.closest("li").querySelector("input").checked'
+  );
+  const identifiedLink =
+    '[...document.querySelectorAll(".saved-apps a")]' +
     '.find(a=>a.textContent==="User query app")';
-  assert.equal(new URL(await evaluate('return ' + identifiedLink + '.href;'))
-    .searchParams.get('webid'), webId);
+  assert.equal(
+    new URL(
+      await evaluate('return ' + identifiedLink + '.href;')
+    ).searchParams.get('webid'),
+    webId
+  );
   const anonymousLauncher = page;
   const anonymousWindow = await openApp(
     '.saved-apps a[href*="/server-app"]:not([href*="webid="])'
@@ -850,9 +1052,11 @@ try {
   launchedPage = anonymousWindow.page;
   page = launchedPage;
   await wait('document.body.innerText.includes("Server-side app received")');
-  const anonymousRequest = new URL(calls.filter(call =>
-    new URL(call.url).pathname === '/server-app'
-  ).at(-1).url);
+  const anonymousRequest = new URL(
+    calls
+      .filter((call) => new URL(call.url).pathname === '/server-app')
+      .at(-1).url
+  );
   assert.equal(anonymousRequest.searchParams.has('webid'), false);
   assert.equal(anonymousRequest.searchParams.get('resource'), launchResource);
   page.close();
@@ -864,8 +1068,10 @@ try {
 
   const anonymousBase = base + '/server-app?view=plain#landing';
   await submit('.saved-apps form', {
-    name: 'Anonymous no resource', url: anonymousBase,
-    launchMode: 'query', anonymous: true
+    name: 'Anonymous no resource',
+    url: anonymousBase,
+    launchMode: 'query',
+    anonymous: true
   });
   const bareSelector = '.saved-apps a[href*="view=plain"]';
   await wait('document.querySelector(' + JSON.stringify(bareSelector) + ')');
@@ -873,9 +1079,11 @@ try {
   launchedPage = bareWindow.page;
   page = launchedPage;
   await wait('document.body.innerText.includes("Server-side app received")');
-  const bareRequest = new URL(calls.filter(call =>
-    new URL(call.url).pathname === '/server-app'
-  ).at(-1).url);
+  const bareRequest = new URL(
+    calls
+      .filter((call) => new URL(call.url).pathname === '/server-app')
+      .at(-1).url
+  );
   assert.equal(bareRequest.searchParams.has('webid'), false);
   assert.equal(bareRequest.searchParams.has('resource'), false);
   page.close();
@@ -886,17 +1094,23 @@ try {
   page = anonymousLauncher;
   await capture('launcher-desktop');
   await page.send('Emulation.setDeviceMetricsOverride', {
-    width: 390, height: 844, deviceScaleFactor: 1, mobile: true
+    width: 390,
+    height: 844,
+    deviceScaleFactor: 1,
+    mobile: true
   });
   await evaluate(
     'document.querySelector(".saved-apps").scrollIntoView({block:"start"});'
   );
-  assert(await evaluate(
-    'return document.documentElement.scrollWidth<=innerWidth;'
-  ));
+  assert(
+    await evaluate('return document.documentElement.scrollWidth<=innerWidth;')
+  );
   await capture('launcher-mobile');
   await page.send('Emulation.setDeviceMetricsOverride', {
-    width: 1280, height: 900, deviceScaleFactor: 1, mobile: false
+    width: 1280,
+    height: 900,
+    deviceScaleFactor: 1,
+    mobile: false
   });
   await visit('files/');
   await wait(
@@ -955,7 +1169,7 @@ try {
     false
   );
   await evaluate(
-    'document.querySelector("[data-simply-command=edit]").click();'
+    'document.querySelector("[data-simply-command=editProfile]").click();'
   );
   await submit('.profile-card form', {
     name: 'Robin de Vries',
@@ -1001,11 +1215,17 @@ try {
       'return document.documentElement.scrollWidth<=document.documentElement.clientWidth;'
     )
   );
-  assert(await evaluate('const dialog=document.querySelector(' +
-    '".preferences-dialog");return dialog.scrollWidth<=dialog.clientWidth;'));
-  await evaluate('document.querySelector(' +
-    '".preferences-dialog [name=contactsResource]")' +
-    '.scrollIntoView({block:"center"});');
+  assert(
+    await evaluate(
+      'const dialog=document.querySelector(' +
+        '".preferences-dialog");return dialog.scrollWidth<=dialog.clientWidth;'
+    )
+  );
+  await evaluate(
+    'document.querySelector(' +
+      '".preferences-dialog [name=contactsResource]")' +
+      '.scrollIntoView({block:"center"});'
+  );
   await capture('preferences-storage-mobile');
   await click('.preferences-dialog [data-simply-command=close]');
   await wait('!document.querySelector(".preferences-dialog").open');
@@ -1097,17 +1317,27 @@ try {
   await wait(
     'window.solidLauncher?.store && [...document.querySelectorAll(".saved-apps a")].some(a=>a.textContent==="Profile launch example")'
   );
-  assert.equal(await evaluate(
-    'return [...document.querySelectorAll(".saved-apps a")].find(a=>a.textContent==="Profile launch example").hasAttribute("href");'
-  ), false);
-  assert.equal(await evaluate(
-    'return [...document.querySelectorAll(".saved-apps a")].find(a=>a.textContent==="Example app").href;'
-  ), 'https://example.org/app');
-  assert.equal(new URL(await evaluate('return ' + anonymousLink + '.href;'))
-    .searchParams.has('webid'), false);
+  assert.equal(
+    await evaluate(
+      'return [...document.querySelectorAll(".saved-apps a")].find(a=>a.textContent==="Profile launch example").hasAttribute("href");'
+    ),
+    false
+  );
+  assert.equal(
+    await evaluate(
+      'return [...document.querySelectorAll(".saved-apps a")].find(a=>a.textContent==="Example app").href;'
+    ),
+    'https://example.org/app'
+  );
+  assert.equal(
+    new URL(
+      await evaluate('return ' + anonymousLink + '.href;')
+    ).searchParams.has('webid'),
+    false
+  );
   await evaluate(
     'const form=document.querySelector(".launch-profile form");' +
-    'form.elements.resource.value="";form.elements.anonymous.checked=true;'
+      'form.elements.resource.value="";form.elements.anonymous.checked=true;'
   );
   const loggedOutLauncher = page;
   const bareProfile = await openApp('.launch-profile button');
@@ -1115,7 +1345,10 @@ try {
   page = launchedPage;
   await wait('window.solidProfile');
   assert.equal(await evaluate('return location.hash;'), '');
-  assert.equal(await evaluate('return window.solidProfile.host.session;'), null);
+  assert.equal(
+    await evaluate('return window.solidProfile.host.session;'),
+    null
+  );
   page.close();
   await loggedOutLauncher.send('Target.closeTarget', {
     targetId: bareProfile.target.targetId
@@ -1134,11 +1367,14 @@ try {
 }
 catch (error) {
   console.error('Pod requests:', calls);
-  console.error('Current app:', await page.evaluate(() => ({
-    url: location.href,
-    launch: window.solidProfile?.host.launch,
-    connected: Boolean(window.solidProfile?.host.session)
-  })));
+  console.error(
+    'Current app:',
+    await page.evaluate(() => ({
+      url: location.href,
+      launch: window.solidProfile?.host.launch,
+      connected: Boolean(window.solidProfile?.host.session)
+    }))
+  );
   console.error(
     await page.evaluate(() => document.querySelector('tbody')?.outerHTML)
   );

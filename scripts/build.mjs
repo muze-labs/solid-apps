@@ -1,5 +1,6 @@
+import { composeTemplate } from './templates.mjs';
 import { bundleApplications } from './bundle.mjs';
-import { mkdir, copyFile, writeFile, readFile, rm } from 'node:fs/promises';
+import { mkdir, copyFile, writeFile, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
@@ -29,37 +30,27 @@ await copyFile(
 for (const output of bundles) {
   const destination = path.join(root, 'www/assets', output.fileName);
   await mkdir(path.dirname(destination), { recursive: true });
-  await writeFile(destination,
-    output.type === 'chunk' ? output.code : output.source);
+  await writeFile(
+    destination,
+    output.type === 'chunk' ? output.code : output.source
+  );
 }
-const shell = await readFile(
-  path.join(root, 'packages/solid-app-ui/src/shell.html'),
-  'utf8'
-);
-const profile = await readFile(
-  path.join(root, 'packages/solid-profile/src/profile.html'),
-  'utf8'
-);
-const preferences = await readFile(
-  path.join(root, 'packages/solid-preferences/src/dialog.html'),
-  'utf8'
-);
 for (const name of ['launcher', 'contacts', 'files', 'profile']) {
-  const title = name[0].toUpperCase() + name.slice(1);
-  const content = (
-    await readFile(path.join(root, `apps/${name}/src/index.html`), 'utf8')
-  ).replace('{{profile}}', profile);
-  let appPreferences = '';
-  if (name !== 'profile') {
-    appPreferences = await readFile(
-      path.join(root, `apps/${name}/src/preferences.html`), 'utf8'
-    );
-  }
-  let body = shell
-    .replace('{{title}}', title)
+  const content = await composeTemplate(
+    path.join(root, `apps/${name}/src/index.html`),
+    { appName: name }
+  );
+  const shell = await composeTemplate(
+    path.join(root, 'packages/solid-app-ui/src/shell.html'),
+    { appName: name }
+  );
+  const preferences = await composeTemplate(
+    path.join(root, 'packages/solid-preferences/src/dialog.html'),
+    { appName: name }
+  );
+  const body = shell
     .replace('{{content}}', content)
-    .replace('{{preferences}}',
-      preferences.replace('{{appPreferences}}', appPreferences));
+    .replace('{{preferences}}', preferences);
   await mkdir(path.join(root, `www/${name}`), { recursive: true });
   await writeFile(
     path.join(root, `www/${name}/index.html`),
@@ -68,15 +59,20 @@ for (const name of ['launcher', 'contacts', 'files', 'profile']) {
 }
 await writeFile(
   path.join(root, 'www/redirect.html'),
-  '<!doctype html><meta charset="utf-8"><title>Solid connection</title><p>Completing sign-in…</p><script type="module" src="assets/redirect' + scriptSuffix + '.js"></script>'
+  '<!doctype html><meta charset="utf-8"><title>Solid connection</title><p>Completing sign-in…</p><script type="module" src="assets/redirect' +
+    scriptSuffix +
+    '.js"></script>'
 );
 await writeFile(
   path.join(root, 'www/index.html'),
   '<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=launcher/"><a href="launcher/">Open Solid Apps</a>'
 );
 console.log('Built all four apps in www/');
-const outputs = Object.fromEntries(bundles.filter(item => item.type === 'chunk')
-  .map(item => ['www/assets/' + item.fileName, item]));
+const outputs = Object.fromEntries(
+  bundles
+    .filter((item) => item.type === 'chunk')
+    .map((item) => ['www/assets/' + item.fileName, item])
+);
 const gzipSizes = new Map();
 for (const [name, output] of Object.entries(outputs)) {
   gzipSizes.set(name, gzipSync(output.code, { level: 6 }).byteLength);
@@ -86,8 +82,10 @@ function importGraph(name, seen = new Set()) {
     return seen;
   }
   seen.add(name);
-  for (const dependency of [...outputs[name].imports,
-    ...outputs[name].dynamicImports]) {
+  for (const dependency of [
+    ...outputs[name].imports,
+    ...outputs[name].dynamicImports
+  ]) {
     importGraph('www/assets/' + dependency, seen);
   }
   return seen;
@@ -97,31 +95,67 @@ function appSizes(suffix) {
   for (const name of ['launcher', 'contacts', 'files', 'profile']) {
     const files = importGraph(`www/assets/${name}/src/index${suffix}.js`);
     importGraph('www/assets/redirect' + suffix + '.js', files);
-    const total = [...files].reduce((sum, file) => sum + gzipSizes.get(file), 0);
+    const total = [...files].reduce(
+      (sum, file) => sum + gzipSizes.get(file),
+      0
+    );
     sizes[name] = { gzipBytes: total, scripts: [...files] };
     if (total >= 200000) {
-      throw new Error('build: ' + name + suffix +
-        ' exceeds the 200 KB gzip JavaScript budget.');
+      throw new Error(
+        'build: ' +
+          name +
+          suffix +
+          ' exceeds the 200 KB gzip JavaScript budget.'
+      );
     }
   }
   return sizes;
 }
 const sizes = appSizes('.min');
 const readableSizes = appSizes('');
-await writeFile(path.join(root, 'www/size-report.json'), JSON.stringify({
-  gzipLevel: 6, node: process.versions.node, apps: sizes,
-  readableApps: readableSizes,
-  servedVariant: readable ? 'readable' : 'minified'
-}, null, 2));
-await writeFile(path.join(root, 'www/bundle-report.json'), JSON.stringify(
-  Object.fromEntries(Object.entries(outputs).map(([name, output]) => [name, {
-    gzipBytes: gzipSizes.get(name),
-    imports: output.imports,
-    modules: Object.keys(output.modules).map(id => path.relative(root, id))
-  }])), null, 2));
-for (const [variant, report] of [['minified', sizes],
-  ['readable', readableSizes]]) {
-  console.log('Gzip JS including auth callback (' + variant + '): ' +
-    Object.entries(report).map(([name, size]) =>
-      `${name} ${size.gzipBytes} B`).join(', '));
+await writeFile(
+  path.join(root, 'www/size-report.json'),
+  JSON.stringify(
+    {
+      gzipLevel: 6,
+      node: process.versions.node,
+      apps: sizes,
+      readableApps: readableSizes,
+      servedVariant: readable ? 'readable' : 'minified'
+    },
+    null,
+    2
+  )
+);
+await writeFile(
+  path.join(root, 'www/bundle-report.json'),
+  JSON.stringify(
+    Object.fromEntries(
+      Object.entries(outputs).map(([name, output]) => [
+        name,
+        {
+          gzipBytes: gzipSizes.get(name),
+          imports: output.imports,
+          modules: Object.keys(output.modules).map((id) =>
+            path.relative(root, id)
+          )
+        }
+      ])
+    ),
+    null,
+    2
+  )
+);
+for (const [variant, report] of [
+  ['minified', sizes],
+  ['readable', readableSizes]
+]) {
+  console.log(
+    'Gzip JS including auth callback (' +
+      variant +
+      '): ' +
+      Object.entries(report)
+        .map(([name, size]) => `${name} ${size.gzipBytes} B`)
+        .join(', ')
+  );
 }

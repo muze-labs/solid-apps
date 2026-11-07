@@ -1,12 +1,28 @@
-import { PortConnection, capabilityError, serializable, restorationState }
-  from './capabilities.mjs';
+import { from } from '@muze-nl/jaqt';
+import {
+  PortConnection,
+  capabilityError,
+  serializable,
+  restorationState
+} from './capabilities.mjs';
 
 export class WorkspaceBroker {
-  constructor({ snapshot = { version: 2, apps: [], launcher: {} }, keys = {},
-    onChange = () => {}, onMessage = () => {}, authorize = () => false,
-    target = window, checkpointTimeout = 10000 } = {}) {
-    Object.assign(this, { onChange, onMessage, authorize, target,
-      checkpointTimeout });
+  constructor({
+    snapshot = { version: 2, apps: [], launcher: {} },
+    keys = {},
+    onChange = () => {},
+    onMessage = () => {},
+    authorize = () => false,
+    target = window,
+    checkpointTimeout = 10000
+  } = {}) {
+    Object.assign(this, {
+      onChange,
+      onMessage,
+      authorize,
+      target,
+      checkpointTimeout
+    });
     this.focusTarget = 'solid-apps-launcher-' + crypto.randomUUID();
     target.name = this.focusTarget;
     this.instances = new Map();
@@ -16,24 +32,39 @@ export class WorkspaceBroker {
     for (const entry of snapshot.apps) {
       this.add(entry, keys[entry.id]);
     }
-    this.listener = event => this.resume(event);
+    this.listener = (event) => this.resume(event);
     target.addEventListener('message', this.listener);
     this.timer = setInterval(() => this.inspect(), 400);
   }
   add(entry, key = crypto.randomUUID() + crypto.randomUUID()) {
-    const record = { entry: structuredClone(entry), key, win: null, peer: null,
-      registered: false, ready: false, restoreError: '', capabilities: [],
-      lastOffer: 0 };
+    const record = {
+      entry: structuredClone(entry),
+      key,
+      win: null,
+      peer: null,
+      registered: false,
+      ready: false,
+      restoreError: '',
+      capabilities: [],
+      lastOffer: 0
+    };
     this.instances.set(entry.id, record);
     return record;
   }
   snapshot() {
-    return { ...this.extra, version: 2, launcher: serializable(this.launcherState),
-      apps: [...this.instances.values()].map(record => serializable(record.entry)) };
+    return {
+      ...this.extra,
+      version: 2,
+      launcher: serializable(this.launcherState),
+      apps: [...this.instances.values()].map((record) =>
+        serializable(record.entry)
+      )
+    };
   }
   keys() {
-    return Object.fromEntries([...this.instances].map(([id, record]) =>
-      [id, record.key]));
+    return Object.fromEntries(
+      [...this.instances].map(([id, record]) => [id, record.key])
+    );
   }
   changed() {
     return this.onChange(this.snapshot(), this.keys());
@@ -41,20 +72,30 @@ export class WorkspaceBroker {
   open(url, { allowBrowse = false, label = '', id } = {}) {
     let record = id && this.instances.get(id);
     if (!record) {
-      record = this.add({ id: crypto.randomUUID(), url, label,
-        allowBrowse, state: null });
+      record = this.add({
+        id: crypto.randomUUID(),
+        url,
+        label,
+        allowBrowse,
+        state: null
+      });
     }
     if (record.win && !record.win.closed) {
       record.win.focus();
       return record;
     }
     this.closing = false;
-    record.win = this.target.open(record.entry.url, '_blank',
-      this.presentation === 'window' ? 'popup' : '');
+    record.win = this.target.open(
+      record.entry.url,
+      '_blank',
+      this.presentation === 'window' ? 'popup' : ''
+    );
     if (!record.win) {
-      this.onMessage('Browser blocked an app. Allow popups or restore it separately.');
+      this.onMessage(
+        'Browser blocked an app. Allow popups or restore it separately.'
+      );
     }
-    this.changed().catch(error => this.onMessage(error.message));
+    this.changed().catch((error) => this.onMessage(error.message));
     return record;
   }
   restore() {
@@ -72,7 +113,7 @@ export class WorkspaceBroker {
         if (!this.closing) {
           this.instances.delete(record.entry.id);
         }
-        this.changed().catch(error => this.onMessage(error.message));
+        this.changed().catch((error) => this.onMessage(error.message));
       }
       else if (!record.registered && Date.now() - record.lastOffer > 1500) {
         this.offer(record);
@@ -82,13 +123,22 @@ export class WorkspaceBroker {
   resume(event) {
     const data = event.data;
     const record = this.instances.get(data?.id);
-    if (!record || data.type !== 'solid-apps:resume' ||
-      data.key !== record.key || event.origin !== new URL(record.entry.url).origin ||
-      (record.win && record.win !== event.source) || !event.source) {
+    if (
+      !record ||
+      data.type !== 'solid-apps:resume' ||
+      data.key !== record.key ||
+      event.origin !== new URL(record.entry.url).origin ||
+      (record.win && record.win !== event.source) ||
+      !event.source
+    ) {
       return;
     }
-    if (record.registered && record.generation === data.generation &&
-      !data.reconnect && !record.peer?.closed) {
+    if (
+      record.registered &&
+      record.generation === data.generation &&
+      !data.reconnect &&
+      !record.peer?.closed
+    ) {
       return;
     }
     if (!record.registered && Date.now() - record.lastOffer < 1500) {
@@ -104,19 +154,31 @@ export class WorkspaceBroker {
     record.restoreError = '';
     const channel = new MessageChannel();
     record.lastOffer = Date.now();
-    record.peer = new PortConnection(channel.port1,
-      (method, input, options) => this.handle(record, method, input, options));
-    record.win.postMessage({ type: 'solid-apps:offer', id: record.entry.id,
-      key: record.key, state: record.entry.state, focusTarget: this.focusTarget },
-    new URL(record.entry.url).origin, [channel.port2]);
+    record.peer = new PortConnection(channel.port1, (method, input, options) =>
+      this.handle(record, method, input, options)
+    );
+    record.win.postMessage(
+      {
+        type: 'solid-apps:offer',
+        id: record.entry.id,
+        key: record.key,
+        state: record.entry.state,
+        focusTarget: this.focusTarget
+      },
+      new URL(record.entry.url).origin,
+      [channel.port2]
+    );
   }
   async handle(record, method, input, options) {
     if (this.instances.get(record.entry.id) !== record || this.closing) {
       throw capabilityError('Workspace instance is no longer active.');
     }
     if (method === 'register') {
-      if (!Array.isArray(input.capabilities) || input.capabilities.length > 16 ||
-        input.capabilities.some(value => typeof value !== 'string')) {
+      if (
+        !Array.isArray(input.capabilities) ||
+        input.capabilities.length > 16 ||
+        input.capabilities.some((value) => typeof value !== 'string')
+      ) {
         throw capabilityError('Invalid capability declaration.');
       }
       record.capabilities = [...new Set(input.capabilities)];
@@ -154,7 +216,8 @@ export class WorkspaceBroker {
     }
     if (method === 'request' && record.registered) {
       return this.request(input.capability, input.input, {
-        ...options, requester: record.entry.id
+        ...options,
+        requester: record.entry.id
       });
     }
     throw capabilityError('Unsupported workspace operation.', 'denied');
@@ -172,7 +235,8 @@ export class WorkspaceBroker {
           resolve(record);
         }
       };
-      const cancel = () => finish(capabilityError('Selection cancelled.', 'cancelled'));
+      const cancel = () =>
+        finish(capabilityError('Selection cancelled.', 'cancelled'));
       const check = () => {
         const record = this.instances.get(id);
         const label = record?.entry.label || 'Application';
@@ -180,19 +244,35 @@ export class WorkspaceBroker {
           cancel();
         }
         else if (!record?.win || record.win.closed) {
-          finish(capabilityError(label + ' did not open or was closed. Allow ' +
-            'popups or open it through Launcher, then retry.', 'disconnected'));
+          finish(
+            capabilityError(
+              label +
+                ' did not open or was closed. Allow ' +
+                'popups or open it through Launcher, then retry.',
+              'disconnected'
+            )
+          );
         }
         else if (record.restoreError) {
           finish(capabilityError(record.restoreError, 'restoring'));
         }
-        else if (record.registered && record.ready && record.peer &&
-          !record.peer.closed) {
+        else if (
+          record.registered &&
+          record.ready &&
+          record.peer &&
+          !record.peer.closed
+        ) {
           finish(null, record);
         }
         else if (Date.now() >= deadline) {
-          finish(capabilityError(label + ' did not become ready. Check its tab ' +
-            'and connection, then retry.', 'timeout'));
+          finish(
+            capabilityError(
+              label +
+                ' did not become ready. Check its tab ' +
+                'and connection, then retry.',
+              'timeout'
+            )
+          );
         }
       };
       const timer = setInterval(check, 100);
@@ -200,49 +280,75 @@ export class WorkspaceBroker {
       check();
     });
   }
-  async request(capability, input, {
-    requester = 'launcher', signal, providerId
-  } = {}) {
-    const providers = [...this.instances.values()].filter(record =>
-      (providerId === undefined || record.entry.id === providerId) &&
-      record.registered && record.ready && record.peer && !record.peer.closed &&
-      record.capabilities.includes(capability) &&
-      this.authorize(requester, record.entry, capability));
+  async request(
+    capability,
+    input,
+    { requester = 'launcher', signal, providerId } = {}
+  ) {
+    const providers = from([...this.instances.values()])
+      .where(
+        (record) =>
+          (providerId === undefined || record.entry.id === providerId) &&
+          record.registered &&
+          record.ready &&
+          record.peer &&
+          !record.peer.closed &&
+          record.capabilities.includes(capability) &&
+          this.authorize(requester, record.entry, capability)
+      )
+      .toArray();
     if (providers.length !== 1) {
-      throw capabilityError(providers.length ? 'More than one provider is available.' :
-        'Open Files through Launcher and allow resource selection.');
+      throw capabilityError(
+        providers.length
+          ? 'More than one provider is available.'
+          : 'Open Files through Launcher and allow resource selection.'
+      );
     }
     try {
       providers[0].win?.focus();
     }
     catch {}
-    const result = await providers[0].peer.call('capability', {
-      capability, input: serializable(input),
-      requester: { application: requester, origin: this.target.location.origin }
-    }, { signal });
+    const result = await providers[0].peer.call(
+      'capability',
+      {
+        capability,
+        input: serializable(input),
+        requester: {
+          application: requester,
+          origin: this.target.location.origin
+        }
+      },
+      { signal }
+    );
     if (result.error) {
       throw capabilityError(result.error.message, result.error.code);
     }
     return result.result;
   }
   async checkpoint() {
-    const previous = new Map([...this.instances.values()].map(record =>
-      [record, record.entry.state]));
+    const previous = new Map(
+      [...this.instances.values()].map((record) => [record, record.entry.state])
+    );
     const results = await Promise.allSettled(
-      [...this.instances.values()].map(async record => {
+      [...this.instances.values()].map(async (record) => {
         const label = record.entry.label
           ? record.entry.label + ' (' + record.entry.url + ')'
           : record.entry.url;
         if (record.registered && !record.ready) {
-          const reason = record.restoreError ||
+          const reason =
+            record.restoreError ||
             'App is still restoring. Finish connecting or reload it, then retry.';
-          throw new Error('workspace-broker: ' + label + ' is not ready. ' + reason);
+          throw new Error(
+            'workspace-broker: ' + label + ' is not ready. ' + reason
+          );
         }
         if (record.registered && record.peer && !record.peer.closed) {
           try {
-            record.entry.state = restorationState(await record.peer.call(
-              'checkpoint', null, { timeout: this.checkpointTimeout }
-            ));
+            record.entry.state = restorationState(
+              await record.peer.call('checkpoint', null, {
+                timeout: this.checkpointTimeout
+              })
+            );
           }
           catch (error) {
             if (['timeout', 'disconnected'].includes(error.code)) {
@@ -253,14 +359,25 @@ export class WorkspaceBroker {
                 record.restoreError = 'Reload this app to reconnect safely.';
               }
             }
-            throw new Error('workspace-broker: Could not collect state from ' +
-              label + '. ' + error.message + ' Open that app, then retry.');
+            throw new Error(
+              'workspace-broker: Could not collect state from ' +
+                label +
+                '. ' +
+                error.message +
+                ' Open that app, then retry.'
+            );
           }
         }
-        else if (record.win && !record.win.closed &&
-          (record.managed || record.entry.state !== null)) {
-          throw new Error('workspace-broker: ' + label +
-            ' is reconnecting. Open that app, then retry.');
+        else if (
+          record.win &&
+          !record.win.closed &&
+          (record.managed || record.entry.state !== null)
+        ) {
+          throw new Error(
+            'workspace-broker: ' +
+              label +
+              ' is reconnecting. Open that app, then retry.'
+          );
         }
       })
     );
@@ -273,9 +390,11 @@ export class WorkspaceBroker {
       }
       throw error;
     }
-    const failures = results.filter(result => result.status === 'rejected');
+    const failures = from(results).where({ status: 'rejected' }).toArray();
     if (failures.length) {
-      throw new Error(failures.map(result => result.reason.message).join('\n'));
+      throw new Error(
+        failures.map((result) => result.reason.message).join('\n')
+      );
     }
   }
   async allow(id, value) {

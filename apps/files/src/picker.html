@@ -1,0 +1,29 @@
+<div style="display: contents">
+  <section
+    class="picker-request app-card"
+    hidden
+    data-simply-field="picker"
+    data-simply-transform="attributes"
+    data-simply-attributes="hidden"
+  >
+    <h2>Select a resource</h2>
+    <p>
+      Requested by
+      <span
+        data-simply-field="requester"
+        data-simply-transform="escape_html"
+      ></span>
+    </p>
+    <p>
+      Choose a resource below. Only its URL is returned; access is unchanged.
+    </p>
+    <div class="actions">
+      <button class="ds-button" data-simply-command="selectFolder">
+        Select current folder
+      </button>
+      <button class="ds-button" data-simply-command="cancelSelection">
+        Cancel selection
+      </button>
+    </div>
+  </section>
+</div>

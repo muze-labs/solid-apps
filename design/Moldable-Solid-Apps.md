@@ -78,6 +78,21 @@ A newly authored or imported slice is a component dataset. Include it in `app.co
 
 Keep the component's original definitions available for inspection and reuse. Store a user's replacement in the app's corresponding section under the same entry name. For example, editing a component template called `solid-contacts-filter` creates an app-level `html` entry called `solid-contacts-filter`. SimplyFlow's existing composition rules select the effective definition. Removing the app override reveals the underlying definition according to those same rules. Apply this model to commands, actions, key bindings, and other named entries where SimplyFlow supports overrides.
 
+### Known limitation: build-time composition
+
+The current suite expands shared account/Preferences includes, app titles and
+app-specific Preferences markup at build time. The resulting templates are
+exposed in the running app; the original include relationships and placeholder
+expansion cannot be changed there without rebuilding. Retaining the expanded
+source does not make that composition editable at runtime.
+
+The maintainer accepts this boundary for now (2026-11-07). Revisit runtime
+composition using SimplyFlow templates and/or fields as part of future
+moldability work. No mechanism is selected yet. The present build-time rule
+remains in force until that design is revisited; the
+[suite roadmap](solid-apps-roadmap.md#deferred-runtime-template-composition)
+retains the follow-up.
+
 ## The future in-app IDE
 
 The IDE opens beside the running application in the same browser page. A user with some programming knowledge can navigate from the app to a component and then to one of its editable parts. Where an app entry overrides a component entry, show which definition is active and keep the original available to inspect. The IDE also lets the user create a component dataset or import one and add it to the app.

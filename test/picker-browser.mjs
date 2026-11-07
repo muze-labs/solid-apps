@@ -6,7 +6,7 @@ import { nodeResolve } from '@rollup/plugin-node-resolve';
 import { startChrome, formatBrowserException } from './support/chrome.mjs';
 
 // Static protocol fixtures exercise actual activation/startup modules without
-// calling WorkspaceState or writing the deferred JSON-in-Turtle representation.
+// invoking workspace persistence. Dependencies use the same browser bundler.
 const dataDirectory = new URL('../packages/solid-app-data/src/', import.meta.url);
 const pickerBundle = await rollup({
   input: new URL('../apps/launcher/src/picker.mjs', import.meta.url).pathname,
@@ -14,10 +14,21 @@ const pickerBundle = await rollup({
 });
 const picker = await pickerBundle.generate({ format: 'es' });
 await pickerBundle.close();
+const brokerBundle = await rollup({
+  input: new URL('../packages/solid-app-data/src/workspace-broker.mjs', import.meta.url).pathname,
+  plugins: [nodeResolve({ browser: true })]
+});
+const broker = await brokerBundle.generate({ format: 'es' });
+await brokerBundle.close();
 let port;
 const server = http.createServer(async (req, res) => {
   const path = new URL(req.url, 'http://fixture.invalid').pathname;
-  if (['/capabilities.mjs', '/workspace-broker.mjs'].includes(path)) {
+  if (path === '/workspace-broker.mjs') {
+    res.writeHead(200, { 'Content-Type': 'text/javascript' });
+    res.end(broker.output[0].code);
+    return;
+  }
+  if (path === '/capabilities.mjs') {
     res.writeHead(200, { 'Content-Type': 'text/javascript' });
     res.end(await readFile(new URL(path.slice(1), dataDirectory)));
     return;
